@@ -1,0 +1,11 @@
+{
+  "name": "tabuleiro-do-ceo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Jogo de tabuleiro digital e educativo de estatística (hot-seat, sem backend).",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "test": "node --test \"tests/*.test.js\""
+  }
+}

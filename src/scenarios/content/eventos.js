@@ -1,0 +1,51 @@
+// Cartas de evento: sorte ou revés com mini-lição. Efeitos fixos (não multiplicados pela reputação).
+export const EVENTOS = [
+  {
+    id: 'eixo_truncado',
+    titulo: 'O gráfico que enganou',
+    texto: 'Um fornecedor mostrou um gráfico em que o preço "despencou". O eixo vertical começava em 95, e a queda real foi de 2%. Você fechou o contrato mesmo assim.',
+    licao: 'Sempre olhe onde o eixo do gráfico começa: um eixo truncado exagera diferenças pequenas.',
+    dinheiro: -8000,
+    reputacao: 0,
+  },
+  {
+    id: 'correlacao',
+    titulo: 'Mais gente, mais vendas?',
+    texto: 'Você notou que as lojas com mais funcionários vendem mais e contratou 20 pessoas para a loja pequena. As vendas não mudaram: as lojas grandes é que precisam de mais gente.',
+    licao: 'Correlação não é causalidade. Duas coisas que andam juntas podem ter uma causa em comum.',
+    dinheiro: -10000,
+    reputacao: -3,
+  },
+  {
+    id: 'amostra_pequena',
+    titulo: 'Pesquisa com 5 clientes',
+    texto: 'Uma pesquisa com 5 clientes disse que 100% aprovam o novo produto. Você lançou em larga escala, e uma pesquisa com 500 clientes mostrou só 62% de aprovação.',
+    licao: 'Amostras pequenas oscilam muito. Quanto menor a amostra, menos confiável é o percentual.',
+    dinheiro: -6000,
+    reputacao: -3,
+  },
+  {
+    id: 'taxa_base',
+    titulo: 'O antifraude "que acerta 99%"',
+    texto: 'Seu sistema antifraude acerta 99% das vezes, mas só 1 em cada 1.000 transações é fraude. Boa parte dos alertas era de clientes honestos, que você bloqueou.',
+    licao: 'Quando o evento é raro, mesmo um teste muito preciso gera muitos falsos positivos (taxa-base).',
+    dinheiro: -5000,
+    reputacao: -5,
+  },
+  {
+    id: 'sobrevivencia',
+    titulo: 'Só os vencedores aparecem',
+    texto: 'Um consultor mostrou que "todas as startups que fizeram X deram certo". Você percebeu que ele só estudou as que sobreviveram e poupou o investimento.',
+    licao: 'Viés de sobrevivência: olhar só quem deu certo esconde os muitos que fizeram o mesmo e fracassaram.',
+    dinheiro: 8000,
+    reputacao: 2,
+  },
+  {
+    id: 'analise_premiada',
+    titulo: 'Análise de dados reconhecida',
+    texto: 'Sua decisão de usar a mediana no relatório salarial virou case em uma revista do setor.',
+    licao: 'Escolher a métrica certa para o formato dos dados também melhora a imagem da empresa.',
+    dinheiro: 5000,
+    reputacao: 5,
+  },
+];

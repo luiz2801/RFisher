@@ -1,0 +1,47 @@
+import { RECEITA_BALANCO } from './config.js';
+
+export const CONFIANCA = { chute: 0.5, certeza: 1.5 };
+export const NIVEL = { iniciante: 1, avancado: 1.5 };
+
+// Questão em aberto (seção 8, item 4): por ora a justificativa "parcial" conta como errada.
+export const PARCIAL_CONTA_COMO_CORRETA = false;
+
+const arredondar = (v) => Math.round(v / 100) * 100 || 0;
+
+// 0 -> ×0,8 · 50 -> ×1,0 · 100 -> ×1,3
+export function multiplicadorReputacao(reputacao) {
+  const r = Math.min(100, Math.max(0, reputacao));
+  return r <= 50 ? 0.8 + (r / 50) * 0.2 : 1 + ((r - 50) / 50) * 0.3;
+}
+
+export function justificativaConta(tipo) {
+  return tipo === 'correta' || (PARCIAL_CONTA_COMO_CORRETA && tipo === 'parcial');
+}
+
+export function classificar(metricaCorreta, justificativaCorreta) {
+  if (metricaCorreta && justificativaCorreta) return 'sucesso';
+  if (metricaCorreta) return 'sorte';
+  if (justificativaCorreta) return 'incoerencia';
+  return 'erro_total';
+}
+
+export function resolverDecisao({ nivel, reputacao, valorBase, metricaCorreta, justificativaCorreta, confianca, impacto }) {
+  const V = valorBase * NIVEL[nivel];
+  const c = CONFIANCA[confianca];
+  const categoria = classificar(metricaCorreta, justificativaCorreta);
+
+  const bruto = { sucesso: V * c, sorte: 0.2 * V * c, incoerencia: 0, erro_total: -0.5 * V * c }[categoria];
+  const multiplicador = bruto > 0 ? multiplicadorReputacao(reputacao) : 1;
+  const deltaReputacao = {
+    sucesso: impacto.reputacao_acerto,
+    sorte: 0,
+    incoerencia: Math.round(impacto.reputacao_erro / 2),
+    erro_total: impacto.reputacao_erro,
+  }[categoria];
+
+  return { categoria, delta: arredondar(bruto * multiplicador), multiplicador, deltaReputacao };
+}
+
+export function receitaBalanco(reputacao) {
+  return arredondar(RECEITA_BALANCO * multiplicadorReputacao(reputacao));
+}
