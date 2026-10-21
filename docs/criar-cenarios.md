@@ -40,9 +40,11 @@ Consequência prática: **nunca escreva um número de dado à mão no texto**. U
 const cenarioNN = {
   id: 'cenario_09_exemplo',          // único; snake_case
   setor: 'logistica',                // um de SETORES (ver tabela de setores)
+  conceito: 'percentil',             // id de CONCEITOS (src/scenarios/content/conceitos.js)
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
+  dificuldade: 1,                    // 1 a 3; define quando o cenário tende a aparecer
   titulo: 'Título curto da situação',
   contexto: 'Você precisa decidir X com base em {{n}} registros. Qual métrica deve usar?',
   dica: 'Pista mostrada só a jogadores de nível iniciante.',
@@ -68,6 +70,8 @@ const cenarioNN = {
 | --- | --- |
 | `id` | Único entre todos os cenários. |
 | `setor` | Obrigatório e válido (ver [Setores](#setores)). No modo cooperativo define quem é o responsável pela decisão. |
+| `conceito` | Obrigatório, id de `CONCEITOS` em [src/scenarios/content/conceitos.js](../src/scenarios/content/conceitos.js). Diz o que o cenário avalia; o perfil de desempenho do fim de jogo agrega erros e acertos por conceito (`fisher.md` 4.6). Reutilize um conceito existente se o cenário treina a mesma ideia; para um novo, acrescente id e nome ao catálogo. |
+| `dificuldade` | Obrigatório, inteiro de 1 a 3 (`DIFICULDADE_MAX`). Ver [Dificuldade](#dificuldade). |
 | `contexto` | Narrativa e pergunta. Pode usar placeholders. |
 | `dica` | Opcional. Aparece só para jogadores de nível iniciante. |
 | `valor_base` | V da matriz de pontuação (`fisher.md` 3.5). Hoje todos usam 20.000; o nível avançado multiplica por 1,5. |
@@ -75,6 +79,18 @@ const cenarioNN = {
 | `dados.tipo_grafico` | `barras_discretas` para dados inteiros e poucos valores (numerações, notas); qualquer outro valor vira histograma. |
 | `dados.descricao_acessivel` | Obrigatória por convenção: é a descrição textual do gráfico (`fisher.md` 5.9). |
 | `impacto` | Variação de reputação por acerto e por erro. Reutilize a constante `impacto` do arquivo, salvo motivo para variar. |
+
+### Dificuldade
+
+O jogo sorteia cenários com dificuldade crescente ao longo da partida (`fisher.md` 4.5): quanto mais o jogador avançou na trilha, mais o sorteio favorece cenários de dificuldade alta. Escolha o valor pelo que o jogador precisa fazer, não pela conta:
+
+| Valor | Critério | Cenários atuais |
+| --- | --- | --- |
+| 1 | A métrica correta é a mais direta (centro de um conjunto com ou sem um único valor atípico, ou a categoria mais frequente). | 01, 03, 07 |
+| 2 | Exige reconhecer o formato dos dados (cauda longa, bimodal) ou pensar em dispersão. | 02, 04, 05 |
+| 3 | Exige comparar dispersão robusta com sensível a outliers, ou comparar amostras. | 06, 08 |
+
+Mantenha ao menos um cenário em cada nível, senão o início ou o fim da partida perde o efeito (há teste para isso). O peso de sorteio e o passo médio do dado estão em `src/engine/config.js`; a lógica, em `src/engine/dificuldade.js`.
 
 ### Opções de métrica
 
@@ -229,8 +245,9 @@ Em `eventos.js`, acrescente um objeto a `EVENTOS`:
 
 `npm test` executa, entre outros, estes testes sobre todo o conteúdo:
 
-- `validarCenario` em várias seeds. Ele reporta: setor inválido, número de opções ≠ 5, opções corretas ≠ 1, justificativas fora de 6–8, justificativas corretas ≠ 1, `equivoco` sem feedback, opção errada sem `equivoco`, tipo de justificativa inválido, placeholder inexistente e marcador sem valor.
+- `validarCenario` em várias seeds. Ele reporta: dificuldade inválida ou ausente, setor inválido, conceito fora do catálogo, número de opções ≠ 5, opções corretas ≠ 1, justificativas fora de 6–8, justificativas corretas ≠ 1, `equivoco` sem feedback, opção errada sem `equivoco`, tipo de justificativa inválido, placeholder inexistente e marcador sem valor.
 - Unicidade dos `id` dos cenários.
+- `dificuldade` inteira de 1 a 3 em todo cenário, com ao menos um cenário por nível.
 - Invariantes de todos os geradores em 1.000 seeds.
 - Todas as telas renderizam sem `{{`, sem `undefined` e sem HTML injetado.
 - Todo evento tem setor válido.
@@ -239,7 +256,7 @@ O validador **não** confere que a opção marcada `correta` é de fato a corret
 
 ## Checklist antes de concluir
 
-- [ ] `id` único; `setor` válido.
+- [ ] `id` único; `setor` válido; `conceito` do catálogo; `dificuldade` de 1 a 3.
 - [ ] 5 opções (1 correta); 6–8 justificativas (1 `correta`).
 - [ ] Todo `equivoco` tem feedback.
 - [ ] Nenhum número de dado escrito à mão; só placeholders.
@@ -260,6 +277,7 @@ O schema da seção 5.5 do `fisher.md` é anterior à implementação. O código
 | --- | --- | --- |
 | Tamanho da amostra | `dados.gerador.n` | `dados.gerador.parametros.n` |
 | `setor` | ausente | obrigatório (modo cooperativo) |
+| `conceito` | presente no exemplo da 5.5 | obrigatório, validado contra `CONCEITOS` |
 | `dica` | ausente | opcional, só para iniciantes |
 | `dados.formato` | ausente | formata os placeholders |
 | `feedback.revelacao` | lista de nomes (`["histograma_com_media_e_mediana"]`) | objeto com `marcadores[{chave, rotulo, correto}]` |

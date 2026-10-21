@@ -4,6 +4,7 @@ import { resolverDecisao, multiplicadorReputacao, CONFIANCA, NIVEL } from '../sr
 
 const impacto = { reputacao_acerto: 5, reputacao_erro: -10 };
 const base = { nivel: 'iniciante', reputacao: 50, valorBase: 20000, impacto };
+const centenas = (v) => Math.round(v / 100) * 100 || 0;
 const jogada = (m, j, confianca, extra = {}) =>
   resolverDecisao({ ...base, metricaCorreta: m, justificativaCorreta: j, confianca, ...extra });
 
@@ -14,15 +15,27 @@ test('exemplos da seção 3.5 (V = 20.000, iniciante, reputação neutra)', () =
   assert.equal(jogada(false, false, 'chute').delta, -5000);
 });
 
-test('as quatro combinações, nos dois níveis de confiança e de jogador', () => {
+test('escala de confiança: 5 níveis crescentes em degraus de 0,25 (seção 3.4)', () => {
+  assert.deepEqual(Object.values(CONFIANCA), [0.5, 0.75, 1, 1.25, 1.5]);
+  assert.deepEqual(
+    Object.keys(CONFIANCA).map((c) => jogada(true, true, c).delta),
+    [10000, 15000, 20000, 25000, 30000],
+  );
+  assert.deepEqual(
+    Object.keys(CONFIANCA).map((c) => jogada(false, false, c).delta),
+    [-5000, -7500, -10000, -12500, -15000],
+  );
+});
+
+test('as quatro combinações, nos cinco níveis de confiança e de jogador', () => {
   for (const nivel of Object.keys(NIVEL)) {
     for (const confianca of Object.keys(CONFIANCA)) {
       const V = 20000 * NIVEL[nivel] * CONFIANCA[confianca];
       const r = (m, j) => jogada(m, j, confianca, { nivel }).delta;
-      assert.equal(r(true, true), V);
-      assert.equal(r(true, false), 0.2 * V);
+      assert.equal(r(true, true), centenas(V));
+      assert.equal(r(true, false), centenas(0.2 * V));
       assert.equal(r(false, true), 0);
-      assert.equal(r(false, false), -0.5 * V);
+      assert.equal(r(false, false), centenas(-0.5 * V));
     }
   }
 });

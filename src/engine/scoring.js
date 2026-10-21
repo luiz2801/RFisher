@@ -1,6 +1,14 @@
 import { RECEITA_BALANCO } from './config.js';
 
-export const CONFIANCA = { chute: 0.5, certeza: 1.5 };
+// Escala crescente de certeza, em degraus iguais de 0,25 (seção 3.4).
+export const CONFIANCA = { chute: 0.5, duvida: 0.75, provavel: 1, confiante: 1.25, certeza: 1.5 };
+export const ROTULO_CONFIANCA = {
+  chute: 'Chute',
+  duvida: 'Tenho dúvidas',
+  provavel: 'Provavelmente certo',
+  confiante: 'Confiante',
+  certeza: 'Certeza absoluta',
+};
 export const NIVEL = { iniciante: 1, avancado: 1.5 };
 
 // Questão em aberto (seção 8, item 4): por ora a justificativa "parcial" conta como errada.

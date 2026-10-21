@@ -43,7 +43,7 @@
 
 ```
 Rola o dado → cai numa casa → vê o cenário/gráfico → escolhe a métrica/ação
-→ escolhe a justificativa → escolhe o nível de confiança (chute ou certeza) → vê o resultado
+→ escolhe a justificativa → escolhe o nível de confiança (escala de 5 níveis, do chute à certeza) → vê o resultado
 → lê a explicação (sempre, inclusive quem acertou) → atualiza dinheiro e reputação → próximo jogador
 ```
 
@@ -104,10 +104,17 @@ Cada afirmação do pool é marcada com um tipo: `correta`, `parcial`, `erro_con
 
 ### 3.4 Aposta de confiança
 
-Antes de revelar, o jogador escolhe:
+Antes de revelar, o jogador escolhe quão certo está, numa escala crescente de 5 níveis em degraus iguais de 0,25:
 
-- **Chute (×0,5):** ganha menos, perde menos.
-- **Certeza (×1,5):** ganha mais, perde mais.
+| Nível | Chave | Multiplicador |
+| --- | --- | --- |
+| Chute | `chute` | ×0,5 |
+| Tenho dúvidas | `duvida` | ×0,75 |
+| Provavelmente certo | `provavel` | ×1,0 |
+| Confiante | `confiante` | ×1,25 |
+| Certeza absoluta | `certeza` | ×1,5 |
+
+Quanto mais alto o nível, mais o jogador ganha ao acertar e mais perde ao errar. As pontas mantêm os valores originais (chute ×0,5, certeza ×1,5); os níveis intermediários permitem graduar a aposta em vez de uma escolha binária. Como a pontuação é linear na confiança, a verificação anti-chute (3.5) vale para todos os níveis.
 
 ### 3.5 Matriz de pontuação
 
@@ -127,6 +134,7 @@ Cada casa de decisão tem um valor **V** (proposta inicial: R$ 10.000 a R$ 50.00
 | Situação | Cálculo | Resultado |
 | --- | --- | --- |
 | Certeza, certa/certa | 20.000 × 1,5 | **+R$ 30.000** |
+| Provavelmente certo, certa/certa | 20.000 × 1,0 | **+R$ 20.000** |
 | Chute, certa/certa | 20.000 × 0,5 | **+R$ 10.000** |
 | Certeza, errada/errada | −0,5 × 20.000 × 1,5 | **−R$ 15.000** |
 | Chute, errada/errada | −0,5 × 20.000 × 0,5 | **−R$ 5.000** |
@@ -220,7 +228,30 @@ Cada cenário contém:
 ### 4.5 Progressão e reforço
 
 - Dificuldade crescente: de cenários com métrica única até cenários ambíguos, em que duas respostas são defensáveis e o contexto decide.
-- Conceitos errados voltam em cenários futuros com dados diferentes (repetição espaçada), em fase posterior.
+- **Implementado (sorteio por progresso):** cada cenário tem `dificuldade` de 1 a 3 (1 = a métrica certa é a mais direta; 2 = exige reconhecer o formato dos dados; 3 = exige comparar dispersão ou amostras). Ao cair numa casa de Decisão, o jogo calcula o **progresso do jogador** (casas percorridas, contando as voltas, ÷ turnos da partida × 3,5, limitado a 1) e converte em uma dificuldade-alvo entre 1 e 3. Entre os cenários que ainda restam no baralho, o peso de sorteio é `1 / (1 + 4 × (dificuldade − alvo)²)`. Assim o começo da partida favorece os fáceis e o fim favorece os difíceis, mas nenhum fica excluído, para a partida não ser previsível. O baralho continua sem repetir cenário dentro de um ciclo. O progresso é individual: quem anda mais rápido recebe cenários mais difíceis antes.
+- Conceitos errados voltam em cenários futuros com dados diferentes (repetição espaçada), em fase posterior. O perfil de desempenho (4.6) já identifica esses conceitos.
+
+### 4.6 Perfil de desempenho (o que o jogador domina e onde tem deficiência)
+
+**Implementado no motor, ainda sem tela** (`src/engine/desempenho.js`, função `perfilDesempenho(jogador)`). Cada decisão fica no `historico` do jogador com o **conceito** avaliado pelo cenário (campo `conceito`, catálogo em `src/scenarios/content/conceitos.js`), a categoria do resultado, a confiança declarada e os **equívocos** da opção e da justificativa escolhidas. No modo cooperativo o histórico continua individual: quem decidiu é quem tem o perfil.
+
+Ao fim da partida, o perfil agrega as decisões por conceito (vários cenários podem avaliar o mesmo):
+
+- **Acerto** da decisão: métrica e justificativa valem meio ponto cada (sucesso 1; sorte e incoerência 0,5; erro total 0). A justificativa `parcial` conta como errada, como na pontuação (8, item 4).
+- **Certeza** de 0 a 1, tirada da escala de confiança: chute 0, dúvida 0,25, provável 0,5, confiante 0,75, certeza 1.
+- **Evidência de domínio** por decisão, de −1 a +1: `(2 × acerto − 1) × (0,5 + 0,5 × certeza)`. Acertar com certeza vale +1 e errar com certeza vale −1; no chute, os dois valem metade. Acerto parcial é neutro. O **domínio** do conceito é a média das evidências.
+- **Diagnóstico** do conceito, cruzando acerto médio (> 0,5 conta como acerto) e certeza média (≥ 0,5 conta como seguro):
+
+| | Seguro | Inseguro |
+| --- | --- | --- |
+| **Acertou** | `dominado`: sabe e sabe que sabe | `inseguro`: sabe, mas não confia (conhecimento frágil) |
+| **Errou** | `equivoco`: erra convicto, a deficiência mais grave | `lacuna`: não sabe e reconhece |
+
+- **Pontos fortes:** conceitos `dominado` e `inseguro`, do maior domínio ao menor. **Deficiências:** `equivoco` e `lacuna`, do menor domínio ao maior; no empate, primeiro quem errou com mais certeza.
+- **Equívocos recorrentes:** cada equívoco cometido soma peso `0,5 + 0,5 × certeza`; a lista vem do maior peso ao menor, com os cenários em que apareceu. Serve para dizer *qual* confusão o jogador fez (ex.: `confunde_mediana_moda`), não só em que conceito errou.
+- **Calibração** (geral e por conceito): certeza média − acerto médio. Acima de 0,15 é `superconfiante`, abaixo de −0,15 é `subconfiante`, senão `calibrado`.
+
+Os limiares (0,5; 0,5; 0,15) são pontos de partida, a calibrar no playtest. Históricos antigos, sem `conceito` nem `equivocos`, são completados a partir do conteúdo atual.
 
 ---
 
@@ -318,13 +349,15 @@ Cada transição é uma função pura `(estado, ação) -> novoEstado`, o que fa
       dinheiro: 120000,
       reputacao: 55,             // 0..100
       posicao: 7,
+      distancia: 23,             // casas percorridas no total, contando voltas (define a dificuldade dos cenários)
       efeitosAtivos: [           // consequências com atraso
         { tipo: "crise_turnover", turnosRestantes: 2, impacto: -15000 }
       ],
       cenariosVistos: ["cenario_01_salarios"],
       historico: [               // base para feedback e repetição espaçada
         { cenario: "cenario_01_salarios", metrica: "media", justificativa: "j4",
-          confianca: "certeza", resultado: "erro_total", delta: -15000 }
+          confianca: "certeza", resultado: "erro_total", delta: -15000,
+          conceito: "mediana", equivocos: ["ignora_outliers"] }   // base do perfil de desempenho (4.6)
       ]
     }
   ],
@@ -342,6 +375,8 @@ O schema original foi atualizado para refletir o pool único, os equívocos e a 
   "versao": 1,
   "idioma": "pt-BR",
   "nivel": "iniciante",
+  "dificuldade": 1,
+  "conceito": "mediana",
   "titulo": "Política Salarial na Startup",
   "contexto": "Você precisa divulgar o salário representativo da equipe para candidatos.",
   "valor_base": 20000,
@@ -400,7 +435,7 @@ O schema original foi atualizado para refletir o pool único, os equívocos e a 
 ### 5.7 Pontuação (pseudocódigo)
 
 ```js
-const CONFIANCA = { chute: 0.5, certeza: 1.5 };
+const CONFIANCA = { chute: 0.5, duvida: 0.75, provavel: 1, confiante: 1.25, certeza: 1.5 };
 const NIVEL = { iniciante: 1, avancado: 1.5 };
 
 function resolverDecisao({ jogador, cenario, metricaCorreta, justificativaCorreta, confianca }) {
@@ -425,7 +460,7 @@ A justificativa do tipo `parcial` deve contar como correta, incorreta ou meio-te
 ### 5.8 Validação de conteúdo e testes
 
 - **JSON Schema** (ou Zod) valida todo cenário no build: cada cenário tem exatamente uma opção correta, ao menos uma justificativa `correta`, todo `equivoco` citado tem feedback, e todo placeholder usado existe.
-- **Testes de pontuação:** as quatro combinações, os dois níveis de confiança, os dois níveis de jogador e os limites de reputação.
+- **Testes de pontuação:** as quatro combinações, os cinco níveis de confiança, os dois níveis de jogador e os limites de reputação.
 - **Testes de geradores:** invariantes da seção 5.6 em 1.000 seeds aleatórias.
 - **Teste de simulação:** 1.000 partidas com jogadores simulados (um que chuta, um que sabe 70%, um que sabe 100%). O que chuta deve terminar com menos dinheiro, e o que sabe tudo, com mais.
 
@@ -490,6 +525,7 @@ A ideia original era validar justificativas escritas com IA no navegador. Ficou 
 8. **Nome e identidade do jogo**, e o tom da narrativa.
 9. **Stack final:** HTML/JS puro ou React; Chart.js ou SVG próprio.
 10. **Plano de playtest:** quem testa, e quais métricas coletar (acerto por cenário, onde travam, o chute compensa?).
+11. **Exibição do perfil de desempenho (4.6):** como e onde mostrar pontos fortes e deficiências na tela de fim de jogo, e se o perfil deve sobreviver ao fim da partida (hoje o save é apagado em `FIM_DE_JOGO`).
 
 ---
 

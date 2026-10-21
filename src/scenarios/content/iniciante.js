@@ -6,9 +6,11 @@ const impacto = { reputacao_acerto: 5, reputacao_erro: -10 };
 const cenario01 = {
   id: 'cenario_01_salarios',
   setor: 'rh',
+  conceito: 'mediana',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
+  dificuldade: 1,
   titulo: 'Política salarial na startup',
   contexto:
     'Você vai divulgar, no anúncio da vaga aberta, o salário representativo da sua equipe de {{n}} pessoas. Qual número deve aparecer no anúncio?',
@@ -64,9 +66,11 @@ const cenario01 = {
 const cenario02 = {
   id: 'cenario_02_sla',
   setor: 'logistica',
+  conceito: 'percentil',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
+  dificuldade: 2,
   titulo: 'Prazo de entrega do e-commerce',
   contexto:
     'Sua loja online vai prometer um prazo de entrega no site. O gráfico mostra o tempo de entrega dos últimos {{n}} pedidos. Qual métrica define um prazo que cubra a grande maioria dos clientes (9 em cada 10)?',
@@ -122,9 +126,11 @@ const cenario02 = {
 const cenario03 = {
   id: 'cenario_03_estoque',
   setor: 'logistica',
+  conceito: 'moda',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
+  dificuldade: 1,
   titulo: 'Estoque de calçados',
   contexto:
     'Sua rede de calçados vai fazer a reposição do estoque. O gráfico mostra a numeração dos últimos {{n}} pares vendidos. Qual numeração você deve comprar em maior quantidade?',
@@ -181,9 +187,11 @@ const cenario03 = {
 const cenario04 = {
   id: 'cenario_04_pecas',
   setor: 'producao',
+  conceito: 'desvio_padrao',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
+  dificuldade: 2,
   titulo: 'Precisão de peças industriais',
   contexto:
     'Duas máquinas produzem eixos de {{media_a}}. As duas têm a mesma média, mas você suspeita que uma delas produz mais peças fora da especificação. Qual métrica revela a diferença entre elas?',
@@ -235,9 +243,11 @@ const cenario04 = {
 const cenario05 = {
   id: 'cenario_05_satisfacao',
   setor: 'produto',
+  conceito: 'distribuicao',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
+  dificuldade: 2,
   titulo: 'Avaliações do aplicativo',
   contexto:
     'Após a atualização do app, {{n}} clientes avaliaram a experiência com notas de 1 a 5 estrelas. O time de produto afirma que a média é {{media}} ("regular/neutro"). Qual métrica ou análise revela a verdadeira opinião dos clientes?',
@@ -292,9 +302,11 @@ const cenario05 = {
 const cenario06 = {
   id: 'cenario_06_sac',
   setor: 'atendimento',
+  conceito: 'iqr',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
+  dificuldade: 3,
   titulo: 'Tempo de atendimento do suporte',
   contexto:
     'Você quer medir a variação rotineira do tempo de atendimento de {{n}} chamados no SAC. A maioria levou entre 10 e 25 minutos, mas chamados esquecidos levaram {{maximo}}. O desvio padrão subiu para {{dp}}. Qual métrica de dispersão avalia a variabilidade típica sem ser distorcida por esses casos aberrantes?',
@@ -349,9 +361,11 @@ const cenario06 = {
 const cenario07 = {
   id: 'cenario_07_envase',
   setor: 'producao',
+  conceito: 'media',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
+  dificuldade: 1,
   titulo: 'Peso dos pacotes na linha de envase',
   contexto:
     'A balança da fábrica pesou {{n}} pacotes de café com peso-alvo de 500 g. A distribuição é simétrica, regular e em formato de sino (normal), sem falhas graves nem outliers. Qual métrica é a mais recomendada para estimar o valor central representativo da produção?',
@@ -407,9 +421,11 @@ const cenario07 = {
 const cenario08 = {
   id: 'cenario_08_amostragem',
   setor: 'produto',
+  conceito: 'variabilidade_amostral',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
+  dificuldade: 3,
   titulo: 'Teste de conversão: Página A vs. Página B',
   contexto:
     'Duas versões de checkout foram comparadas ao longo dos dias. A Página A tem média de {{media_a}}, testada com grande volume de acessos. A Página B teve média de {{media_b}}, mas foi exibida para poucos visitantes. Qual informação sobre as duas versões separa um ganho real de uma flutuação aleatória?',

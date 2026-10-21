@@ -5,8 +5,10 @@ import {
   BONUS_INVESTIDOR_REPUTACAO, CORTE_ORCAMENTO, CORTE_ORCAMENTO_REPUTACAO, REDUCAO_PREJUIZO_PASSIVA,
   REPUTACAO_BALANCO_RH, DINHEIRO_INICIAL,
 } from './config.js';
-import { resolverDecisao, receitaBalanco, justificativaConta } from './scoring.js';
-import { jogadorAtual, carteira, ehCooperativo } from './state.js';
+import { resolverDecisao, receitaBalanco, justificativaConta, CONFIANCA } from './scoring.js';
+import { jogadorAtual, carteira, ehCooperativo, distanciaPercorrida, progressoDoJogador } from './state.js';
+import { escolherPorDificuldade } from './dificuldade.js';
+import { equivocosDaEscolha } from './desempenho.js';
 import { diretoriaDoSetor } from './papeis.js';
 import { instanciar, obterCenario, idsCenarios } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
@@ -17,6 +19,15 @@ import { EVENTOS } from '../scenarios/content/eventos.js';
 function sacar(e, chave, todos, rng) {
   if (!e[chave].length) e[chave] = rng.embaralhar(todos);
   return e[chave].shift();
+}
+
+// Cenário do baralho com dificuldade mais próxima do progresso do jogador (sem repetir no ciclo).
+function sacarCenario(e, progresso, rng) {
+  if (!e.baralhoCenarios.length) e.baralhoCenarios = rng.embaralhar(idsCenarios());
+  const candidatos = e.baralhoCenarios.map((id) => ({ id, dificuldade: obterCenario(id).dificuldade }));
+  const id = escolherPorDificuldade(candidatos, progresso, rng);
+  e.baralhoCenarios.splice(e.baralhoCenarios.indexOf(id), 1);
+  return id;
 }
 
 // Reputação em zero dispara crise de imagem: multa e reputação parcialmente recuperada.
@@ -66,13 +77,14 @@ const TRANSICOES = {
       const j = jogadorAtual(e);
       const dado = rng.inteiro(1, 6);
       const { posicao, passouInicio } = avancar(j.posicao, dado);
+      j.distancia = distanciaPercorrida(j) + dado;
       j.posicao = posicao;
       e.dado = dado;
       e.balanco = passouInicio ? aplicarBalanco(e) : null;
 
       const casa = CASAS[posicao];
       if (casa === 'decisao') {
-        const def = obterCenario(sacar(e, 'baralhoCenarios', idsCenarios(), rng));
+        const def = obterCenario(sacarCenario(e, progressoDoJogador(e, j), rng));
         const inst = instanciar(def, rng);
         e.cenarioAtual = {
           id: def.id,
@@ -124,7 +136,7 @@ const TRANSICOES = {
 
   ESCOLHER_CONFIANCA: {
     CONFIANCA(e, { valor }) {
-      if (valor !== 'chute' && valor !== 'certeza') return e;
+      if (!Object.hasOwn(CONFIANCA, valor)) return e;
       const c = e.cenarioAtual;
       c.confianca = valor;
 
@@ -160,13 +172,16 @@ const TRANSICOES = {
         deltaReputacao: r.deltaReputacao,
         crise,
       };
+      // Base do perfil de desempenho do fim de jogo (src/engine/desempenho.js).
       j.historico.push({
         cenario: def.id,
+        conceito: def.conceito,
         metrica: metrica.id,
         justificativa: just.id,
         confianca: valor,
         resultado: r.categoria,
         delta: r.delta,
+        equivocos: equivocosDaEscolha(metrica, just),
       });
       e.fase = 'MOSTRAR_RESULTADO';
       return e;

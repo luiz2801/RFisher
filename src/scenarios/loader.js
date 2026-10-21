@@ -1,8 +1,10 @@
 import { CENARIOS } from './content/iniciante.js';
+import { CONCEITOS } from './content/conceitos.js';
 import { gerar } from './generators.js';
 import { resumo } from '../stats/metrics.js';
 import { formatar } from '../stats/format.js';
 import { SETORES } from '../engine/papeis.js';
+import { DIFICULDADE_MAX } from '../engine/config.js';
 
 const POR_ID = new Map(CENARIOS.map((c) => [c.id, c]));
 
@@ -52,6 +54,10 @@ export function validarCenario(def, rng) {
   const err = (m) => erros.push(`${def.id}: ${m}`);
 
   if (!SETORES.includes(def.setor)) err(`setor inválido ou ausente: ${def.setor}`);
+  if (!Object.hasOwn(CONCEITOS, def.conceito)) err(`conceito inválido ou ausente: ${def.conceito}`);
+  if (!Number.isInteger(def.dificuldade) || def.dificuldade < 1 || def.dificuldade > DIFICULDADE_MAX) {
+    err(`dificuldade deve ser inteiro de 1 a ${DIFICULDADE_MAX}: ${def.dificuldade}`);
+  }
   if (def.opcoes.length !== 5) err(`esperadas 5 opções, há ${def.opcoes.length}`);
   if (def.opcoes.filter((o) => o.correta).length !== 1) err('deve haver exatamente 1 opção correta');
   const nJust = def.justificativas.length;

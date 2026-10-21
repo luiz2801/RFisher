@@ -1,0 +1,51 @@
+name: Testes
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  testes:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Instalar dependências
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            echo "Sem package-lock.json: o projeto não tem dependências externas."
+          fi
+
+      - name: Lint
+        run: npm run lint
+
+      # Só reporta a cobertura; a meta ainda não foi definida (docs/testes.md).
+      - name: Testes com cobertura
+        run: npm run test:cobertura
+
+      - name: Publicar lcov
+        if: matrix.node == 22
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-lcov
+          path: coverage/lcov.info
+          if-no-files-found: error

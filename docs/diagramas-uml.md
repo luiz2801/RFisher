@@ -37,16 +37,19 @@ classDiagram
         +number dinheiro
         +number reputacao
         +int posicao
+        +int distancia
         +List~HistoricoDecisao~ historico
     }
 
     class HistoricoDecisao {
         +string cenario
+        +string conceito
         +string metrica
         +string justificativa
         +Confianca confianca
         +CategoriaResultado resultado
         +number delta
+        +List~string~ equivocos
     }
 
     class CenarioDef {
@@ -54,6 +57,8 @@ classDiagram
         +int versao
         +string idioma
         +Nivel nivel
+        +int dificuldade
+        +string conceito
         +string titulo
         +string contexto
         +string dica
@@ -96,6 +101,12 @@ classDiagram
         +embaralhar(lista) Array
     }
 
+    class DificuldadeService {
+        +dificuldadeAlvo(progresso) number
+        +pesoDificuldade(dificuldade, progresso) number
+        +escolherPorDificuldade(candidatos, progresso, rng) string
+    }
+
     class ScoringEngine {
         +multiplicadorReputacao(reputacao) number
         +justificativaConta(tipo) boolean
@@ -133,6 +144,7 @@ classDiagram
     
     GameState ..> RngService : utiliza seed/estado
     GameState ..> BoardService : consulta trilha
+    GameState ..> DificuldadeService : sorteia cenário por progresso
     ScenarioLoader ..> CenarioDef : gerencia/instancia
     ScoringEngine <.. GameState : calcula pontuação
     StorageService ..> GameState : serializa/deserializa
@@ -160,7 +172,7 @@ stateDiagram-v2
         state FluxoDecisao {
             ESCOLHER_METRICA --> ESCOLHER_JUSTIFICATIVA : METRICA(id)
             ESCOLHER_JUSTIFICATIVA --> ESCOLHER_CONFIANCA : JUSTIFICATIVA(id)
-            ESCOLHER_CONFIANCA --> MOSTRAR_RESULTADO : CONFIANCA('chute' | 'certeza')
+            ESCOLHER_CONFIANCA --> MOSTRAR_RESULTADO : CONFIANCA('chute' | 'duvida' | 'provavel' | 'confiante' | 'certeza')
         }
         
         MOSTRAR_RESULTADO --> ValidaFimTurno : CONTINUAR
@@ -207,7 +219,10 @@ sequenceDiagram
         Note over Machine: Aplica balanço financeiro
     end
 
+    Note over Machine: distancia += dado; progresso = distancia / (turnos × 3,5)
+
     alt Casa == 'decisao'
+        Machine->>Machine: sacarCenario (peso por dificuldade vs. progresso)
         Machine->>Loader: instanciar(obterCenario(id), rng)
         Loader-->>Machine: { series, num, vars }
         Note over Machine: fase = 'ESCOLHER_METRICA'
@@ -255,7 +270,9 @@ graph TD
         MACHINE["machine.js<br/>(Redutor / Transições)"]
         STATE["state.js<br/>(Fábrica de Estado)"]
         BOARD["board.js<br/>(Trilha e Posições)"]
+        DIFICULDADE["dificuldade.js<br/>(Sorteio por dificuldade)"]
         SCORING["scoring.js<br/>(Cálculo de Pontos)"]
+        DESEMPENHO["desempenho.js<br/>(Perfil por conceito e certeza)"]
         RNG["rng.js<br/>(Mulberry32 PRNG)"]
         CONFIG["config.js<br/>(Constantes Globais)"]
     end
@@ -263,7 +280,7 @@ graph TD
     subgraph Scenarios_Layer["Camada Cenários (src/scenarios/)"]
         LOADER["loader.js<br/>(Interpolação e Validação)"]
         GENERATORS["generators.js<br/>(Geração com Invariantes)"]
-        CONTENT["content/<br/>(iniciante.js, eventos.js)"]
+        CONTENT["content/<br/>(iniciante.js, eventos.js, conceitos.js)"]
     end
 
     subgraph Stats_Layer["Camada Stats (src/stats/)"]
@@ -284,10 +301,16 @@ graph TD
 
     MACHINE --> STATE
     MACHINE --> BOARD
+    MACHINE --> DIFICULDADE
+    DIFICULDADE --> CONFIG
     MACHINE --> SCORING
     MACHINE --> RNG
     MACHINE --> LOADER
     MACHINE --> CONFIG
+    MACHINE --> DESEMPENHO
+    DESEMPENHO --> SCORING
+    DESEMPENHO --> LOADER
+    DESEMPENHO --> CONTENT
 
     LOADER --> GENERATORS
     LOADER --> CONTENT
@@ -305,8 +328,10 @@ graph TD
 | Módulo | Responsabilidade Principal |
 | :--- | :--- |
 | **`src/engine/machine.js`** | Máquina de estados finitos que orquestra as transições a partir de ações do jogador. |
-| **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`) e funções seletoras puras (`jogadorAtual`, `classificacao`). |
+| **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`) e funções seletoras puras (`jogadorAtual`, `classificacao`, `progressoDoJogador`). |
+| **`src/engine/dificuldade.js`** | Dificuldade-alvo a partir do progresso do jogador e sorteio ponderado de cenários do baralho. |
 | **`src/engine/rng.js`** | Gerador pseudo-aleatório determinístico baseado no algoritmo `mulberry32` com estado serializável em 32-bits. |
+| **`src/engine/desempenho.js`** | Perfil de desempenho do jogador a partir do histórico: domínio e diagnóstico por conceito, pontos fortes, deficiências, equívocos recorrentes e calibração da certeza (`fisher.md` 4.6). |
 | **`src/engine/scoring.js`** | Algoritmos de pontuação, multiplicadores de reputação, regras de aposta e crise de imagem. |
 | **`src/scenarios/generators.js`** | Síntese de dados estatísticos com validação de invariantes conceituais. |
 | **`src/scenarios/loader.js`** | Instanciação de cenários, cálculo de resumo estatístico e substituição de variáveis nos enunciados. |

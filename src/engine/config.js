@@ -17,3 +17,9 @@ export const CORTE_ORCAMENTO = 8000;
 export const CORTE_ORCAMENTO_REPUTACAO = 5;
 export const REDUCAO_PREJUIZO_PASSIVA = 0.3; // fração do prejuízo de eventos do setor da diretoria
 export const REPUTACAO_BALANCO_RH = 2;
+
+// Dificuldade crescente: cenários têm dificuldade de 1 a DIFICULDADE_MAX e o sorteio favorece
+// a que corresponde ao progresso do jogador na trilha (docs/criar-cenarios.md).
+export const DIFICULDADE_MAX = 3;
+export const PASSO_MEDIO_DADO = 3.5; // casas por jogada, para estimar o percurso total da partida
+export const SELETIVIDADE_DIFICULDADE = 4; // peso do cenário = 1 / (1 + k × distância²) até a dificuldade-alvo

@@ -5,6 +5,8 @@ import { novoJogo, vencedores } from '../src/engine/state.js';
 import { reduzir } from '../src/engine/machine.js';
 import { obterCenario } from '../src/scenarios/loader.js';
 import { DINHEIRO_INICIAL } from '../src/engine/config.js';
+import { CONFIANCA } from '../src/engine/scoring.js';
+import { viewJogo } from '../src/ui/views.js';
 
 const jogadores = (...niveis) => niveis.map((nivel, i) => ({ nome: `J${i + 1}`, nivel }));
 
@@ -69,7 +71,7 @@ test('o reducer não altera o estado anterior', () => {
   assert.deepEqual(e, antes);
 });
 
-test('em casas de decisão, a pergunta de certeza ocorre após a resposta (métrica e justificativa)', () => {
+test('em casas de decisão, a pergunta de certeza (5 níveis) ocorre após a resposta (métrica e justificativa)', () => {
   let e = novoJogo({ jogadores: jogadores('iniciante'), seed: 1 });
   let passos = 0;
   while (e.fase === 'ROLAR_DADO' && passos < 20) {
@@ -88,8 +90,16 @@ test('em casas de decisão, a pergunta de certeza ocorre após a resposta (métr
   e = reduzir(e, { tipo: 'JUSTIFICATIVA', valor: def.justificativas[0].id });
   assert.equal(e.fase, 'ESCOLHER_CONFIANCA');
 
-  e = reduzir(e, { tipo: 'CONFIANCA', valor: 'certeza' });
+  const html = viewJogo(e);
+  for (const nivel of Object.keys(CONFIANCA)) assert.match(html, new RegExp(`data-valor="${nivel}"`));
+
+  for (const invalido of ['talvez', 'toString', undefined]) {
+    assert.equal(reduzir(e, { tipo: 'CONFIANCA', valor: invalido }).fase, 'ESCOLHER_CONFIANCA');
+  }
+
+  e = reduzir(e, { tipo: 'CONFIANCA', valor: 'provavel' });
   assert.equal(e.fase, 'MOSTRAR_RESULTADO');
+  assert.equal(e.resultado.confianca, 'provavel');
 });
 
 test('o estado sobrevive a JSON (salvar/retomar partida)', () => {

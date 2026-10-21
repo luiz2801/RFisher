@@ -1,5 +1,5 @@
 import { criarRng } from './rng.js';
-import { DINHEIRO_INICIAL, REPUTACAO_INICIAL, TURNOS_PADRAO } from './config.js';
+import { DINHEIRO_INICIAL, REPUTACAO_INICIAL, TURNOS_PADRAO, PASSO_MEDIO_DADO } from './config.js';
 import { atribuirPapeis } from './papeis.js';
 
 export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, seed = Date.now(), modo = 'competitivo' }) {
@@ -25,6 +25,7 @@ export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, seed = Date.now(),
       dinheiro: DINHEIRO_INICIAL,
       reputacao: REPUTACAO_INICIAL,
       posicao: 0,
+      distancia: 0,
       historico: [],
       papeis: cooperativo ? papeis[id] : [],
       merito: 0,
@@ -39,6 +40,13 @@ export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, seed = Date.now(),
 }
 
 export const jogadorAtual = (e) => e.jogadores[e.jogadorAtual];
+
+// Casas já percorridas, contando as voltas. Saves antigos não têm `distancia`: vale a posição.
+export const distanciaPercorrida = (j) => j.distancia ?? j.posicao;
+
+// 0 a 1: quanto do percurso esperado da partida (turnos × passo médio do dado) o jogador já andou.
+export const progressoDoJogador = (e, j) =>
+  Math.min(1, distanciaPercorrida(j) / (e.turnosPorJogador * PASSO_MEDIO_DADO));
 
 // Saves antigos não têm `modo`: eram sempre competitivos.
 export const ehCooperativo = (e) => e.modo === 'cooperativo';

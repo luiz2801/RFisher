@@ -1,0 +1,150 @@
+# Formato da partida salva e política de versão
+
+Descreve o que o jogo grava no `localStorage`, quando grava, e as regras para mudar esse formato sem quebrar partidas em andamento. O código está em [src/storage/persist.js](../src/storage/persist.js) (leitura e escrita) e [src/engine/state.js](../src/engine/state.js) (criação do estado).
+
+As seções [Formato atual](#formato-atual) e [Comportamento atual](#comportamento-atual) descrevem o que o código faz hoje. A [Política de versão](#política-de-versão) é a regra proposta para mudanças futuras; trechos que o código ainda não cumpre estão marcados como **pendente**.
+
+## Princípios
+
+- A partida salva **é** o estado do jogo (`estado` da máquina de estados), serializado como JSON. Não há um formato separado: o que o motor usa é o que se grava.
+- O estado é só dado serializável (sem funções, `Map`, `Date` nem referências circulares). Isso permite `structuredClone` na máquina e `JSON.stringify` no save.
+- A partida é determinística: a `seed` e o estado do gerador (`rng`) estão no save, então retomar uma partida reproduz exatamente o que viria.
+- O save é um conforto, não um requisito. Qualquer falha de armazenamento é ignorada e o jogo continua funcionando.
+
+## Onde e quando
+
+| Item | Valor |
+| --- | --- |
+| Armazenamento | `localStorage` do navegador, só no dispositivo do jogador |
+| Chave | `tabuleiro-do-ceo:partida:v1` |
+| Quantidade | Uma única partida salva por navegador |
+| Gravação | Ao iniciar a partida e a cada ação que muda o estado (cada transição da máquina) |
+| Remoção | Ao chegar a `FIM_DE_JOGO` e ao abandonar a partida (botão "Nova partida", com confirmação) |
+| Retomada | Botão "Continuar partida salva" no menu |
+
+A chave termina em `:v1`. Ela só muda em ruptura de formato (ver [Política de versão](#política-de-versão)).
+
+## Formato atual
+
+Versão do formato: **`versao: 1`**.
+
+### Raiz
+
+| Campo | Tipo | Descrição |
+| --- | --- | --- |
+| `versao` | número | Versão do formato. Hoje sempre `1`. |
+| `modo` | `'competitivo'` \| `'cooperativo'` | Modo de jogo. Ausente em saves antigos (tratado como competitivo). |
+| `empresa` | objeto \| `null` | `{ dinheiro, reputacao }` da empresa. Só no cooperativo; `null` no competitivo. |
+| `seed` | inteiro (32 bits) | Semente informada ou sorteada no início. |
+| `rng` | inteiro (32 bits) | Estado atual do gerador de números aleatórios (mulberry32). |
+| `turnoAtual` | inteiro ≥ 1 | Trimestre atual. Aumenta quando todos os jogadores jogaram. |
+| `turnosPorJogador` | inteiro | Duração da partida. |
+| `jogadorAtual` | inteiro | Índice em `jogadores` de quem joga. |
+| `fase` | texto | Fase da máquina de estados (ver abaixo). |
+| `dado` | 1–6 \| `null` | Último dado rolado na vez. |
+| `balanco` | objeto \| `null` | Resultado do Balanço se o jogador passou pela casa inicial na vez. |
+| `jogadores` | lista | Um objeto por jogador (ver abaixo). |
+| `baralhoCenarios` | lista de ids | Cenários ainda não sorteados no ciclo atual. A ordem não indica o próximo: o sorteio é ponderado pela dificuldade (ver `fisher.md` 4.5). |
+| `baralhoEventos` | lista de ids | Eventos ainda não sorteados no ciclo atual. |
+| `cenarioAtual` | objeto \| `null` | Decisão em andamento. |
+| `eventoAtual` | objeto \| `null` | Carta de evento em exibição. |
+| `resultado` | objeto \| `null` | Resultado da última decisão, na tela de resultado. |
+
+Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `ESCOLHER_JUSTIFICATIVA`, `ESCOLHER_CONFIANCA`, `MOSTRAR_RESULTADO`, `MOSTRAR_EVENTO`, `MOSTRAR_BALANCO`, `FIM_DE_JOGO`.
+
+### `jogadores[]`
+
+| Campo | Tipo | Descrição |
+| --- | --- | --- |
+| `id` | inteiro | Índice do jogador. |
+| `nome` | texto | Nome digitado (sempre escapado ao exibir). |
+| `nivel` | `'iniciante'` \| `'avancado'` | Nível de dificuldade. |
+| `dinheiro` | inteiro | Carteira individual. No cooperativo não muda (o caixa é da empresa). |
+| `reputacao` | 0–100 | Reputação individual. No cooperativo não muda. |
+| `posicao` | 0–27 | Casa no tabuleiro. |
+| `distancia` | inteiro ≥ 0 | Casas percorridas no total, contando as voltas (soma dos dados). Define a dificuldade dos cenários sorteados. Ausente em saves antigos (vale `posicao`). |
+| `historico` | lista | Decisões tomadas: `{ cenario, conceito, metrica, justificativa, confianca, resultado, delta, equivocos }`. `conceito` e `equivocos` (ids dos equívocos da opção e da justificativa escolhidas) alimentam o perfil de desempenho (`fisher.md` 4.6); ausentes em saves antigos, são recalculados a partir do conteúdo. |
+| `papeis` | lista de ids de diretoria | Só no cooperativo; vazio no competitivo. |
+| `merito`, `habilidadeUsos` | inteiros | Reservados para o cooperativo; **ainda não usados** pelo motor. |
+
+### Campos de contexto da fase
+
+- **`cenarioAtual`**: `{ id, series, num, vars, ordemOpcoes, ordemJustificativas, confianca, metricaId, justificativaId }`. `series` são os dados sorteados; `num` as métricas calculadas; `vars` os textos já formatados para os placeholders. As escolhas começam em `null` e são preenchidas conforme a fase avança.
+- **`eventoAtual`**: `{ id, crise, dinheiro }`. `dinheiro` já inclui o amortecimento do cooperativo.
+- **`confianca`** (em `historico`, `cenarioAtual` e `resultado`): uma das chaves `chute`, `duvida`, `provavel`, `confiante` ou `certeza`. Saves antigos, que só usavam `chute` e `certeza`, continuam válidos.
+- **`resultado`**: `{ cenarioId, metricaId, justificativaId, confianca, metricaCorreta, justificativaCorreta, categoria, delta, multiplicador, deltaReputacao, crise }`.
+- **`balanco`**: `{ receita, custos, liquido }` e, no cooperativo, `bonusRh` e `meta: { valor, cumprida, dinheiro, reputacao, crise }`.
+
+Os campos de contexto só existem nas fases em que fazem sentido e são zerados em `CONTINUAR`.
+
+### Dependência do conteúdo
+
+O save guarda **ids** de cenários, opções, justificativas e eventos (`cenarioAtual.id`, `metricaId`, `baralhoCenarios`, `historico`...). Ao exibir, o jogo procura esses ids no conteúdo atual (`src/scenarios/content/`). Portanto o conteúdo faz parte do contrato do save (ver [Mudanças de conteúdo](#mudanças-de-conteúdo)).
+
+## Comportamento atual
+
+- **Validação ao carregar** (`carregar`): devolve o estado só se o JSON é válido, `versao === 1`, `jogadores` é uma lista e `fase` existe. Qualquer outro caso devolve `null`, e o menu aparece sem a opção de continuar.
+- **Falha de armazenamento** (`salvar`, `limpar`): erros são engolidos (cota cheia, modo privado, `localStorage` bloqueado).
+- **Saves antigos sem `modo`:** `ehCooperativo` trata ausência como competitivo, e a partida retoma normalmente.
+- Não há migração entre versões: um save de outra versão é descartado em silêncio.
+- A validação não confere o conteúdo dos campos (tipos, faixas, ids existentes). Um save adulterado ou corrompido com a estrutura mínima passa na validação.
+
+## Política de versão
+
+### O que é uma mudança de formato
+
+Qualquer alteração em `src/storage/` ou na forma do estado criado em `novoJogo` e transformado em `src/engine/machine.js`: campos acrescentados, removidos, renomeados, com outro tipo ou outro significado. Também conta mudar o valor de uma constante que o save "congela" (por exemplo, o tamanho do tabuleiro ou a lista de fases).
+
+### Classificação e o que fazer
+
+| Tipo de mudança | Exemplo | Versão | Ação obrigatória |
+| --- | --- | --- | --- |
+| **Compatível** (acrescenta campo opcional, com padrão seguro quando ausente) | `modo` no cooperativo | Mantém | Código tolera ausência do campo; teste com save antigo; documentar aqui |
+| **Migrável** (muda a forma, mas dá para converter) | Renomear `dinheiro` para `caixa` | Incrementa (`versao: 2`) | Escrever `migrar(v1) → v2`; teste de migração com fixture; documentar |
+| **Incompatível** (não dá para converter com segurança) | Mudar o tabuleiro de 28 para 40 casas no meio da partida | Incrementa e **descarta** saves antigos | Avisar na tela do menu; documentar o motivo |
+
+Regras:
+
+1. **Prefira mudanças compatíveis.** Todo campo novo deve ter um padrão seguro quando ausente, e o código que o lê deve usar esse padrão (como `ehCooperativo` faz).
+2. **Nunca reutilize o significado de um campo existente.** Crie um campo novo.
+3. **Incremente `versao` só quando precisar.** Mudanças compatíveis não incrementam; migráveis e incompatíveis sim.
+4. **A chave do `localStorage` (`...:v1`) muda só em ruptura total**, quando não se quer sequer ler o save antigo. Em migração, a chave se mantém e o conteúdo é convertido ao carregar.
+5. **Migração é uma cadeia:** `v1 → v2 → v3`, cada passo uma função pura sobre o JSON. O código mantém todos os passos desde a menor versão suportada.
+6. **Versão desconhecida (maior que a do código)** é descartada, nunca interpretada. Isso protege quem abre uma versão antiga do jogo depois de uma nova.
+7. **Fixtures:** cada versão do formato tem um save de exemplo em `tests/fixtures/` (uma partida em cada fase relevante, nos dois modos). Os testes carregam todas as fixtures com o código atual.
+8. **Atualize a documentação na mesma mudança:** este arquivo (tabelas e histórico), `docs/diagramas-uml.md` (estado) e, se for regra de jogo, o `fisher.md`.
+
+### Mudanças de conteúdo
+
+Como o save referencia ids do conteúdo, alterar o conteúdo também pode quebrar partidas em andamento.
+
+| Mudança de conteúdo | Efeito em saves | Regra |
+| --- | --- | --- |
+| Corrigir um texto (contexto, feedback, rótulos) | Nenhum | Livre |
+| Acrescentar cenário ou evento | Nenhum (entra no próximo ciclo do baralho) | Livre |
+| Alterar parâmetros de um gerador | Nenhum para decisões já sorteadas (os dados estão no save) | Livre |
+| Remover ou renomear **cenário**, **evento**, **opção** ou **justificativa** | Pode quebrar a decisão ou o baralho salvos | Não renomear. Se for inevitável, tratar como mudança migrável |
+| Mudar o significado de uma opção (a correta passa a ser outra) | Resultado incoerente com o que o jogador viu | Criar um novo cenário com outro `id` |
+| Trocar o `setor` de um cenário ou evento | Nenhum para decisões em curso | Livre |
+
+**Pendente:** hoje o jogo não valida ids ao carregar. Se `cenarioAtual.id` não existir no conteúdo, a tela falha. A proteção prevista é descartar o save (ou limpar os ids inexistentes dos baralhos) na validação de `carregar`.
+
+### Pendências para cumprir esta política
+
+- [ ] Validar tipos e faixas ao carregar (`fase` conhecida, `posicao` em 0–27, `jogadorAtual` válido, ids existentes no conteúdo).
+- [ ] Descartar versão maior que a suportada de forma explícita (hoje o `=== 1` já cumpre, mas sem aviso ao jogador).
+- [ ] Mostrar no menu um aviso quando existe save inválido ou de versão incompatível.
+- [ ] Criar `tests/fixtures/` com um save de cada versão, inclusive um **anterior à existência do campo `modo`**.
+- [ ] Testes de `persist.js`: `carregar` com chave ausente, JSON inválido, versão diferente, sem `jogadores`; `salvar` e `limpar` com `localStorage` falho (ver [testes.md](testes.md), seção 8).
+- [ ] Decidir se `merito` e `habilidadeUsos` ficam no formato (hoje não são usados).
+
+## Histórico de versões
+
+| Versão | Mudança | Compatibilidade |
+| --- | --- | --- |
+| 1 | Formato inicial. | n/a |
+| 1 (sem incremento) | Acrescentados `modo`, `empresa`, `papeis`, `merito`, `habilidadeUsos` para o modo cooperativo. | Compatível: save sem `modo` é competitivo |
+| 1 (sem incremento) | Acrescentado `jogadores[].distancia`; o sorteio de cenários passa a ser ponderado pela dificuldade. | Compatível: save sem `distancia` usa `posicao` |
+| 1 (sem incremento) | Acrescentados `conceito` e `equivocos` em `jogadores[].historico[]`, para o perfil de desempenho. | Compatível: entradas sem esses campos são completadas pelo conteúdo |
+
+Ao mudar o formato, acrescente uma linha aqui.

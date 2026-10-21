@@ -5,7 +5,7 @@ import { CASAS, NUM_CASAS, ROTULO_CASA, coordenadas } from '../engine/board.js';
 import { jogadorAtual, classificacao, vencedores, ehCooperativo, classificarEmpresa } from '../engine/state.js';
 import { DIRETORIAS } from '../engine/papeis.js';
 import { metaTrimestral } from '../engine/machine.js';
-import { CONFIANCA, NIVEL } from '../engine/scoring.js';
+import { CONFIANCA, ROTULO_CONFIANCA, NIVEL } from '../engine/scoring.js';
 import { MAX_JOGADORES, TURNOS_PADRAO } from '../engine/config.js';
 import { obterCenario, preencher, valorDoMarcador } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
@@ -331,10 +331,10 @@ function viewRolar(e) {
         .join('')}</div>`;
   } else {
     const V = def.valor_base * NIVEL[j.nivel];
-    const linha = (chave, nome) => {
+    const linha = (chave) => {
       const f = CONFIANCA[chave];
       return `<button class="opcao" data-acao="CONFIANCA" data-valor="${chave}">
-        <strong>${nome} (×${String(f).replace('.', ',')})</strong>
+        <strong>${ROTULO_CONFIANCA[chave]} (×${String(f).replace('.', ',')})</strong>
         <span>Acerto total: até ${brlSinal(V * f)} · Erro total: ${brlSinal(-0.5 * V * f)}</span>
       </button>`;
     };
@@ -346,7 +346,7 @@ function viewRolar(e) {
       passo = `<h3>3. Quão confiante você está na sua resposta?</h3>
       ${resumo}
       <p class="ajuda">Aposte: quanto maior a confiança, maior o ganho e a perda.</p>
-      <div class="opcoes">${linha('chute', 'Chute')}${linha('certeza', 'Certeza')}</div>`;
+      <div class="opcoes">${Object.keys(CONFIANCA).map(linha).join('')}</div>`;
   }
       return `${bannerBalanco(e)}${html}${passo}`;
 }
