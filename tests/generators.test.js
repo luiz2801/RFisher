@@ -50,3 +50,42 @@ test('cenário 04: médias iguais e desvios muito distintos', () => {
     assert.ok(desvioPadrao(b) > 5 * desvioPadrao(a));
   }
 });
+
+test('cenário 05: distribuição bimodal com concentração em 1 e 5 e vale no meio', () => {
+  const g = todosCenarios()[4].dados.gerador;
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    const c1 = v.filter((x) => x === 1).length;
+    const c5 = v.filter((x) => x === 5).length;
+    const c3 = v.filter((x) => x === 3).length;
+    assert.ok(c1 >= 10 && c5 >= 10);
+    assert.ok(c3 < c1 && c3 < c5);
+  }
+});
+
+test('cenário 06: outliers inflam desvio padrão muito acima do IQR', () => {
+  const g = todosCenarios()[5].dados.gerador;
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    const iqr = percentil(v, 75) - percentil(v, 25);
+    assert.ok(desvioPadrao(v) > 3 * iqr);
+  }
+});
+
+test('cenário 07: distribuição normal simétrica com média próxima da mediana', () => {
+  const g = todosCenarios()[6].dados.gerador;
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.ok(Math.abs(media(v) - mediana(v)) < 0.6);
+    assert.ok(Math.abs(media(v) - 500) < 0.8);
+  }
+});
+
+test('cenário 08: amostra pequena tem variabilidade significativamente maior que amostra grande', () => {
+  const g = todosCenarios()[7].dados.gerador;
+  for (let seed = 1; seed <= 200; seed++) {
+    const [a, b] = gerar(g, criarRng(seed)).series.map((s) => s.valores);
+    assert.ok(desvioPadrao(b) > 4 * desvioPadrao(a));
+    assert.ok(media(b) > media(a));
+  }
+});

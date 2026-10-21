@@ -80,6 +80,80 @@ const GERADORES = {
       return Math.abs(media(a) - media(b)) < 0.01 && desvioPadrao(b) > 5 * desvioPadrao(a);
     },
   },
+
+  bimodal_polarizado: {
+    gerar(p, rng) {
+      const valores = [];
+      const totalPesos = p.pesos.reduce((s, w) => s + w, 0);
+      for (let i = 0; i < p.n; i++) {
+        let r = rng.prox() * totalPesos;
+        let nota = 1;
+        while (nota < p.pesos.length && r >= p.pesos[nota - 1]) {
+          r -= p.pesos[nota - 1];
+          nota++;
+        }
+        valores.push(nota);
+      }
+      return { series: [{ nome: 'Avaliações', valores }] };
+    },
+    invariante([v]) {
+      const c = contagens(v);
+      const n1 = c.get(1) ?? 0;
+      const n5 = c.get(5) ?? 0;
+      const n3 = c.get(3) ?? 0;
+      const m = media(v);
+      return n1 >= 10 && n5 >= 10 && (n1 + n5) / v.length >= 0.55 && n3 < n1 && n3 < n5 && m >= 2.2 && m <= 3.8;
+    },
+  },
+
+  dispersao_outliers: {
+    gerar(p, rng) {
+      const nOutliers = p.outliers.length;
+      const valores = [];
+      for (let i = 0; i < p.n - nOutliers; i++) {
+        valores.push(casas(rng.entre(p.baseMin, p.baseMax), 1));
+      }
+      for (const o of p.outliers) {
+        valores.push(casas(o * rng.entre(0.9, 1.1), 1));
+      }
+      return { series: [{ nome: 'Tempo de suporte', valores: rng.embaralhar(valores) }] };
+    },
+    invariante([v]) {
+      const q1 = percentil(v, 25);
+      const q3 = percentil(v, 75);
+      const iqr = q3 - q1;
+      return desvioPadrao(v) > 3 * iqr && mediana(v) <= 25 && iqr > 0;
+    },
+  },
+
+  distribuicao_normal_simetrica: {
+    gerar(p, rng) {
+      return {
+        series: [{ nome: 'Pesagem', valores: padronizado(p.n, p.media, p.dp, rng, 1) }],
+      };
+    },
+    invariante([v]) {
+      const m = media(v);
+      const med = mediana(v);
+      return Math.abs(m - med) < 0.6 && Math.abs(m - 500) < 0.8;
+    },
+  },
+
+  comparacao_amostral: {
+    gerar(p, rng) {
+      const sA = padronizado(p.nA, p.mediaA, p.dpA, rng, 1);
+      const sB = padronizado(p.nB, p.mediaB, p.dpB, rng, 1);
+      return {
+        series: [
+          { nome: p.nomes[0], valores: sA },
+          { nome: p.nomes[1], valores: sB },
+        ],
+      };
+    },
+    invariante([a, b]) {
+      return desvioPadrao(b) > 4 * desvioPadrao(a) && media(b) > media(a);
+    },
+  },
 };
 
 export function tiposDeGerador() {

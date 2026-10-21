@@ -44,11 +44,18 @@ export function desvioPadrao(v) {
 export function resumo(v) {
   const min = Math.min(...v);
   const max = Math.max(...v);
+  const q1 = percentil(v, 25);
+  const q3 = percentil(v, 75);
   return {
     media: media(v),
     mediana: mediana(v),
     moda: moda(v),
     p90: percentil(v, 90),
+    p95: percentil(v, 95),
+    p25: q1,
+    p75: q3,
+    iqr: q3 - q1,
+    amplitude: max - min,
     dp: desvioPadrao(v),
     maximo: max,
     minimo: min,

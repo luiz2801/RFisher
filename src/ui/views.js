@@ -52,7 +52,7 @@ export function viewMenu({ salvo } = {}) {
       </label>
       ${linhas}
       <label>Turnos por jogador
-        <select name="turnos">${[6, 8, 10, 12].map((n) => `<option value="${n}" ${n === TURNOS_PADRAO ? 'selected' : ''}>${n}</option>`).join('')}</select>
+        <select name="turnos">${[2, 6, 8, 10, 12].map((n) => `<option value="${n}" ${n === TURNOS_PADRAO ? 'selected' : ''}>${n}</option>`).join('')}</select>
       </label>
       <label>Semente (opcional, para repetir uma partida)
         <input name="seed" inputmode="numeric" pattern="[0-9]*" placeholder="aleatória">
@@ -188,7 +188,7 @@ function viewDecisao(e) {
       <p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong></p>
       <div class="opcoes">${c.ordemJustificativas
         .map((id) => def.justificativas.find((x) => x.id === id))
-        .map((x) => `<button class="opcao" data-acao="JUSTIFICATIVA" data-valor="${x.id}">${esc(x.texto)}</button>`)
+        .map((x) => `<button class="opcao" data-acao="JUSTIFICATIVA" data-valor="${x.id}">${esc(preencher(x.texto, c.vars))}</button>`)
         .join('')}</div>`;
   } else {
     const V = def.valor_base * NIVEL[j.nivel];
@@ -202,7 +202,7 @@ function viewDecisao(e) {
     const escolhida = def.opcoes.find((o) => o.id === c.metricaId);
     const justEscolhida = def.justificativas.find((x) => x.id === c.justificativaId);
     const resumo = escolhida && justEscolhida
-      ? `<p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong><br>Sua justificativa: <strong>${esc(justEscolhida.texto)}</strong></p>`
+      ? `<p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong><br>Sua justificativa: <strong>${esc(preencher(justEscolhida.texto, c.vars))}</strong></p>`
       : '';
     passo = `<h3>3. Quão confiante você está na sua resposta?</h3>
       ${resumo}
@@ -239,7 +239,7 @@ function viewResultado(e) {
 
   const gabarito = [];
   if (!r.metricaCorreta) gabarito.push(`<li>Métrica certa: ${esc(preencher(certa.texto, vars))}</li>`);
-  if (!r.justificativaCorreta) gabarito.push(`<li>Justificativa certa: ${esc(justCerta.texto)}</li>`);
+  if (!r.justificativaCorreta) gabarito.push(`<li>Justificativa certa: ${esc(preencher(justCerta.texto, vars))}</li>`);
 
   const rep = r.deltaReputacao ? ` · Reputação ${r.deltaReputacao > 0 ? '+' : '−'}${Math.abs(r.deltaReputacao)}` : '';
   const mult = r.multiplicador !== 1 ? ` (bônus de reputação ×${r.multiplicador.toFixed(2).replace('.', ',')})` : '';

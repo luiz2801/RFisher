@@ -6,6 +6,12 @@ export function formatar(tipo, v) {
       return 'R$ ' + nf(0, 0).format(Math.round(v));
     case 'dias':
       return nf(1, 1).format(v) + ' dias';
+    case 'minutos':
+      return nf(1, 1).format(v) + ' min';
+    case 'gramas':
+      return nf(1, 1).format(v) + ' g';
+    case 'porcento':
+      return nf(1, 1).format(v) + '%';
     case 'mm':
       return nf(2, 2).format(v) + ' mm';
     default:

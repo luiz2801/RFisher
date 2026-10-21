@@ -71,7 +71,7 @@ export function validarCenario(def, rng) {
     }
   }
   for (const m of def.feedback.revelacao.marcadores) {
-    const chave = def.dados.gerador.tipo === 'mesma_media_variancia_distinta' ? `${m.chave}_a` : m.chave;
+    const chave = m.chave in num ? m.chave : `${m.chave}_a`;
     if (!(chave in num)) err(`marcador sem valor: ${m.chave}`);
   }
   return erros;
