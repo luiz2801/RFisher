@@ -1,6 +1,6 @@
 # Fisher SA
 
-Jogo de tabuleiro digital e educativo de estatística. Especificação completa em [fisher.md](fisher.md). Documentação arquitetural e diagramas UML em [docs/diagramas-uml.md](docs/diagramas-uml.md).
+Jogo de tabuleiro digital e educativo de estatística. Especificação completa em [fisher.md](fisher.md). Documentação arquitetural e diagramas UML em [docs/diagramas-uml.md](docs/diagramas-uml.md). Tipos de teste esperados e lacunas atuais em [docs/testes.md](docs/testes.md). Como criar cenários, eventos e geradores em [docs/criar-cenarios.md](docs/criar-cenarios.md).
 
 ## Rodar
 
