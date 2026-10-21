@@ -1,4 +1,4 @@
-# Tabuleiro do CEO (nome provisório)
+# Fisher SA (nome provisório)
 
 > Jogo de tabuleiro digital e educativo, em que cada jogador é o CEO de uma empresa e aprende estatística tomando decisões de negócio. Roda no navegador, sem backend, sem IA e sem custo de infraestrutura.
 
@@ -42,8 +42,8 @@
 ### Core loop
 
 ```
-Rola o dado → cai numa casa → vê o cenário/gráfico → escolhe o nível de confiança
-→ escolhe a métrica/ação → escolhe a justificativa → vê o resultado
+Rola o dado → cai numa casa → vê o cenário/gráfico → escolhe a métrica/ação
+→ escolhe a justificativa → escolhe o nível de confiança (chute ou certeza) → vê o resultado
 → lê a explicação (sempre, inclusive quem acertou) → atualiza dinheiro e reputação → próximo jogador
 ```
 
@@ -91,7 +91,7 @@ Circuito de aproximadamente **20 casas**. Cada casa coloca pelo menos uma métri
 
 1. Rola o dado e avança.
 2. Resolve a casa (decisão, evento, duelo, mercado, auditoria ou balanço).
-3. Em casas de decisão: **confiança → métrica → justificativa → resultado → explicação**.
+3. Em casas de decisão: **métrica → justificativa → confiança → resultado → explicação**.
 4. Atualiza o estado e passa a vez.
 
 ### 3.3 Decisão em duas etapas
@@ -289,7 +289,7 @@ INICIO_TURNO
    └─> ROLAR_DADO
         └─> MOVER
              └─> RESOLVER_CASA
-                  ├─ Decisão ─> ESCOLHER_CONFIANCA ─> ESCOLHER_METRICA ─> ESCOLHER_JUSTIFICATIVA ─> MOSTRAR_RESULTADO ─> MOSTRAR_EXPLICACAO
+                  ├─ Decisão ─> ESCOLHER_METRICA ─> ESCOLHER_JUSTIFICATIVA ─> ESCOLHER_CONFIANCA ─> MOSTRAR_RESULTADO ─> MOSTRAR_EXPLICACAO
                   ├─ Evento ──> MOSTRAR_EVENTO ─> APLICAR_EFEITO
                   ├─ Duelo ───> (jogador A e B respondem em tela oculta) ─> COMPARAR ─> MOSTRAR_EXPLICACAO
                   ├─ Mercado ─> COMPRAR_OU_PASSAR

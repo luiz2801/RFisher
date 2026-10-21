@@ -51,8 +51,9 @@ const TRANSICOES = {
           ordemJustificativas: rng.embaralhar(def.justificativas.map((x) => x.id)),
           confianca: null,
           metricaId: null,
+          justificativaId: null,
         };
-        e.fase = 'ESCOLHER_CONFIANCA';
+        e.fase = 'ESCOLHER_METRICA';
       } else if (casa === 'evento') {
         const idCarta = sacar(e, 'baralhoEventos', EVENTOS.map((x) => x.id), rng);
         const carta = EVENTOS.find((ev) => ev.id === idCarta);
@@ -64,15 +65,6 @@ const TRANSICOES = {
         e.fase = 'MOSTRAR_BALANCO';
       }
       e.rng = rng.estado;
-      return e;
-    },
-  },
-
-  ESCOLHER_CONFIANCA: {
-    CONFIANCA(e, { valor }) {
-      if (valor !== 'chute' && valor !== 'certeza') return e;
-      e.cenarioAtual.confianca = valor;
-      e.fase = 'ESCOLHER_METRICA';
       return e;
     },
   },
@@ -92,6 +84,21 @@ const TRANSICOES = {
       const def = obterCenario(c.id);
       const just = def.justificativas.find((x) => x.id === valor);
       if (!just) return e;
+      c.justificativaId = valor;
+      e.fase = 'ESCOLHER_CONFIANCA';
+      return e;
+    },
+  },
+
+  ESCOLHER_CONFIANCA: {
+    CONFIANCA(e, { valor }) {
+      if (valor !== 'chute' && valor !== 'certeza') return e;
+      const c = e.cenarioAtual;
+      c.confianca = valor;
+
+      const def = obterCenario(c.id);
+      const just = def.justificativas.find((x) => x.id === c.justificativaId);
+      if (!just) return e;
 
       const j = jogadorAtual(e);
       const metrica = def.opcoes.find((o) => o.id === c.metricaId);
@@ -101,7 +108,7 @@ const TRANSICOES = {
         valorBase: def.valor_base,
         metricaCorreta: metrica.correta,
         justificativaCorreta: justificativaConta(just.tipo),
-        confianca: c.confianca,
+        confianca: valor,
         impacto: def.impacto,
       });
       j.dinheiro += r.delta;
@@ -111,7 +118,7 @@ const TRANSICOES = {
         cenarioId: def.id,
         metricaId: metrica.id,
         justificativaId: just.id,
-        confianca: c.confianca,
+        confianca: valor,
         metricaCorreta: metrica.correta,
         justificativaCorreta: just.tipo === 'correta',
         categoria: r.categoria,
@@ -124,7 +131,7 @@ const TRANSICOES = {
         cenario: def.id,
         metrica: metrica.id,
         justificativa: just.id,
-        confianca: c.confianca,
+        confianca: valor,
         resultado: r.categoria,
         delta: r.delta,
       });

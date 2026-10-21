@@ -69,6 +69,29 @@ test('o reducer não altera o estado anterior', () => {
   assert.deepEqual(e, antes);
 });
 
+test('em casas de decisão, a pergunta de certeza ocorre após a resposta (métrica e justificativa)', () => {
+  let e = novoJogo({ jogadores: jogadores('iniciante'), seed: 1 });
+  let passos = 0;
+  while (e.fase === 'ROLAR_DADO' && passos < 20) {
+    e = reduzir(e, { tipo: 'ROLAR' });
+    passos++;
+    if (e.fase === 'MOSTRAR_EVENTO' || e.fase === 'MOSTRAR_BALANCO') {
+      e = reduzir(e, { tipo: 'CONTINUAR' });
+    }
+  }
+  assert.equal(e.fase, 'ESCOLHER_METRICA');
+  const def = obterCenario(e.cenarioAtual.id);
+
+  e = reduzir(e, { tipo: 'METRICA', valor: def.opcoes[0].id });
+  assert.equal(e.fase, 'ESCOLHER_JUSTIFICATIVA');
+
+  e = reduzir(e, { tipo: 'JUSTIFICATIVA', valor: def.justificativas[0].id });
+  assert.equal(e.fase, 'ESCOLHER_CONFIANCA');
+
+  e = reduzir(e, { tipo: 'CONFIANCA', valor: 'certeza' });
+  assert.equal(e.fase, 'MOSTRAR_RESULTADO');
+});
+
 test('o estado sobrevive a JSON (salvar/retomar partida)', () => {
   let e = novoJogo({ jogadores: jogadores('iniciante', 'avancado'), turnos: 4, seed: 77 });
   for (let i = 0; i < 12; i++) {

@@ -1,6 +1,6 @@
-# Tabuleiro do CEO
+# Fisher SA
 
-Jogo de tabuleiro digital e educativo de estatística. Especificação completa em [fisher.md](fisher.md).
+Jogo de tabuleiro digital e educativo de estatística. Especificação completa em [fisher.md](fisher.md). Documentação arquitetural e diagramas UML em [docs/diagramas-uml.md](docs/diagramas-uml.md).
 
 ## Rodar
 

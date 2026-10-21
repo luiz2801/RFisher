@@ -40,11 +40,10 @@ export function viewMenu({ salvo } = {}) {
   return `<main class="menu">
     <h1>Tabuleiro do CEO</h1>
     <p class="sub">Você é o CEO de uma empresa. Escolha a métrica certa, justifique a decisão e termine com mais dinheiro.</p>
-    ${
-      salvo
-        ? `<section class="cartao"><p>Há uma partida salva: ${salvo.jogadores.length} jogador(es), turno ${Math.min(salvo.turnoAtual, salvo.turnosPorJogador)} de ${salvo.turnosPorJogador}.</p>
+    ${salvo
+      ? `<section class="cartao"><p>Há uma partida salva: ${salvo.jogadores.length} jogador(es), turno ${Math.min(salvo.turnoAtual, salvo.turnosPorJogador)} de ${salvo.turnosPorJogador}.</p>
            <button class="primario" data-acao="CONTINUAR_SALVA">Continuar partida salva</button></section>`
-        : ''
+      : ''
     }
     <form id="form-menu" class="cartao">
       <h2>Nova partida</h2>
@@ -176,7 +175,22 @@ function viewDecisao(e) {
   const { def, html } = blocoCenario(e);
   let passo;
 
-  if (e.fase === 'ESCOLHER_CONFIANCA') {
+  if (e.fase === 'ESCOLHER_METRICA') {
+    const dica = j.nivel === 'iniciante' && def.dica ? `<p class="dica"><strong>Dica:</strong> ${esc(def.dica)}</p>` : '';
+    passo = `<h3>1. Qual métrica você escolhe?</h3>${dica}
+      <div class="opcoes">${c.ordemOpcoes
+        .map((id) => def.opcoes.find((o) => o.id === id))
+        .map((o) => `<button class="opcao" data-acao="METRICA" data-valor="${o.id}">${esc(preencher(o.texto, c.vars))}</button>`)
+        .join('')}</div>`;
+  } else if (e.fase === 'ESCOLHER_JUSTIFICATIVA') {
+    const escolhida = def.opcoes.find((o) => o.id === c.metricaId);
+    passo = `<h3>2. Por que essa é a melhor decisão?</h3>
+      <p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong></p>
+      <div class="opcoes">${c.ordemJustificativas
+        .map((id) => def.justificativas.find((x) => x.id === id))
+        .map((x) => `<button class="opcao" data-acao="JUSTIFICATIVA" data-valor="${x.id}">${esc(x.texto)}</button>`)
+        .join('')}</div>`;
+  } else {
     const V = def.valor_base * NIVEL[j.nivel];
     const linha = (chave, nome) => {
       const f = CONFIANCA[chave];
@@ -185,24 +199,15 @@ function viewDecisao(e) {
         <span>Acerto total: até ${brlSinal(V * f)} · Erro total: ${brlSinal(-0.5 * V * f)}</span>
       </button>`;
     };
-    passo = `<h3>1. Quão confiante você está?</h3>
-      <p class="ajuda">Antes de escolher, aposte: quanto maior a confiança, maior o ganho e a perda.</p>
-      <div class="opcoes">${linha('chute', 'Chute')}${linha('certeza', 'Certeza')}</div>`;
-  } else if (e.fase === 'ESCOLHER_METRICA') {
-    const dica = j.nivel === 'iniciante' && def.dica ? `<p class="dica"><strong>Dica:</strong> ${esc(def.dica)}</p>` : '';
-    passo = `<h3>2. Qual métrica você escolhe?</h3>${dica}
-      <div class="opcoes">${c.ordemOpcoes
-        .map((id) => def.opcoes.find((o) => o.id === id))
-        .map((o) => `<button class="opcao" data-acao="METRICA" data-valor="${o.id}">${esc(preencher(o.texto, c.vars))}</button>`)
-        .join('')}</div>`;
-  } else {
     const escolhida = def.opcoes.find((o) => o.id === c.metricaId);
-    passo = `<h3>3. Por que essa é a melhor decisão?</h3>
-      <p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong></p>
-      <div class="opcoes">${c.ordemJustificativas
-        .map((id) => def.justificativas.find((x) => x.id === id))
-        .map((x) => `<button class="opcao" data-acao="JUSTIFICATIVA" data-valor="${x.id}">${esc(x.texto)}</button>`)
-        .join('')}</div>`;
+    const justEscolhida = def.justificativas.find((x) => x.id === c.justificativaId);
+    const resumo = escolhida && justEscolhida
+      ? `<p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong><br>Sua justificativa: <strong>${esc(justEscolhida.texto)}</strong></p>`
+      : '';
+    passo = `<h3>3. Quão confiante você está na sua resposta?</h3>
+      ${resumo}
+      <p class="ajuda">Aposte: quanto maior a confiança, maior o ganho e a perda.</p>
+      <div class="opcoes">${linha('chute', 'Chute')}${linha('certeza', 'Certeza')}</div>`;
   }
   return `${bannerBalanco(e)}${html}${passo}`;
 }
