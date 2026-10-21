@@ -31,3 +31,15 @@ test('o validador detecta problemas', () => {
   const erros = validarCenario(ruim, criarRng(1));
   assert.equal(erros.length, 3, erros.join('\n'));
 });
+
+test('todo evento tem um setor válido', async () => {
+  const { EVENTOS } = await import('../src/scenarios/content/eventos.js');
+  const { SETORES } = await import('../src/engine/papeis.js');
+  for (const ev of EVENTOS) assert.ok(SETORES.includes(ev.setor), `evento sem setor: ${ev.id}`);
+});
+
+test('o validador exige setor no cenário', () => {
+  const ruim = structuredClone(todosCenarios()[0]);
+  delete ruim.setor;
+  assert.equal(validarCenario(ruim, criarRng(1)).length, 1);
+});

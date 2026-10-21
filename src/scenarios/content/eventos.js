@@ -2,6 +2,7 @@
 export const EVENTOS = [
   {
     id: 'eixo_truncado',
+    setor: 'dados',
     titulo: 'O gráfico que enganou',
     texto: 'Um fornecedor mostrou um gráfico em que o preço "despencou". O eixo vertical começava em 95, e a queda real foi de 2%. Você fechou o contrato mesmo assim.',
     licao: 'Sempre olhe onde o eixo do gráfico começa: um eixo truncado exagera diferenças pequenas.',
@@ -10,6 +11,7 @@ export const EVENTOS = [
   },
   {
     id: 'correlacao',
+    setor: 'rh',
     titulo: 'Mais gente, mais vendas?',
     texto: 'Você notou que as lojas com mais funcionários vendem mais e contratou 20 pessoas para a loja pequena. As vendas não mudaram: as lojas grandes é que precisam de mais gente.',
     licao: 'Correlação não é causalidade. Duas coisas que andam juntas podem ter uma causa em comum.',
@@ -18,6 +20,7 @@ export const EVENTOS = [
   },
   {
     id: 'amostra_pequena',
+    setor: 'produto',
     titulo: 'Pesquisa com 5 clientes',
     texto: 'Uma pesquisa com 5 clientes disse que 100% aprovam o novo produto. Você lançou em larga escala, e uma pesquisa com 500 clientes mostrou só 62% de aprovação.',
     licao: 'Amostras pequenas oscilam muito. Quanto menor a amostra, menos confiável é o percentual.',
@@ -26,6 +29,7 @@ export const EVENTOS = [
   },
   {
     id: 'taxa_base',
+    setor: 'dados',
     titulo: 'O antifraude "que acerta 99%"',
     texto: 'Seu sistema antifraude acerta 99% das vezes, mas só 1 em cada 1.000 transações é fraude. Boa parte dos alertas era de clientes honestos, que você bloqueou.',
     licao: 'Quando o evento é raro, mesmo um teste muito preciso gera muitos falsos positivos (taxa-base).',
@@ -34,6 +38,7 @@ export const EVENTOS = [
   },
   {
     id: 'sobrevivencia',
+    setor: 'financeiro',
     titulo: 'Só os vencedores aparecem',
     texto: 'Um consultor mostrou que "todas as startups que fizeram X deram certo". Você percebeu que ele só estudou as que sobreviveram e poupou o investimento.',
     licao: 'Viés de sobrevivência: olhar só quem deu certo esconde os muitos que fizeram o mesmo e fracassaram.',
@@ -42,6 +47,7 @@ export const EVENTOS = [
   },
   {
     id: 'analise_premiada',
+    setor: 'rh',
     titulo: 'Análise de dados reconhecida',
     texto: 'Sua decisão de usar a mediana no relatório salarial virou case em uma revista do setor.',
     licao: 'Escolher a métrica certa para o formato dos dados também melhora a imagem da empresa.',
@@ -50,6 +56,7 @@ export const EVENTOS = [
   },
   {
     id: 'regressao_media',
+    setor: 'rh',
     titulo: 'A ilusão do mês recorde',
     texto: 'O vendedor que bateu recorde no mês passado teve vendas normais neste mês. Você achou que ele perdeu o ritmo, mas era apenas o efeito estatístico natural de retorno à média.',
     licao: 'Regressão à média: resultados extremos tendem naturalmente a ficar mais perto da média nas medições seguintes.',
@@ -58,6 +65,7 @@ export const EVENTOS = [
   },
   {
     id: 'paradoxo_simpson',
+    setor: 'produto',
     titulo: 'O paradoxo dos canais de venda',
     texto: 'No consolidado geral, o canal digital parecia vender menos. Mas ao separar por região, ele venceu em todas as capitais. Você evitou cortar o canal certo.',
     licao: 'Paradoxo de Simpson: uma tendência observada em vários subgrupos pode se inverter quando os dados são agrupados sem controle de variáveis.',
@@ -66,6 +74,7 @@ export const EVENTOS = [
   },
   {
     id: 'correlacao_espuria',
+    setor: 'rh',
     titulo: 'Café e faturamento',
     texto: 'Um estudo interno mostrou forte correlação entre consumo de café e lucro da empresa. Você investiu numa cafeteria cara para os funcionários, mas o faturamento não mudou: equipes maiores apenas consomem mais café.',
     licao: 'Correlações espúrias: variáveis de confusão (como tamanho da equipe) criam associações falsas onde não há relação de causa e efeito.',
@@ -74,6 +83,7 @@ export const EVENTOS = [
   },
   {
     id: 'auditoria_estatistica',
+    setor: 'financeiro',
     titulo: 'Auditoria de dados independente',
     texto: 'Uma auditoria externa confirmou a solidez das suas métricas de amostragem e controle de qualidade, atraindo novos investidores para a sua empresa.',
     licao: 'Usar métricas adequadas e amostras representativas constrói credibilidade real de longo prazo.',

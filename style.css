@@ -112,6 +112,7 @@ button.discreto {
 
 .menu {
   max-width: 560px;
+  max-width: 660px;
   margin: 0 auto;
   padding: 2rem 16px;
 }
@@ -513,4 +514,316 @@ td {
 
 .ranking li {
   margin: .4rem 0;
+}
+
+/* Contexto narrativo e história dos CEOs */
+.menu-cabecalho {
+  margin-bottom: 1.25rem;
+}
+
+.tag-contexto {
+  display: inline-block;
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--primaria);
+  background: color-mix(in srgb, var(--primaria) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primaria) 30%, transparent);
+  padding: .25rem .65rem;
+  border-radius: 999px;
+  margin-bottom: .6rem;
+}
+
+.cartao-historia {
+  background: var(--surface);
+  border-left: 4px solid var(--primaria);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .04);
+}
+
+.historia-topo {
+  display: flex;
+  gap: .85rem;
+  align-items: center;
+  margin-bottom: .85rem;
+}
+
+.icone-alerta {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.subtitulo-memorando {
+  display: block;
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--suave);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.prologo-texto p {
+  margin: .55rem 0;
+  line-height: 1.6;
+}
+
+.bloco-missao {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: .9rem 1.1rem;
+  margin: 1.1rem 0;
+  border: 1px solid var(--borda);
+}
+
+.bloco-missao h3 {
+  margin-top: 0;
+  font-size: 1rem;
+  color: var(--texto);
+}
+
+.bloco-missao p {
+  margin: .4rem 0;
+  font-size: .93rem;
+  line-height: 1.5;
+}
+
+.regras-conselho {
+  margin: .6rem 0 .25rem;
+  padding-left: 1.25rem;
+  font-size: .91rem;
+}
+
+.regras-conselho li {
+  margin: .45rem 0;
+  line-height: 1.45;
+}
+
+.frase-efeito {
+  border-left: 3px solid var(--aviso);
+  padding-left: .85rem;
+  margin: 1rem 0 0;
+  color: var(--suave);
+  font-size: .89rem;
+  line-height: 1.5;
+}
+
+.card-jogador-config {
+  padding: .85rem 1rem;
+}
+
+.legend-jogador {
+  font-weight: 600;
+  padding: 0 .4rem;
+}
+
+.divisao-info {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  background: var(--bg);
+  border-radius: 6px;
+  padding: .5rem .85rem;
+  margin: .4rem 0 .75rem;
+  border: 1px solid var(--borda);
+}
+
+.divisao-icone {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.divisao-nome {
+  font-weight: 600;
+  font-size: .92rem;
+}
+
+.divisao-foco {
+  font-size: .8rem;
+  color: var(--suave);
+}
+
+.briefing-inaugural {
+  border-left: 4px solid var(--bom);
+  background: color-mix(in srgb, var(--bom) 10%, var(--surface));
+  padding: .85rem 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+.briefing-inaugural p {
+  margin: .4rem 0 0;
+  font-size: .93rem;
+  line-height: 1.5;
+}
+
+.contexto-rapido {
+  margin: .75rem 0 0;
+  background: var(--surface);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  padding: .5rem .75rem;
+  font-size: .88rem;
+}
+
+.contexto-rapido summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--primaria);
+}
+
+.cartao-contexto-interno {
+  margin-top: .5rem;
+  padding-top: .5rem;
+  border-top: 1px solid var(--borda);
+  color: var(--texto);
+  line-height: 1.5;
+}
+/* Tela inicial com scroll narrativo */
+.hero {
+  min-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: .5rem;
+}
+
+.hero h1 {
+  font-size: clamp(2.4rem, 8vw, 3.8rem);
+  line-height: 1.05;
+  margin: .25rem 0;
+}
+
+.hero .sub {
+  font-size: 1.1rem;
+  max-width: 34ch;
+}
+
+.rolar-dica {
+  margin-top: 2rem;
+  color: var(--primaria);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.rolar-dica span {
+  display: inline-block;
+  animation: quicar 1.6s ease-in-out infinite;
+}
+
+@keyframes quicar {
+  50% { transform: translateY(5px); }
+}
+
+.secao-scroll {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2.5rem 0;
+  border-top: 1px solid var(--borda);
+  line-height: 1.6;
+}
+
+.secao-scroll h2 {
+  margin-top: 0;
+}
+
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .75rem;
+  margin: 1rem 0;
+}
+
+.indicadores div {
+  background: var(--surface);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  padding: .8rem;
+  text-align: center;
+}
+
+.indicadores strong {
+  display: block;
+  font-size: 1.4rem;
+  color: var(--primaria);
+}
+
+.indicadores span {
+  font-size: .8rem;
+  color: var(--suave);
+}
+
+.lista-divisoes,
+.passos {
+  list-style: none;
+  padding: 0;
+  margin: .5rem 0;
+  display: grid;
+  gap: .75rem;
+}
+
+.lista-divisoes li,
+.passos li {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  background: var(--surface);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  padding: .8rem 1rem;
+}
+
+.passos p {
+  margin: .2rem 0 0;
+  font-size: .92rem;
+  color: var(--suave);
+  line-height: 1.45;
+}
+
+.passo-num {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.fim-scroll {
+  align-items: stretch;
+  text-align: center;
+}
+
+.fim-scroll .frase-efeito {
+  text-align: left;
+  margin: 0 0 1.5rem;
+}
+
+.cta-grande {
+  font-size: 1.15rem;
+  padding: .9rem 1.5rem;
+  border-radius: 999px;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--primaria) 35%, transparent);
+}
+
+#form-menu {
+  scroll-margin-top: 1rem;
+  margin-bottom: 3rem;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .rolar-dica span { animation: none; }
+}
+
+/* Modo cooperativo: painel da empresa */
+.empresa {
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+.empresa .din {
+  font-size: 1.4rem;
+  font-weight: 700;
 }

@@ -156,3 +156,79 @@ test('o dado não decide a partida: mesmo com sorte no dado, o conhecimento pesa
   }
   assert.ok(decisao > 2 * Math.abs(outros), `decisões ${decisao} vs. resto ${outros}`);
 });
+
+// ---------- modo cooperativo ----------
+
+import { carteira, classificarEmpresa } from '../src/engine/state.js';
+import { metaTrimestral } from '../src/engine/machine.js';
+
+const coop = (n, extra = {}) =>
+  novoJogo({ jogadores: jogadores(...Array(n).fill('iniciante')), modo: 'cooperativo', seed: 5, ...extra });
+
+test('cooperativo: todo setor tem responsável, com 1, 2 ou 3 jogadores', () => {
+  for (const n of [1, 2, 3]) {
+    const e = coop(n);
+    const papeis = e.jogadores.flatMap((j) => j.papeis);
+    assert.deepEqual([...papeis].sort(), ['operacoes', 'pessoas_financas', 'tecnologia']);
+  }
+});
+
+test('cooperativo: o caixa é da empresa, e o dinheiro dos jogadores não muda', () => {
+  const e = jogar({ jogadores: jogadores('iniciante', 'iniciante'), modo: 'cooperativo', turnos: 6, seed: 3 }, saberTudo);
+  assert.ok(e.jogadores.every((j) => j.dinheiro === DINHEIRO_INICIAL));
+  assert.notEqual(e.empresa.dinheiro, DINHEIRO_INICIAL);
+  assert.ok(e.empresa.dinheiro > DINHEIRO_INICIAL);
+});
+
+test('competitivo continua com carteira individual e sem empresa', () => {
+  const e = novoJogo({ jogadores: jogadores('iniciante'), seed: 1 });
+  assert.equal(e.empresa, null);
+  assert.equal(carteira(e), e.jogadores[0]);
+  // saves antigos, sem `modo`, seguem competitivos
+  delete e.modo;
+  assert.equal(carteira(e), e.jogadores[0]);
+});
+
+test('cooperativo: a meta do Balanço premia ou corta e ninguém é eliminado', () => {
+  const resultados = new Set();
+  for (let seed = 1; seed <= 60; seed++) {
+    const e = jogar({ jogadores: jogadores('iniciante', 'iniciante'), modo: 'cooperativo', turnos: 10, seed }, chutador(seed));
+    assert.equal(e.fase, 'FIM_DE_JOGO');
+    assert.equal(e.jogadores.length, 2);
+  }
+  // força um Balanço com caixa baixo e outro com caixa alto
+  for (const dinheiro of [0, 10 * DINHEIRO_INICIAL]) {
+    let e = coop(1);
+    e.empresa.dinheiro = dinheiro;
+    e.jogadores[0].posicao = 27; // qualquer dado passa pelo início
+    e = reduzir(e, { tipo: 'ROLAR' });
+    assert.ok(e.balanco.meta, 'balanço cooperativo deve avaliar a meta');
+    resultados.add(e.balanco.meta.cumprida);
+    assert.equal(e.balanco.meta.valor, metaTrimestral(e));
+  }
+  assert.deepEqual([...resultados].sort(), [false, true]);
+});
+
+test('cooperativo: a meta cresce com os trimestres e com o número de jogadores', () => {
+  const a = coop(1);
+  const b = coop(3);
+  assert.equal(metaTrimestral(a), DINHEIRO_INICIAL);
+  assert.ok(metaTrimestral({ ...a, turnoAtual: 5 }) > metaTrimestral(a));
+  assert.ok(metaTrimestral({ ...b, turnoAtual: 5 }) > metaTrimestral({ ...a, turnoAtual: 5 }));
+});
+
+test('cooperativo: classificação final por faixas de caixa e reputação', () => {
+  const faixa = (dinheiro, reputacao) => classificarEmpresa({ dinheiro, reputacao }).id;
+  assert.equal(faixa(0, 90), 'falencia');
+  assert.equal(faixa(DINHEIRO_INICIAL, 50), 'sobrevivencia');
+  assert.equal(faixa(2 * DINHEIRO_INICIAL, 65), 'crescimento');
+  assert.equal(faixa(3 * DINHEIRO_INICIAL, 80), 'lider');
+  assert.equal(faixa(3 * DINHEIRO_INICIAL, 30), 'sobrevivencia'); // caixa sozinho não basta
+});
+
+test('cooperativo: o estado sobrevive a JSON e a partida é determinística', () => {
+  const cfg = { jogadores: jogadores('iniciante', 'avancado', 'iniciante'), modo: 'cooperativo', turnos: 5, seed: 8 };
+  const e = jogar(cfg, saberTudo);
+  assert.deepEqual(JSON.parse(JSON.stringify(e)), e);
+  assert.deepEqual(jogar(cfg, saberTudo), e);
+});

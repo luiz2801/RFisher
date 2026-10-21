@@ -69,6 +69,7 @@ Rola o dado → cai numa casa → vê o cenário/gráfico → escolhe a métrica
 | 6 | **Competitivo**, até 3 jogadores | Apostas e duelos geram discussão, que é onde se aprende |
 | 7 | **Jogo da Vida** como referência (não Monopoly) | Monopoly gira em torno de propriedades e eliminação, mecânicas sem relação com estatística |
 | 8 | **Níveis por jogador** (recomendação, a confirmar) | Iniciante e avançado podem jogar juntos, com multiplicadores compensando o risco |
+| 9 | **Modo cooperativo** com diretorias, ao lado do competitivo (fase 1 implementada) | Caixa compartilhado resolve a recuperação de quem está atrás e mantém a discussão entre papéis. Ver [docs/modo-cooperativo.md](docs/modo-cooperativo.md) |
 
 ---
 

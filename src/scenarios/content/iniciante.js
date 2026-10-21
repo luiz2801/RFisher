@@ -5,6 +5,7 @@ const impacto = { reputacao_acerto: 5, reputacao_erro: -10 };
 
 const cenario01 = {
   id: 'cenario_01_salarios',
+  setor: 'rh',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
@@ -62,6 +63,7 @@ const cenario01 = {
 
 const cenario02 = {
   id: 'cenario_02_sla',
+  setor: 'logistica',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
@@ -119,6 +121,7 @@ const cenario02 = {
 
 const cenario03 = {
   id: 'cenario_03_estoque',
+  setor: 'logistica',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
@@ -177,6 +180,7 @@ const cenario03 = {
 
 const cenario04 = {
   id: 'cenario_04_pecas',
+  setor: 'producao',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
@@ -230,6 +234,7 @@ const cenario04 = {
 
 const cenario05 = {
   id: 'cenario_05_satisfacao',
+  setor: 'produto',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
@@ -286,6 +291,7 @@ const cenario05 = {
 
 const cenario06 = {
   id: 'cenario_06_sac',
+  setor: 'atendimento',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
@@ -342,6 +348,7 @@ const cenario06 = {
 
 const cenario07 = {
   id: 'cenario_07_envase',
+  setor: 'producao',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',
@@ -399,6 +406,7 @@ const cenario07 = {
 
 const cenario08 = {
   id: 'cenario_08_amostragem',
+  setor: 'produto',
   versao: 1,
   idioma: 'pt-BR',
   nivel: 'iniciante',

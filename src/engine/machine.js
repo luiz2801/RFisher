@@ -1,8 +1,13 @@
 import { criarRng } from './rng.js';
 import { CASAS, avancar } from './board.js';
-import { CUSTOS_BALANCO, MULTA_CRISE, REPUTACAO_POS_CRISE } from './config.js';
+import {
+  CUSTOS_BALANCO, MULTA_CRISE, REPUTACAO_POS_CRISE, META_CRESCIMENTO_POR_JOGADOR, BONUS_INVESTIDOR,
+  BONUS_INVESTIDOR_REPUTACAO, CORTE_ORCAMENTO, CORTE_ORCAMENTO_REPUTACAO, REDUCAO_PREJUIZO_PASSIVA,
+  REPUTACAO_BALANCO_RH, DINHEIRO_INICIAL,
+} from './config.js';
 import { resolverDecisao, receitaBalanco, justificativaConta } from './scoring.js';
-import { jogadorAtual } from './state.js';
+import { jogadorAtual, carteira, ehCooperativo } from './state.js';
+import { diretoriaDoSetor } from './papeis.js';
 import { instanciar, obterCenario, idsCenarios } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
 
@@ -23,10 +28,35 @@ function mudarReputacao(j, delta) {
   return true;
 }
 
-function aplicarBalanco(j) {
-  const receita = receitaBalanco(j.reputacao);
-  j.dinheiro += receita - CUSTOS_BALANCO;
-  return { receita, custos: CUSTOS_BALANCO, liquido: receita - CUSTOS_BALANCO };
+// Caixa mínimo exigido pelo Conselho: cresce a cada trimestre e com o número de jogadores.
+export const metaTrimestral = (e) =>
+  DINHEIRO_INICIAL + META_CRESCIMENTO_POR_JOGADOR * e.jogadores.length * (e.turnoAtual - 1);
+
+function aplicarBalanco(e) {
+  const w = carteira(e);
+  const receita = receitaBalanco(w.reputacao);
+  w.dinheiro += receita - CUSTOS_BALANCO;
+  const balanco = { receita, custos: CUSTOS_BALANCO, liquido: receita - CUSTOS_BALANCO };
+  if (!ehCooperativo(e)) return balanco;
+
+  // Cooperativo: bônus do RH, depois a meta. Quem falha sofre corte, ninguém é eliminado.
+  mudarReputacao(w, REPUTACAO_BALANCO_RH);
+  const meta = metaTrimestral(e);
+  const cumprida = w.dinheiro >= meta;
+  const ajusteDinheiro = cumprida ? BONUS_INVESTIDOR : -CORTE_ORCAMENTO;
+  w.dinheiro += ajusteDinheiro;
+  const crise = mudarReputacao(w, cumprida ? BONUS_INVESTIDOR_REPUTACAO : -CORTE_ORCAMENTO_REPUTACAO);
+  return {
+    ...balanco,
+    bonusRh: REPUTACAO_BALANCO_RH,
+    meta: { valor: meta, cumprida, dinheiro: ajusteDinheiro, reputacao: cumprida ? BONUS_INVESTIDOR_REPUTACAO : -CORTE_ORCAMENTO_REPUTACAO, crise },
+  };
+}
+
+// Prejuízo de evento do setor de uma diretoria é amortecido (todo setor tem diretor no cooperativo).
+function dinheiroDoEvento(e, carta) {
+  if (!ehCooperativo(e) || carta.dinheiro >= 0 || !diretoriaDoSetor(carta.setor)) return carta.dinheiro;
+  return Math.round((carta.dinheiro * (1 - REDUCAO_PREJUIZO_PASSIVA)) / 100) * 100;
 }
 
 const TRANSICOES = {
@@ -38,7 +68,7 @@ const TRANSICOES = {
       const { posicao, passouInicio } = avancar(j.posicao, dado);
       j.posicao = posicao;
       e.dado = dado;
-      e.balanco = passouInicio ? aplicarBalanco(j) : null;
+      e.balanco = passouInicio ? aplicarBalanco(e) : null;
 
       const casa = CASAS[posicao];
       if (casa === 'decisao') {
@@ -57,9 +87,11 @@ const TRANSICOES = {
       } else if (casa === 'evento') {
         const idCarta = sacar(e, 'baralhoEventos', EVENTOS.map((x) => x.id), rng);
         const carta = EVENTOS.find((ev) => ev.id === idCarta);
-        j.dinheiro += carta.dinheiro;
-        const crise = carta.reputacao !== 0 ? mudarReputacao(j, carta.reputacao) : false;
-        e.eventoAtual = { id: carta.id, crise };
+        const dinheiro = dinheiroDoEvento(e, carta);
+        const w = carteira(e);
+        w.dinheiro += dinheiro;
+        const crise = carta.reputacao !== 0 ? mudarReputacao(w, carta.reputacao) : false;
+        e.eventoAtual = { id: carta.id, crise, dinheiro };
         e.fase = 'MOSTRAR_EVENTO';
       } else {
         e.fase = 'MOSTRAR_BALANCO';
@@ -101,18 +133,19 @@ const TRANSICOES = {
       if (!just) return e;
 
       const j = jogadorAtual(e);
+      const w = carteira(e);
       const metrica = def.opcoes.find((o) => o.id === c.metricaId);
       const r = resolverDecisao({
         nivel: j.nivel,
-        reputacao: j.reputacao,
+        reputacao: w.reputacao,
         valorBase: def.valor_base,
         metricaCorreta: metrica.correta,
         justificativaCorreta: justificativaConta(just.tipo),
         confianca: valor,
         impacto: def.impacto,
       });
-      j.dinheiro += r.delta;
-      const crise = mudarReputacao(j, r.deltaReputacao);
+      w.dinheiro += r.delta;
+      const crise = mudarReputacao(w, r.deltaReputacao);
 
       e.resultado = {
         cenarioId: def.id,

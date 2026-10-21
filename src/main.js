@@ -33,6 +33,7 @@ function iniciar(form) {
   estado = novoJogo({
     jogadores,
     turnos: Number(dados.get('turnos')),
+    modo: dados.get('modo') === 'cooperativo' ? 'cooperativo' : 'competitivo',
     seed: seedTexto ? Number(seedTexto) : Math.floor(Math.random() * 2 ** 32),
   });
   salvar(estado);
@@ -48,6 +49,13 @@ app.addEventListener('click', (ev) => {
     limpar();
     estado = null;
     render();
+  } else if (acao === 'ABRIR_CONFIG') {
+    const form = document.getElementById('form-menu');
+    form.hidden = false;
+    botao.hidden = true;
+    botao.setAttribute('aria-expanded', 'true');
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    form.querySelector('input')?.focus({ preventScroll: true });
   } else if (acao === 'CONTINUAR_SALVA') {
     estado = carregar();
     render({ focar: true });

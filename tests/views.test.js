@@ -46,6 +46,29 @@ test('todas as telas de uma partida renderizam sem placeholders soltos nem HTML 
   }
 });
 
+test('as telas do modo cooperativo renderizam até o fim', () => {
+  let e = novoJogo({
+    jogadores: [{ nome: 'Ana', nivel: 'iniciante' }, { nome: 'Bia', nivel: 'iniciante' }],
+    modo: 'cooperativo',
+    turnos: 12,
+    seed: 11,
+  });
+  for (let i = 0; i < 400 && e.fase !== 'FIM_DE_JOGO'; i++) {
+    const html = viewJogo(e);
+    assert.ok(!html.includes('undefined') && !html.includes('{{'), `tela quebrada na fase ${e.fase}`);
+    assert.match(html, /caixa e reputação compartilhados/);
+    const def = e.cenarioAtual && obterCenario(e.cenarioAtual.id);
+    const acao = {
+      ROLAR_DADO: { tipo: 'ROLAR' },
+      ESCOLHER_CONFIANCA: { tipo: 'CONFIANCA', valor: 'chute' },
+      ESCOLHER_METRICA: { tipo: 'METRICA', valor: def?.opcoes[0].id },
+      ESCOLHER_JUSTIFICATIVA: { tipo: 'JUSTIFICATIVA', valor: def?.justificativas[0].id },
+    }[e.fase] ?? { tipo: 'CONTINUAR' };
+    e = reduzir(e, acao);
+  }
+  assert.match(viewJogo(e), /terminou em:/);
+});
+
 test('esc neutraliza HTML', () => {
   assert.equal(esc('<a href="x">&</a>'), '&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;');
 });
