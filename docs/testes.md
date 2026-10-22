@@ -114,6 +114,7 @@ Valida que o jogo premia conhecimento e não sorte (`fisher.md` 5.8 e 3.5).
 - Quem chuta termina com menos dinheiro que quem sabe tudo (já existe).
 - O dado não decide a partida (já existe).
 - Esperança do chute total ≈ −0,27 × V × confiança (já existe, em `scoring.test.js`).
+- Rival do modo solo (já existe, em `bot.test.js`): acerto empírico igual ao do perfil, confiança crescente com o perfil, partida reproduzível com save, taxa de vitória da referência decrescente do fácil ao difícil, chutador perde do fácil. A calibração em si fica em `scripts/simular-bot.mjs`, por ser lenta.
 - Jogador que acerta 70 % fica entre os dois (o `fisher.md` pede os três perfis; hoje só há dois).
 - Nos dois níveis (`iniciante`, `avancado`) e com 1, 2 e 3 jogadores.
 - Cooperativo: equipe que sabe tudo chega a faixa superior; equipe que chuta chega a `falencia` ou `sobrevivencia`; nenhuma faixa é inalcançável. A calibração das constantes de `config.js` é marcada como "a calibrar" e deve ser acompanhada por um teste de relatório, não de aprovação rígida.

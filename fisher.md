@@ -28,12 +28,12 @@
 | --- | --- |
 | **Gênero** | Jogo de tabuleiro digital, simulação de tomada de decisão, educativo |
 | **Plataforma** | Navegador no computador (hot-seat: todos jogam no mesmo computador) |
-| **Jogadores** | 1 a 3 simultâneos, revezando turnos |
+| **Jogadores** | 1 a 3 simultâneos, revezando turnos; ou 1 contra um rival controlado pelo computador (modo solo, 3.11) |
 | **Papel do jogador** | CEO de uma empresa |
-| **Modo** | Competitivo |
+| **Modo** | Competitivo, cooperativo ou solo (competitivo contra o computador) |
 | **Objetivo** | Ter mais dinheiro ao fim de N turnos |
 | **Métricas** | Dinheiro e reputação |
-| **Juiz** | O computador (regras determinísticas, sem IA) |
+| **Juiz** | O computador (regras determinísticas, sem IA). No modo solo, o computador também joga como rival, sem IA: um perfil estatístico de acertos (3.11) |
 | **Duração alvo** | 30 a 40 minutos (10 a 12 turnos por jogador) |
 | **Níveis** | Iniciante (sem base de matemática) e Avançado (já conhece média, mediana, Paradoxo de Simpson etc.) |
 | **Custo** | Zero (site estático, sem servidor) |
@@ -70,6 +70,7 @@ Rola os dois dados (soma, 2 a 12) → cai numa casa → vê o cenário/gráfico 
 | 7 | **Jogo da Vida** como referência (não Monopoly) | Monopoly gira em torno de propriedades e eliminação, mecânicas sem relação com estatística |
 | 8 | **Níveis por jogador** (recomendação, a confirmar) | Iniciante e avançado podem jogar juntos, com multiplicadores compensando o risco |
 | 9 | **Modo cooperativo** com diretorias, ao lado do competitivo (fase 1 implementada) | Caixa compartilhado resolve a recuperação de quem está atrás e mantém a discussão entre papéis. Ver [docs/modo-cooperativo.md](docs/modo-cooperativo.md) |
+| 10 | **Modo solo**: competitivo contra um rival do computador, que acerta com a frequência de um perfil, calibrado por simulação (implementado) | Uma pessoa sozinha não tinha contra quem competir. Um rival estocástico usa as mesmas regras e é balanceado pela taxa de vitória, sem IA nem rubber-banding (3.11) |
 
 ---
 
@@ -178,6 +179,31 @@ Para não eliminar ninguém, o jogo tem pelo menos um destes mecanismos (a defin
 ### 3.10 Punição
 
 A punição é ajustável. O ponto de partida é perda de dinheiro e reputação (tabela 3.5). Opções a explorar: voltar casas, perder a vez, ou **consequências com atraso** (uma decisão ruim gera uma crise algumas rodadas depois). Ela precisa doer sem deixar o jogador entediado.
+
+### 3.11 Modo solo: rival controlado pelo computador
+
+**Implementado** (`src/engine/bot.js`, perfis em `src/engine/config.js`). É o modo competitivo com dois jogadores: a pessoa (jogador 1) e um rival do computador (jogador 2). Valem as mesmas regras, casas, baralhos e pontuação, e ganha quem tiver mais dinheiro ao fim (reputação desempata). O rival joga no **mesmo nível** da pessoa, então as casas valem o mesmo para os dois.
+
+**O rival não resolve o cenário.** Ele acerta com a frequência do seu perfil:
+
+1. **Acerto efetivo:** `p = acerto − 0,08 × (dificuldade − 1)`, limitado a 0,05–0,98. O rival sente a dificuldade crescente (4.5) como uma pessoa.
+2. **Métrica e justificativa:** cada uma acerta com probabilidade `p`, de forma independente. Ao errar, escolhe ao acaso entre os distratores, que são equívocos reais. Por isso a tela de resultado mostra o equívoco do rival, e o erro dele também ensina.
+3. **Confiança:** vem de uma certeza interna `p + 0,1 × (acertos − 1) + ruído normal (dp 0,15)`, em que `acertos` vai de 0 a 2. Os limiares 0,30 · 0,45 · 0,60 · 0,75 separam os cinco níveis, do chute à certeza. Quem acerta tende a apostar mais alto, mas às vezes o rival erra convicto.
+4. **Determinismo:** o rival usa o rng da partida (ação `DECIDIR_BOT`), então a seed reproduz também as jogadas dele, inclusive depois de salvar e retomar.
+
+**Valor esperado por decisão.** Com `pm = pj = p` e a matriz 3.5, em unidades de V × confiança: `EV(p) = 0,3·p² + 1,2·p − 0,5`. O ponto de equilíbrio é p ≈ 0,38. Abaixo disso o rival perde dinheiro em média, e o chute puro (≈ 0,2 e 1/6) dá os −0,27 da verificação anti-chute.
+
+**Perfis e calibração.** O alvo é a **taxa de vitória** de um jogador de referência, não o acerto do rival. Como ainda não há dados de playtest, a referência é um jogador simulado de acerto 0,6, com o mesmo modelo de confiança, em partidas de 10 turnos. `scripts/simular-bot.mjs --calibrar` acha por bisseção o acerto de cada perfil:
+
+| Perfil | Rival | Acerto | Referência vence (alvo) |
+| --- | --- | --- | --- |
+| `facil` | Estagiário(a) | 0,48 | 70% |
+| `medio` | Analista | 0,60 | 50% |
+| `dificil` | Sênior | 0,70 | 30% |
+
+A variância é alta: em 10 turnos cada jogador decide cerca de 6 vezes, e a diferença final de dinheiro entre os dois tem desvio padrão de R$ 49 a 58 mil, contra uma diferença média de até R$ 31 mil. O rival difícil perde partidas, e o fácil ganha algumas, o que é saudável. Os números são pontos de partida. Depois do playtest, o acerto de referência deve ser trocado pelo acerto real medido no `historico`, e a calibração refeita.
+
+**Fora do modelo, de propósito:** *rubber-banding* (o rival errar quando está à frente), porque desfaz a relação entre aprender e ganhar; rival que conhece a resposta e a embaralha; correlação entre métrica e justificativa, e pontos fortes por conceito, que ficam para uma fase posterior.
 
 ---
 
@@ -472,6 +498,7 @@ A justificativa do tipo `parcial` deve contar como correta, incorreta ou meio-te
 - **Testes de pontuação:** as quatro combinações, os cinco níveis de confiança, os dois níveis de jogador e os limites de reputação.
 - **Testes de geradores:** invariantes da seção 5.6 em 1.000 seeds aleatórias.
 - **Teste de simulação:** 1.000 partidas com jogadores simulados (um que chuta, um que sabe 70%, um que sabe 100%). O que chuta deve terminar com menos dinheiro, e o que sabe tudo, com mais.
+- **Balanceamento do rival (modo solo, 3.11):** a taxa de vitória do jogador de referência cai do rival fácil ao difícil, e quem chuta perde quase sempre do fácil (`tests/bot.test.js`). A calibração fica em `scripts/simular-bot.mjs`.
 
 ### 5.9 Acessibilidade e persistência
 

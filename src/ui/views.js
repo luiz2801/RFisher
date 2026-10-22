@@ -3,16 +3,17 @@ import { esc } from './html.js';
 import { grafico, calcularDominio } from './components/grafico.js';
 import { parDadosHtml } from './components/dado.js';
 import { CASAS, NUM_CASAS, ROTULO_CASA, coordenadas } from '../engine/board.js';
-import { jogadorAtual, classificacao, vencedores, ehCooperativo, classificarEmpresa } from '../engine/state.js';
+import { jogadorAtual, classificacao, vencedores, ehCooperativo, ehBot, classificarEmpresa } from '../engine/state.js';
 import { DIRETORIAS } from '../engine/papeis.js';
 import { metaTrimestral } from '../engine/machine.js';
 import { CONFIANCA, ROTULO_CONFIANCA, NIVEL } from '../engine/scoring.js';
-import { MAX_JOGADORES, TURNOS_PADRAO } from '../engine/config.js';
+import { MAX_JOGADORES, TURNOS_PADRAO, PERFIS_BOT } from '../engine/config.js';
 import { obterCenario, preencher, valorDoMarcador } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
 import { brl, brlSinal } from '../stats/format.js';
 
 const NOME_NIVEL = { iniciante: 'Iniciante', avancado: 'Avançado' };
+const ROTULO_BOT = { facil: 'fácil', medio: 'médio', dificil: 'difícil' };
 export const DIVISOES = [
   {
     cargo: 'CEO de Produtos & Tecnologia',
@@ -40,8 +41,8 @@ const TITULO_RESULTADO = {
   erro_total: '✖ Erro total',
 };
 const MSG_JUSTIFICATIVA = {
-  parcial: 'Sua justificativa é verdadeira, mas incompleta: não explica por que a métrica escolhida é a melhor.',
-  irrelevante: 'Sua justificativa pode até ser verdade, mas não sustenta a decisão.',
+  parcial: 'É verdadeira, mas incompleta: não explica por que a métrica escolhida é a melhor.',
+  irrelevante: 'Pode até ser verdade, mas não sustenta a decisão.',
 };
 
 // ---------- menu ----------
@@ -138,10 +139,16 @@ export function viewMenu({ salvo } = {}) {
         <select name="modo">
           <option value="competitivo">Competitivo (cada CEO com o seu caixa)</option>
           <option value="cooperativo">Cooperativo (diretoria de uma só empresa, caixa compartilhado)</option>
+          <option value="solo">Solo (você contra um rival controlado pelo computador)</option>
         </select>
       </label>
-      <label>Quantidade de CEOs concorrentes
+      <label data-campo="n">Quantidade de CEOs concorrentes
         <select name="n">${[1, 2, 3].map((n) => `<option value="${n}" ${n === 2 ? 'selected' : ''}>${n}</option>`).join('')}</select>
+      </label>
+      <label data-campo="bot" hidden>Rival
+        <select name="bot">${Object.entries(PERFIS_BOT)
+          .map(([id, p]) => `<option value="${id}" ${id === 'medio' ? 'selected' : ''}>${esc(p.nome)} (${ROTULO_BOT[id]})</option>`)
+          .join('')}</select>
       </label>
       ${linhas}
       <label>Trimestres fiscais (turnos por jogador)
@@ -158,8 +165,16 @@ export function viewMenu({ salvo } = {}) {
 // ---------- jogo ----------
 
 const nomesPapeis = (j) => j.papeis.map((id) => DIRETORIAS[id].nome).join(' + ');
-// Cargo exibido: a(s) diretoria(s) no cooperativo, a divisão no competitivo.
-const cargoDe = (e, j) => (ehCooperativo(e) ? nomesPapeis(j) : DIVISOES[j.id % DIVISOES.length].cargo);
+// Cargo exibido: a(s) diretoria(s) no cooperativo, a divisão no competitivo, o perfil no rival do solo.
+const cargoDe = (e, j) => {
+  if (ehBot(j)) return `🤖 computador, ${ROTULO_BOT[j.bot]}`;
+  return ehCooperativo(e) ? nomesPapeis(j) : DIVISOES[j.id % DIVISOES.length].cargo;
+};
+// Textos da decisão em segunda pessoa para quem joga, em terceira para o rival do computador.
+const autor = (e) =>
+  ehBot(jogadorAtual(e))
+    ? { metrica: 'Métrica do rival', justificativa: 'Justificativa do rival', passou: 'O rival passou' }
+    : { metrica: 'Sua métrica', justificativa: 'Sua justificativa', passou: 'Você passou' };
 
 export function viewJogo(e) {
   const turno = Math.min(e.turnoAtual, e.turnosPorJogador);
@@ -262,7 +277,7 @@ const metaTexto = (b) =>
 
 const bannerBalanco = (e) =>
       e.balanco && e.fase !== 'MOSTRAR_BALANCO'
-      ? `<p class="aviso">${ehCooperativo(e) ? 'A empresa passou' : 'Você passou'} pelo Balanço: ${brlSinal(e.balanco.liquido)} (receita ${brl(e.balanco.receita)}, custos ${brl(e.balanco.custos)}).${metaTexto(e.balanco)}</p>`
+      ? `<p class="aviso">${ehCooperativo(e) ? 'A empresa passou' : autor(e).passou} pelo Balanço: ${brlSinal(e.balanco.liquido)} (receita ${brl(e.balanco.receita)}, custos ${brl(e.balanco.custos)}).${metaTexto(e.balanco)}</p>`
       : '';
 
       const botaoContinuar = '<button class="primario" data-acao="CONTINUAR">Próximo jogador</button>';
@@ -278,6 +293,11 @@ function viewRolar(e) {
       </div>`
       : '';
 
+  if (ehBot(j)) {
+    return `${inaugural}<h2>Vez de ${esc(j.nome)} <small>(${esc(cargo)})</small></h2>
+      <p>O rival está na casa ${j.posicao + 1}. Ele rola os dados e decide sozinho; você acompanha o resultado.</p>
+      <button class="primario" data-acao="ROLAR">Ver a jogada do rival</button>`;
+  }
   return `${inaugural}<h2>Vez de ${esc(j.nome)} <small>(${esc(cargo)})</small></h2>
       <p>Você está na casa ${j.posicao + 1}. Role os dados para avançar na trilha e encarar os desafios do mercado.</p>
       <button class="primario" data-acao="ROLAR">Rolar os dados</button>`;
@@ -314,6 +334,11 @@ function viewRolar(e) {
       const c = e.cenarioAtual;
       const {def, html} = blocoCenario(e);
       let passo;
+
+      // Normalmente o main.js já despacha DECIDIR_BOT; o botão cobre uma partida retomada nesta fase.
+      if (ehBot(j)) {
+    return `${bannerBalanco(e)}${html}<button class="primario" data-acao="DECIDIR_BOT">Ver a decisão do rival</button>`;
+  }
 
       if (e.fase === 'ESCOLHER_METRICA') {
     const dica = j.nivel === 'iniciante' && def.dica ? `<p class="dica"><strong>Dica:</strong> ${esc(def.dica)}</p>` : '';
@@ -368,13 +393,18 @@ function viewRolar(e) {
       const titulo = html.slice(0, html.indexOf('</p>') + 4); // título + contexto
     const graficos = html.slice(titulo.length);
 
+    const quem = autor(e);
+    // A decisão do rival não aparece em nenhuma etapa anterior, então o resultado a mostra.
+    const escolhasRival = ehBot(jogadorAtual(e))
+      ? `<p class="ajuda">${quem.metrica}: <strong>${esc(preencher(escolhida.texto, vars))}</strong><br>${quem.justificativa}: <strong>${esc(preencher(just.texto, vars))}</strong><br>Confiança: <strong>${ROTULO_CONFIANCA[r.confianca]}</strong></p>`
+      : '';
     const explicacoes = [`<p>${esc(preencher(fb.explicacao_correta, vars))}</p>`];
     if (!r.metricaCorreta) {
-      explicacoes.push(`<p><strong>Sua métrica:</strong> ${esc(preencher(fb.por_equivoco[escolhida.equivoco], vars))}</p>`);
+      explicacoes.push(`<p><strong>${quem.metrica}:</strong> ${esc(preencher(fb.por_equivoco[escolhida.equivoco], vars))}</p>`);
   }
     if (!r.justificativaCorreta) {
     const msg = fb.por_equivoco[just.equivoco] ?? MSG_JUSTIFICATIVA[just.tipo];
-    explicacoes.push(`<p><strong>Sua justificativa:</strong> ${esc(preencher(msg, vars))}</p>`);
+    explicacoes.push(`<p><strong>${quem.justificativa}:</strong> ${esc(preencher(msg, vars))}</p>`);
   }
 
     const gabarito = [];
@@ -384,7 +414,7 @@ function viewRolar(e) {
     const rep = r.deltaReputacao ? ` · Reputação ${r.deltaReputacao > 0 ? '+' : '−'}${Math.abs(r.deltaReputacao)}` : '';
     const mult = r.multiplicador !== 1 ? ` (bônus de reputação ×${r.multiplicador.toFixed(2).replace('.', ',')})` : '';
 
-    return `${bannerBalanco(e)}${titulo}
+    return `${bannerBalanco(e)}${titulo}${escolhasRival}
     <div class="resultado ${r.categoria}">
       <h3>${TITULO_RESULTADO[r.categoria]}</h3>
       <p class="delta">${r.delta === 0 ? 'Nenhuma variação de dinheiro' : brlSinal(r.delta)}${mult}${rep}</p>

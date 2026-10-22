@@ -11,12 +11,14 @@ npm start                # http://localhost:8000
 npm test                 # testes (node:test, sem dependências)
 npm run test:cobertura   # testes + cobertura: resumo no terminal e coverage/lcov.info
 npm run lint             # sintaxe (node --check) e bloqueio de test.only e debugger
+node scripts/simular-bot.mjs [--calibrar]   # balanceamento do rival do modo solo (taxa de vitória por perfil)
 ```
 
 Requer Node.js 20 ou mais recente. O CI (`.github/workflows/test.yml`, GitHub Actions) roda `lint` e `test:cobertura` em Node 20 e 22 a cada pull request e push na `main`, e publica o `lcov.info` como artefato.
 
 ## Estado atual
 
+- Modos competitivo, cooperativo e solo. O solo é o competitivo contra um rival controlado pelo computador, em três perfis (Estagiário(a), Analista, Sênior). O rival acerta com a frequência do perfil, menos nos cenários difíceis, aposta por uma certeza interna ruidosa e foi calibrado por simulação para que um jogador de acerto 0,6 vença 70%, 50% e 30% das partidas (`fisher.md` 3.11, `scripts/simular-bot.mjs`).
 - Trilha ampliada de 28 casas em grade 8x8 (1 casa de Balanço, 18 de Decisão e 9 de Evento), 1 a 3 jogadores em hot-seat, dois dados (soma, 2 a 12) com animação de rolagem e o peão saltando casa a casa até a posição final, aposta de confiança em 5 níveis (×0,5 a ×1,5), métrica e justificativa.
 - Casas: Decisão, Evento e Balanço. Duelo, Mercado e Auditoria ficam para a Fase 2.
 - 13 cenários de tomada de decisão estatística com dados gerados por seed e invariantes matemáticos testados em 1.000 seeds cada. Cada um tem dificuldade 1 a 3 (entre parênteses) e o sorteio favorece os mais difíceis conforme o jogador avança na trilha (ver abaixo):
@@ -44,5 +46,7 @@ Decisões tomadas onde a especificação deixava em aberto:
 - Justificativa `parcial` conta como errada (`PARCIAL_CONTA_COMO_CORRETA` em `src/engine/scoring.js`).
 - Reputação: 0 a 100, começa em 50; multiplica só os ganhos (×0,8 a ×1,3); em zero há multa de R$ 10.000.
 - Cenários em módulos JS (`src/scenarios/content/`) com o formato da seção 5.5, em vez de arquivos JSON.
+- Modo solo gravado como `modo: 'competitivo'` com um jogador `bot`, em vez de um terceiro modo: as regras são as mesmas do competitivo. O rival joga no nível da pessoa e decide numa única ação (`DECIDIR_BOT`), mostrada na tela de resultado.
+- Perfis do rival calibrados contra um jogador simulado de acerto 0,6, à falta de dados de playtest. Depois do playtest, trocar a referência pelo acerto real medido no `historico` e recalibrar.
 - Sem mecanismo de recuperação ainda: ninguém é eliminado, mas o dinheiro pode ficar negativo.
 - Dificuldade dos cenários atribuída à mão (4 com nível 1, 5 com nível 2 e 4 com nível 3) e ainda a calibrar no playtest, junto com o passo médio dos dois dados (7) e a seletividade do sorteio (`src/engine/config.js`). Ainda não há cenários ambíguos (fisher.md 4.5).

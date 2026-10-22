@@ -1,5 +1,5 @@
 import { criarRng } from './rng.js';
-import { DINHEIRO_INICIAL, REPUTACAO_INICIAL, TURNOS_PADRAO, PASSO_MEDIO_DADO } from './config.js';
+import { DINHEIRO_INICIAL, REPUTACAO_INICIAL, TURNOS_PADRAO, PASSO_MEDIO_DADO, PERFIS_BOT } from './config.js';
 import { atribuirPapeis } from './papeis.js';
 
 export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, seed = Date.now(), modo = 'competitivo' }) {
@@ -28,6 +28,8 @@ export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, seed = Date.now(),
       posicao: 0,
       distancia: 0,
       historico: [],
+      // Perfil do rival controlado pelo computador (modo solo), ou null para uma pessoa.
+      bot: Object.hasOwn(PERFIS_BOT, j.bot ?? '') ? j.bot : null,
       papeis: cooperativo ? papeis[id] : [],
       merito: 0,
       habilidadeUsos: 0,
@@ -51,6 +53,9 @@ export const progressoDoJogador = (e, j) =>
 
 // Saves antigos não têm `modo`: eram sempre competitivos.
 export const ehCooperativo = (e) => e.modo === 'cooperativo';
+
+// Saves antigos não têm `bot`: todos eram pessoas.
+export const ehBot = (j) => Boolean(j?.bot);
 
 // Quem recebe dinheiro e reputação: a empresa (cooperativo) ou o jogador da vez.
 export const carteira = (e) => (ehCooperativo(e) ? e.empresa : jogadorAtual(e));

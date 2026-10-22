@@ -40,6 +40,7 @@ classDiagram
         +int posicao
         +int distancia
         +List~HistoricoDecisao~ historico
+        +PerfilBot bot
     }
 
     class HistoricoDecisao {
@@ -102,6 +103,12 @@ classDiagram
         +embaralhar(lista) Array
     }
 
+    class BotService {
+        +acertoEfetivo(perfil, dificuldade) number
+        +confiancaDaCerteza(certeza) Confianca
+        +decidirBot(def, perfil, rng) Escolha
+    }
+
     class DificuldadeService {
         +dificuldadeAlvo(progresso) number
         +pesoDificuldade(dificuldade, progresso) number
@@ -146,6 +153,7 @@ classDiagram
     GameState ..> RngService : utiliza seed/estado
     GameState ..> BoardService : consulta trilha
     GameState ..> DificuldadeService : sorteia cenário por progresso
+    GameState ..> BotService : decide a vez do rival (modo solo)
     ScenarioLoader ..> CenarioDef : gerencia/instancia
     ScoringEngine <.. GameState : calcula pontuação
     StorageService ..> GameState : serializa/deserializa
@@ -171,7 +179,8 @@ stateDiagram-v2
         ROLAR_DADO --> MOSTRAR_BALANCO : ROLAR (caiu em 'balanco')
         
         state FluxoDecisao {
-            ESCOLHER_METRICA --> ESCOLHER_JUSTIFICATIVA : METRICA(id)
+            ESCOLHER_METRICA --> ESCOLHER_JUSTIFICATIVA : METRICA(id) (só pessoa)
+            ESCOLHER_METRICA --> MOSTRAR_RESULTADO : DECIDIR_BOT (só rival do modo solo)
             ESCOLHER_JUSTIFICATIVA --> ESCOLHER_CONFIANCA : JUSTIFICATIVA(id)
             ESCOLHER_CONFIANCA --> MOSTRAR_RESULTADO : CONFIANCA('chute' | 'duvida' | 'provavel' | 'confiante' | 'certeza')
         }
@@ -239,6 +248,12 @@ sequenceDiagram
     Machine-->>UI: novoEstado
     deactivate Machine
     
+    opt Vez do rival (modo solo) e fase 'ESCOLHER_METRICA'
+        UI->>Machine: reduzir(estado, { tipo: 'DECIDIR_BOT' })
+        Machine->>Machine: decidirBot(def, perfil, rng) e pontua como uma pessoa
+        Machine-->>UI: novoEstado (fase: 'MOSTRAR_RESULTADO')
+    end
+
     UI->>Storage: salvar(novoEstado)
     UI->>UI: render()
     
@@ -275,6 +290,7 @@ graph TD
         STATE["state.js<br/>(Fábrica de Estado)"]
         BOARD["board.js<br/>(Trilha e Posições)"]
         DIFICULDADE["dificuldade.js<br/>(Sorteio por dificuldade)"]
+        BOT["bot.js<br/>(Rival do modo solo)"]
         SCORING["scoring.js<br/>(Cálculo de Pontos)"]
         DESEMPENHO["desempenho.js<br/>(Perfil por conceito e certeza)"]
         RNG["rng.js<br/>(Mulberry32 PRNG)"]
@@ -306,6 +322,9 @@ graph TD
     MACHINE --> STATE
     MACHINE --> BOARD
     MACHINE --> DIFICULDADE
+    MACHINE --> BOT
+    BOT --> CONFIG
+    BOT --> SCORING
     DIFICULDADE --> CONFIG
     MACHINE --> SCORING
     MACHINE --> RNG
@@ -332,7 +351,8 @@ graph TD
 | Módulo | Responsabilidade Principal |
 | :--- | :--- |
 | **`src/engine/machine.js`** | Máquina de estados finitos que orquestra as transições a partir de ações do jogador. |
-| **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`) e funções seletoras puras (`jogadorAtual`, `classificacao`, `progressoDoJogador`). |
+| **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`) e funções seletoras puras (`jogadorAtual`, `ehBot`, `classificacao`, `progressoDoJogador`). |
+| **`src/engine/bot.js`** | Rival do modo solo: acerta métrica e justificativa com a probabilidade do perfil (menor nos cenários difíceis), escolhe distratores ao errar e deriva a confiança de uma certeza interna ruidosa. Perfis em `config.js`, calibração em `scripts/simular-bot.mjs` (`fisher.md` 3.11). |
 | **`src/engine/dificuldade.js`** | Dificuldade-alvo a partir do progresso do jogador e sorteio ponderado de cenários do baralho. |
 | **`src/engine/rng.js`** | Gerador pseudo-aleatório determinístico baseado no algoritmo `mulberry32` com estado serializável em 32-bits. |
 | **`src/engine/desempenho.js`** | Perfil de desempenho do jogador a partir do histórico: domínio e diagnóstico por conceito, pontos fortes, deficiências, equívocos recorrentes e calibração da certeza (`fisher.md` 4.6). |

@@ -64,6 +64,7 @@ Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `ESCOLHER_JUSTIFICATIVA`, `
 | `posicao` | 0–27 | Casa no tabuleiro. |
 | `distancia` | inteiro ≥ 0 | Casas percorridas no total, contando as voltas (soma dos dados). Define a dificuldade dos cenários sorteados. Ausente em saves antigos (vale `posicao`). |
 | `historico` | lista | Decisões tomadas: `{ cenario, conceito, metrica, justificativa, confianca, resultado, delta, equivocos }`. `conceito` e `equivocos` (ids dos equívocos da opção e da justificativa escolhidas) alimentam o perfil de desempenho (`fisher.md` 4.6); ausentes em saves antigos, são recalculados a partir do conteúdo. |
+| `bot` | `'facil'` \| `'medio'` \| `'dificil'` \| `null` | Perfil do rival controlado pelo computador (modo solo, `fisher.md` 3.11); `null` para uma pessoa. Ausente em saves antigos (vale pessoa). |
 | `papeis` | lista de ids de diretoria | Só no cooperativo; vazio no competitivo. |
 | `merito`, `habilidadeUsos` | inteiros | Reservados para o cooperativo; **ainda não usados** pelo motor. |
 
@@ -146,5 +147,6 @@ Como o save referencia ids do conteúdo, alterar o conteúdo também pode quebra
 | 1 (sem incremento) | Acrescentados `modo`, `empresa`, `papeis`, `merito`, `habilidadeUsos` para o modo cooperativo. | Compatível: save sem `modo` é competitivo |
 | 1 (sem incremento) | Acrescentado `jogadores[].distancia`; o sorteio de cenários passa a ser ponderado pela dificuldade. | Compatível: save sem `distancia` usa `posicao` |
 | 1 (sem incremento) | Acrescentados `conceito` e `equivocos` em `jogadores[].historico[]`, para o perfil de desempenho. | Compatível: entradas sem esses campos são completadas pelo conteúdo |
+| 1 (sem incremento) | Acrescentado `jogadores[].bot`, para o rival do modo solo. O modo solo grava `modo: 'competitivo'`. | Compatível: jogador sem `bot` é uma pessoa |
 
 Ao mudar o formato, acrescente uma linha aqui.
