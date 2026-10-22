@@ -41,6 +41,13 @@ export function desvioPadrao(v) {
   return Math.sqrt(soma(v.map((x) => (x - m) ** 2)) / (v.length - 1));
 }
 
+// Média depois de descartar a fração `prop` dos menores e dos maiores valores (5% de cada ponta por padrão).
+export function mediaAparada(v, prop = 0.05) {
+  const o = [...v].sort((a, b) => a - b);
+  const k = Math.floor(o.length * prop);
+  return media(o.slice(k, o.length - k));
+}
+
 export function resumo(v) {
   const min = Math.min(...v);
   const max = Math.max(...v);
@@ -57,6 +64,8 @@ export function resumo(v) {
     iqr: q3 - q1,
     amplitude: max - min,
     dp: desvioPadrao(v),
+    cv: desvioPadrao(v) / Math.abs(media(v)),
+    media_aparada: mediaAparada(v),
     maximo: max,
     minimo: min,
     ponto_medio: (min + max) / 2,

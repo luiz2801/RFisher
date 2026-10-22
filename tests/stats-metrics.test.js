@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mediana, moda, percentil, desvioPadrao, resumo } from '../src/stats/metrics.js';
+import { mediana, moda, percentil, desvioPadrao, mediaAparada, resumo } from '../src/stats/metrics.js';
 
 // Estes números são os que o aluno vê na tela: um erro aqui ensina estatística errada.
 
@@ -50,4 +50,13 @@ test('formatos cm e ms arredondam para inteiro com separador pt-BR', async () =>
   const { formatar } = await import('../src/stats/format.js');
   assert.equal(formatar('cm', 362.6), '363 cm');
   assert.equal(formatar('ms', 3736.4), '3.736 ms');
+});
+
+test('média aparada descarta 5% de cada ponta e o resumo traz CV e média aparada', () => {
+  const v = [0, 0, ...Array(16).fill(5), 10, 10];
+  assert.equal(mediaAparada(v, 0.1), 5);
+  assert.equal(mediaAparada([1, 2, 3]), 2, 'com poucos registros nada é descartado');
+  const r = resumo([2, 4, 4, 4, 5, 5, 7, 9]);
+  assert.ok(Math.abs(r.cv - r.dp / 5) < 1e-9);
+  assert.equal(r.media_aparada, 5);
 });

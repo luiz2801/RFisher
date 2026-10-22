@@ -301,7 +301,7 @@ test('o resultado confronta o valor informado com o correto, a margem e o passo 
 
 test('uma partida inteira com cenários de cálculo termina e é reproduzível com save a cada ação', () => {
   const jogar = (copiar) => {
-    let e = novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante' }], turnos: 10, seed: 2 });
+    let e = novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante' }], turnos: 10, seed: 1 });
     let viuValor = false;
     for (let i = 0; i < 3000 && e.fase !== 'FIM_DE_JOGO'; i++) {
       const def = e.cenarioAtual && obterCenario(e.cenarioAtual.id);

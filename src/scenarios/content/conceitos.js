@@ -11,4 +11,7 @@ export const CONCEITOS = {
   variabilidade_amostral: 'Variabilidade e tamanho da amostra',
   extremos: 'Máximo como restrição',
   media_para_total: 'Média para projetar totais',
+  cv: 'Coeficiente de variação (dispersão relativa)',
+  media_aparada: 'Média aparada (trimmed mean)',
+  paradoxo_simpson: 'Paradoxo de Simpson',
 };

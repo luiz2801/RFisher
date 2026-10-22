@@ -50,4 +50,16 @@ export const MATERIAIS = {
     revisar: 'Para projetar um total (receita, custo), multiplique a média pelo número de casos; a mediana ignora o peso dos valores altos.',
     links: [wiki('Valor esperado', 'Valor_esperado'), wiki('Média aritmética', 'Média_aritmética'), wiki('Assimetria', 'Assimetria_(estatística)')],
   },
+  cv: {
+    revisar: 'Compare a dispersão de séries em escalas diferentes dividindo o desvio padrão pela média: o desvio absoluto de quem fatura mais sempre parece maior.',
+    links: [wiki('Coeficiente de variação', 'Coeficiente_de_variação'), wiki('Desvio padrão', 'Desvio_padrão')],
+  },
+  media_aparada: {
+    revisar: 'Quando há extremos dos dois lados que não representam o grupo, descarte uma fração de cada ponta e calcule a média do restante.',
+    links: [wiki('Média aparada', 'Média_aparada'), wiki('Outlier', 'Outlier'), wiki('Média aritmética', 'Média_aritmética')],
+  },
+  paradoxo_simpson: {
+    revisar: 'Lembre que um total é uma média ponderada: se o peso dos grupos muda, o resultado geral pode cair mesmo com todos os grupos melhorando.',
+    links: [wiki('Paradoxo de Simpson', 'Paradoxo_de_Simpson'), wiki('Média ponderada', 'Média_ponderada')],
+  },
 };

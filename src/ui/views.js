@@ -409,9 +409,26 @@ function tabelaDados(def, c) {
     <thead><tr>${cabecalho}</tr></thead><tbody>${linhas}</tbody></table>${botaoCopiar}`;
 }
 
+// Cenário de segmentos (paradoxo_simpson): em vez de histograma, tabela com a taxa de cada segmento antes e depois.
+// As visitas, que explicam a inversão, só aparecem no resultado.
+function tabelaSegmentos(c, revelar) {
+  const [antes, depois, visAntes, visDepois] = c.series.map((s) => s.valores);
+  const pct = (v) => formatar('porcento', v);
+  const milhar = (v) => new Intl.NumberFormat('pt-BR').format(v);
+  const linhas = ['Desktop', 'Mobile', 'Geral']
+    .map((nome, i) => `<tr><th scope="row">${nome}</th><td>${pct(antes[i])}</td><td>${pct(depois[i])}</td>${revelar && i < 2 ? `<td>${milhar(visAntes[i])}</td><td>${milhar(visDepois[i])}</td>` : revelar ? '<td>' + milhar(visAntes[0] + visAntes[1]) + '</td><td>' + milhar(visDepois[0] + visDepois[1]) + '</td>' : ''}</tr>`)
+    .join('');
+  const extra = revelar ? '<th scope="col">Visitas antes</th><th scope="col">Visitas depois</th>' : '';
+  return `<table class="tabela-dados"><caption>Taxa de conversão por dispositivo</caption>
+    <thead><tr><th scope="col">Dispositivo</th><th scope="col">Antes</th><th scope="col">Depois</th>${extra}</tr></thead><tbody>${linhas}</tbody></table>`;
+}
+
       function blocoCenario(e, marcadoresRevelacao) {
   const c = e.cenarioAtual;
       const def = obterCenario(c.id);
+      if (def.dados.tipo_grafico === 'segmentos') {
+        return { def, html: `<h2>${esc(def.titulo)}</h2><p class="contexto">${esc(preencher(def.contexto, c.vars))}</p>${tabelaSegmentos(c, marcadoresRevelacao !== undefined)}` };
+      }
       const discreto = def.dados.tipo_grafico === 'barras_discretas';
       const dominio = calcularDominio(c.series, discreto);
       const mostraGrafico = !ehCalculo(def) || def.dados.exibir.includes('grafico');

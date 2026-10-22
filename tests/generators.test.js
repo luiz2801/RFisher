@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { criarRng } from '../src/engine/rng.js';
 import { todosCenarios } from '../src/scenarios/loader.js';
 import { gerar, verificarInvariante } from '../src/scenarios/generators.js';
-import { media, mediana, moda, percentil, desvioPadrao } from '../src/stats/metrics.js';
+import { media, mediaAparada, mediana, moda, percentil, desvioPadrao } from '../src/stats/metrics.js';
 
 test('métricas básicas', () => {
   assert.equal(media([1, 2, 3, 4]), 2.5);
@@ -190,5 +190,35 @@ test('cenário 18: o desvio padrão é inflado pela execução travada e o IQR n
     const iqr = percentil(v, 75) - percentil(v, 25);
     assert.ok(desvioPadrao(v) > 3 * iqr);
     assert.ok(iqr > 0 && iqr < 12, 'o IQR reflete só os valores do meio');
+  }
+});
+
+test('cenário 19: o CV mostra a filial grande como a mais estável, ao contrário do desvio padrão', () => {
+  const g = geradorDe('cenario_19_variabilidade_relativa');
+  for (let seed = 1; seed <= 200; seed++) {
+    const [a, b] = gerar(g, criarRng(seed)).series.map((s) => s.valores);
+    assert.ok(desvioPadrao(b) > 4 * desvioPadrao(a), 'o desvio absoluto de B é bem maior');
+    assert.ok(desvioPadrao(b) / media(b) < desvioPadrao(a) / media(a), 'mas o CV de B é menor');
+  }
+});
+
+test('cenário 20: as notas 0 e 10 são extremos e a média aparada volta ao centro do sino', () => {
+  const g = geradorDe('cenario_20_media_aparada');
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.equal(v.length, 100);
+    assert.equal(v.filter((x) => x === 0).length, 3);
+    assert.equal(v.filter((x) => x === 10).length, 5);
+    assert.ok(Math.abs(mediaAparada(v) - 7.5) < 0.24);
+  }
+});
+
+test('cenário 21: as taxas sobem nos dois segmentos e a geral cai porque o tráfego migra para o Mobile', () => {
+  const g = geradorDe('cenario_21_paradoxo_simpson');
+  for (let seed = 1; seed <= 200; seed++) {
+    const [antes, depois, visAntes, visDepois] = gerar(g, criarRng(seed)).series.map((s) => s.valores);
+    assert.deepEqual(antes, [6, 2, 4]);
+    assert.deepEqual(depois, [7, 2.5, 3]);
+    assert.ok(visDepois[1] / (visDepois[0] + visDepois[1]) > visAntes[1] / (visAntes[0] + visAntes[1]));
   }
 });

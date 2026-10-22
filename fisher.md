@@ -238,11 +238,15 @@ A variância é alta: em 10 turnos cada jogador decide cerca de 6 vezes, e a dif
 | 16 | Chamados de suporte por cliente (**cálculo**) | Contagens com cauda à direita, tabela de frequências | **Média** | Calcular a média de uma tabela de frequências para projetar um total |
 | 17 | Regularidade da embaladora (**cálculo**) | 8 tempos de ciclo | **Desvio padrão** | Calcular o desvio padrão amostral e distingui-lo da amplitude |
 | 18 | Estabilidade da carga noturna (**cálculo**) | Dispersão com uma execução travada, 11 registros | **Amplitude interquartil (IQR)** | Calcular quartis e perceber que o IQR resiste ao outlier |
+| 19 | Comparando o risco de duas filiais | Duas filiais de portes muito diferentes | **Coeficiente de variação (CV = dp / média)** | Comparar desvios padrões brutos de escalas diferentes |
+| 20 | Nota de clima e outliers comportamentais | Sino simétrico com notas 0 e 10 sem critério | **Média aparada** (5% de cada ponta) | Usar a média simples, ou a mediana, quando só as pontas devem ser descartadas |
+| 21 | O mistério da taxa de conversão | Taxas que sobem em cada dispositivo e caem no geral | **Paradoxo de Simpson** (mudança no peso dos grupos) | Esquecer que o total é uma média ponderada e desconfiar do painel |
+
+O cenário 21 usa o gerador `paradoxo_simpson`: as taxas são fixas (Desktop 6% → 7%, Mobile 2% → 2,5%, geral 4% → 3%) e o sorteio muda só o volume de visitas, com o Mobile indo de 50% para 8/9 do tráfego. A tela mostra a tabela de taxas (`tipo_grafico: 'segmentos'`); as visitas, que explicam a inversão, só aparecem no resultado. Decisão de projeto: os números das taxas estão escritos no texto do cenário (são constantes do gerador, não sorteio). No cenário 20 a média simples quase não se afasta da aparada (as pontas são quase simétricas); o que o cenário avalia é reconhecer a técnica que descarta as pontas. As métricas `cv` (dp / |média|) e `media_aparada` (5% de cada ponta) entram no resumo dos dados e valem como placeholders e marcadores.
 
 ### 4.2 Cenários candidatos (nível avançado e eventos)
 
 - Correlação vs. causalidade
-- Paradoxo de Simpson
 - Viés de sobrevivência
 - Tamanho de amostra pequeno
 - Eixo truncado em gráfico enganoso

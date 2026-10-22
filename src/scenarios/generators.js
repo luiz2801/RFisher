@@ -1,4 +1,4 @@
-import { media, mediana, moda, percentil, desvioPadrao, contagens } from '../stats/metrics.js';
+import { soma, media, mediaAparada, mediana, moda, percentil, desvioPadrao, contagens } from '../stats/metrics.js';
 
 // Cada gerador devolve { series: [{ nome, valores }] } e tem um invariante:
 // se o sorteio não preservar a resposta correta, `gerar` sorteia de novo.
@@ -136,16 +136,19 @@ const GERADORES = {
     },
   },
 
+  // Sino simétrico. Com `outliers` ([{valor, qtd}], opcional), acrescenta nas pontas valores sem critério
+  // (notas 0 e 10 dadas sem ler a pergunta); a média aparada os descarta e volta ao centro do sino.
   distribuicao_normal_simetrica: {
     gerar(p, rng) {
-      return {
-        series: [{ nome: 'Pesagem', valores: padronizado(p.n, p.media, p.dp, rng, 1) }],
-      };
+      const extras = (p.outliers ?? []).flatMap((o) => Array(o.qtd).fill(o.valor));
+      const base = padronizado(p.n - extras.length, p.media, p.dp, rng, 1);
+      return { series: [{ nome: p.outliers ? 'Notas' : 'Pesagem', valores: extras.length ? rng.embaralhar([...base, ...extras]) : base }] };
     },
-    invariante([v]) {
-      const m = media(v);
-      const med = mediana(v);
-      return Math.abs(m - med) < 0.6 && Math.abs(m - 500) < 0.8;
+    invariante([v], p) {
+      if (!p.outliers) return Math.abs(media(v) - mediana(v)) < 0.15 * p.dp && Math.abs(media(v) - p.media) < 0.2 * p.dp;
+      const [piso, teto] = [Math.min(...p.outliers.map((o) => o.valor)), Math.max(...p.outliers.map((o) => o.valor))];
+      const miolo = v.filter((x) => x > piso && x < teto);
+      return v.length - miolo.length === p.outliers.reduce((s, o) => s + o.qtd, 0) && Math.abs(mediaAparada(v) - p.media) < 0.2 * p.dp;
     },
   },
 
@@ -232,6 +235,34 @@ const GERADORES = {
     invariante([v]) {
       const m = media(v);
       return m - mediana(v) >= 0.2 && Math.abs(m - moda(v)) >= 0.5 && percentil(v, 90) > 1.5 * m;
+    },
+  },
+
+  // Paradoxo de Simpson: a conversão sobe no Desktop (6% → 7%) e no Mobile (2% → 2,5%), mas a geral cai
+  // (4% → 3%) porque o tráfego migra para o Mobile (50% → 8/9 das visitas). As taxas são fixas; o sorteio muda
+  // só o volume de visitas. Séries: taxas antes e depois (Desktop, Mobile, Geral, em %) e visitas (Desktop, Mobile).
+  paradoxo_simpson: {
+    gerar(p, rng) {
+      const metade = rng.inteiro(p.metadeAntesMin, p.metadeAntesMax) * 1000;
+      const nono = rng.inteiro(p.nonoDepoisMin, p.nonoDepoisMax) * 1000;
+      const antes = [metade, metade];
+      const depois = [nono, 8 * nono];
+      const conv = (visitas, taxas) => visitas.map((vis, i) => vis * taxas[i] / 100);
+      const taxa = (visitas, taxas) => casas((100 * soma(conv(visitas, taxas))) / soma(visitas), 1);
+      return {
+        series: [
+          { nome: 'Conversão antes (%)', valores: [...p.taxasAntes, taxa(antes, p.taxasAntes)] },
+          { nome: 'Conversão depois (%)', valores: [...p.taxasDepois, taxa(depois, p.taxasDepois)] },
+          { nome: 'Visitas antes', valores: antes },
+          { nome: 'Visitas depois', valores: depois },
+        ],
+      };
+    },
+    invariante([antes, depois, visAntes, visDepois]) {
+      const sobe = depois[0] > antes[0] && depois[1] > antes[1];
+      const geralCai = depois[2] < antes[2];
+      const migrou = visDepois[1] / soma(visDepois) > visAntes[1] / soma(visAntes);
+      return sobe && geralCai && migrou && antes[1] < antes[0] && depois[1] < depois[0];
     },
   },
 };

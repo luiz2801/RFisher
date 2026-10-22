@@ -2410,6 +2410,28 @@
         "texto": "O desvio padrão da Filial B é muito maior simplesmente porque ela fatura muito mais, não necessariamente por ser mais arriscada.",
         "tipo": "erro_conceitual",
         "equivoco": "ignora_escala"
+      },
+      {
+        "id": "j3",
+        "texto": "Comparar os desvios padrões já resolve, porque o maior desvio indica sempre a filial mais arriscada.",
+        "tipo": "erro_conceitual",
+        "equivoco": "ignora_escala"
+      },
+      {
+        "id": "j4",
+        "texto": "Dividir o desvio padrão pela média ajuda, mas só vale se as duas filiais tiverem o mesmo número de meses.",
+        "tipo": "parcial"
+      },
+      {
+        "id": "j5",
+        "texto": "A Filial B tem mais funcionários e, por isso, mais estoque parado no fim do mês.",
+        "tipo": "irrelevante"
+      },
+      {
+        "id": "j6",
+        "texto": "Duas filiais com médias diferentes nunca podem ser comparadas em dispersão.",
+        "tipo": "afirmacao_falsa",
+        "equivoco": "confunde_dispersao"
       }
     ],
     "feedback": {
@@ -2423,9 +2445,8 @@
       "revelacao": {
         "marcadores": [
           {
-            "chave": "cv",
-            "rotulo": "CV",
-            "correto": true
+            "chave": "media",
+            "rotulo": "Média"
           }
         ]
       }
@@ -2495,6 +2516,12 @@
         "texto": "Moda",
         "correta": false,
         "equivoco": "moda_inadequada"
+      },
+      {
+        "id": "ponto_medio",
+        "texto": "Ponto médio (média entre a menor e a maior nota)",
+        "correta": false,
+        "equivoco": "ponto_medio_extremos"
       }
     ],
     "justificativas": [
@@ -2508,13 +2535,36 @@
         "texto": "A média simples vai incorporar as notas cegas de 10 e os trolls de 0, distorcendo o resultado do bônus.",
         "tipo": "erro_conceitual",
         "equivoco": "sensivel_a_extremos"
+      },
+      {
+        "id": "j3",
+        "texto": "A mediana é sempre igual à média aparada, então tanto faz qual das duas usar.",
+        "tipo": "afirmacao_falsa",
+        "equivoco": "perde_informacao"
+      },
+      {
+        "id": "j4",
+        "texto": "Cortar só os valores mais baixos já basta, pois as notas 10 dadas sem critério não distorcem o bônus.",
+        "tipo": "parcial"
+      },
+      {
+        "id": "j5",
+        "texto": "Funcionários que respondem rápido costumam gostar mais do gestor.",
+        "tipo": "irrelevante"
+      },
+      {
+        "id": "j6",
+        "texto": "A moda é melhor porque a nota mais votada representa a equipe inteira.",
+        "tipo": "erro_conceitual",
+        "equivoco": "moda_inadequada"
       }
     ],
     "feedback": {
       "por_equivoco": {
         "sensivel_a_extremos": "A média simples inclui as avaliações sem critério, puxando o resultado de forma injusta.",
         "perde_informacao": "Embora a mediana anule os extremos, ela foca em uma única pessoa (a do meio), ignorando a distribuição e pequenas nuances das notas autênticas.",
-        "moda_inadequada": "A moda pega apenas a nota mais votada, mas em escalas contínuas (ex: 7.2), raramente reflete a equipe toda."
+        "moda_inadequada": "A moda pega apenas a nota mais votada, mas em escalas contínuas (ex: 7.2), raramente reflete a equipe toda.",
+        "ponto_medio_extremos": "O ponto médio usa justamente as duas notas mais extremas (o 0 e o 10), então é a métrica mais contaminada pelo comportamento que você quer anular."
       },
       "explicacao_correta": "A Média Aparada resolve o problema eliminando deliberadamente uma fração das pontas (ex: 5% de cada lado) e tirando a média do resto, retendo a vantagem matemática da média sem o ruído dos extremos.",
       "revelacao": {
@@ -2546,14 +2596,27 @@
     "valor_base": 20000,
     "dados": {
       "gerador": {
-        "tipo": "matriz_confusao",
-        "parametros": {}
+        "tipo": "paradoxo_simpson",
+        "parametros": {
+          "taxasAntes": [
+            6,
+            2
+          ],
+          "taxasDepois": [
+            7,
+            2.5
+          ],
+          "metadeAntesMin": 20,
+          "metadeAntesMax": 30,
+          "nonoDepoisMin": 5,
+          "nonoDepoisMax": 7
+        }
       },
       "formato": "porcento",
       "rotulo_x": "Dispositivo",
       "rotulo_y": "Taxa de Conversão (%)",
-      "tipo_grafico": "barras_agrupadas",
-      "descricao_acessivel": "Gráfico de barras mostrando aumento no Mobile e no Desktop, mas ao lado a barra de Conversão Geral diminui."
+      "tipo_grafico": "segmentos",
+      "descricao_acessivel": "Tabela com a taxa de conversão de Desktop, Mobile e geral, antes e depois: Desktop e Mobile sobem, a taxa geral cai."
     },
     "opcoes": [
       {
@@ -2578,6 +2641,12 @@
         "texto": "A conversão foi puxada para baixo por outliers",
         "correta": false,
         "equivoco": "taxa_nao_tem_outlier"
+      },
+      {
+        "id": "amostra_pequena",
+        "texto": "Ruído de amostra pequena, sem significado",
+        "correta": false,
+        "equivoco": "ruido_amostral"
       }
     ],
     "justificativas": [
@@ -2591,23 +2660,40 @@
         "texto": "Painéis de BI apenas agregam a matemática; não é um erro, é uma falha de interpretação da média ponderada.",
         "tipo": "erro_conceitual",
         "equivoco": "desconfia_ferramenta"
+      },
+      {
+        "id": "j3",
+        "texto": "Se todos os segmentos subiram, a média geral também precisa subir; portanto o painel tem erro.",
+        "tipo": "erro_conceitual",
+        "equivoco": "desconfia_ferramenta"
+      },
+      {
+        "id": "j4",
+        "texto": "A queda geral aparece porque o Mobile tem taxa menor, mas isso por si só não explica a inversão.",
+        "tipo": "parcial"
+      },
+      {
+        "id": "j5",
+        "texto": "O Desktop converte mais porque as telas maiores são mais bonitas.",
+        "tipo": "irrelevante"
+      },
+      {
+        "id": "j6",
+        "texto": "A taxa geral é sempre a média simples das taxas dos segmentos.",
+        "tipo": "afirmacao_falsa",
+        "equivoco": "nao_explica_matematica"
       }
     ],
     "feedback": {
       "por_equivoco": {
         "desconfia_ferramenta": "O BI está correto. Isso é um efeito matemático real das médias ponderadas chamado Paradoxo de Simpson.",
         "nao_explica_matematica": "A sazonalidade pode explicar o volume, mas não explica como a matemática faz a soma dos grupos ir contra os grupos isolados.",
-        "taxa_nao_tem_outlier": "Taxas de conversão agregadas não sofrem de 'outliers' numéricos do mesmo jeito que variáveis contínuas como salários."
+        "taxa_nao_tem_outlier": "Taxas de conversão agregadas não sofrem de 'outliers' numéricos do mesmo jeito que variáveis contínuas como salários.",
+        "ruido_amostral": "O período tem dezenas de milhares de visitas; a queda geral tem explicação exata na ponderação dos segmentos, não no acaso."
       },
       "explicacao_correta": "Este é o clássico Paradoxo de Simpson! A conversão geral é uma média ponderada. Se o tráfego em massa migrou do Desktop (alta conversão) para o Mobile (baixa conversão), a média geral cai, mesmo que ambos tenham melhorado isoladamente.",
       "revelacao": {
-        "marcadores": [
-          {
-            "chave": "paradoxo_simpson",
-            "rotulo": "Peso da Amostra",
-            "correto": true
-          }
-        ]
+        "marcadores": []
       }
     },
     "impacto": {
