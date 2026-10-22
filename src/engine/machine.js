@@ -3,10 +3,11 @@ import { CASAS, avancar } from './board.js';
 import {
   CUSTOS_BALANCO, MULTA_CRISE, REPUTACAO_POS_CRISE, META_CRESCIMENTO_POR_JOGADOR, BONUS_INVESTIDOR,
   BONUS_INVESTIDOR_REPUTACAO, CORTE_ORCAMENTO, CORTE_ORCAMENTO_REPUTACAO, REDUCAO_PREJUIZO_PASSIVA,
-  REPUTACAO_BALANCO_RH, DINHEIRO_INICIAL,
+  REPUTACAO_BALANCO_RH, DINHEIRO_INICIAL, PERFIS_BOT,
 } from './config.js';
 import { resolverDecisao, receitaBalanco, justificativaConta, CONFIANCA } from './scoring.js';
-import { jogadorAtual, carteira, ehCooperativo, distanciaPercorrida, progressoDoJogador } from './state.js';
+import { jogadorAtual, carteira, ehCooperativo, ehBot, distanciaPercorrida, progressoDoJogador } from './state.js';
+import { decidirBot } from './bot.js';
 import { escolherPorDificuldade } from './dificuldade.js';
 import { equivocosDaEscolha } from './desempenho.js';
 import { diretoriaDoSetor } from './papeis.js';
@@ -118,10 +119,23 @@ const TRANSICOES = {
 
   ESCOLHER_METRICA: {
     METRICA(e, { valor }) {
+      if (ehBot(jogadorAtual(e))) return e;
       if (!obterCenario(e.cenarioAtual.id).opcoes.some((o) => o.id === valor)) return e;
       e.cenarioAtual.metricaId = valor;
       e.fase = 'ESCOLHER_JUSTIFICATIVA';
       return e;
+    },
+    // Vez do rival do modo solo: as três escolhas de uma vez, com o rng da partida.
+    DECIDIR_BOT(e) {
+      const j = jogadorAtual(e);
+      if (!ehBot(j)) return e;
+      const rng = criarRng(e.rng);
+      const escolha = decidirBot(obterCenario(e.cenarioAtual.id), PERFIS_BOT[j.bot], rng);
+      e.rng = rng.estado;
+      e.cenarioAtual.metricaId = escolha.metrica;
+      e.cenarioAtual.justificativaId = escolha.justificativa;
+      e.cenarioAtual.confianca = escolha.confianca;
+      return resolverEscolhas(e);
     },
   },
 
@@ -140,57 +154,61 @@ const TRANSICOES = {
   ESCOLHER_CONFIANCA: {
     CONFIANCA(e, { valor }) {
       if (!Object.hasOwn(CONFIANCA, valor)) return e;
-      const c = e.cenarioAtual;
-      c.confianca = valor;
-
-      const def = obterCenario(c.id);
-      const just = def.justificativas.find((x) => x.id === c.justificativaId);
-      if (!just) return e;
-
-      const j = jogadorAtual(e);
-      const w = carteira(e);
-      const metrica = def.opcoes.find((o) => o.id === c.metricaId);
-      const r = resolverDecisao({
-        nivel: j.nivel,
-        reputacao: w.reputacao,
-        valorBase: def.valor_base,
-        metricaCorreta: metrica.correta,
-        justificativaCorreta: justificativaConta(just.tipo),
-        confianca: valor,
-        impacto: def.impacto,
-      });
-      w.dinheiro += r.delta;
-      const crise = mudarReputacao(w, r.deltaReputacao);
-
-      e.resultado = {
-        cenarioId: def.id,
-        metricaId: metrica.id,
-        justificativaId: just.id,
-        confianca: valor,
-        metricaCorreta: metrica.correta,
-        justificativaCorreta: just.tipo === 'correta',
-        categoria: r.categoria,
-        delta: r.delta,
-        multiplicador: r.multiplicador,
-        deltaReputacao: r.deltaReputacao,
-        crise,
-      };
-      // Base do perfil de desempenho do fim de jogo (src/engine/desempenho.js).
-      j.historico.push({
-        cenario: def.id,
-        conceito: def.conceito,
-        metrica: metrica.id,
-        justificativa: just.id,
-        confianca: valor,
-        resultado: r.categoria,
-        delta: r.delta,
-        equivocos: equivocosDaEscolha(metrica, just),
-      });
-      e.fase = 'MOSTRAR_RESULTADO';
-      return e;
+      e.cenarioAtual.confianca = valor;
+      return resolverEscolhas(e);
     },
   },
 };
+
+// Pontua a decisão com as escolhas já gravadas em `cenarioAtual` (por uma pessoa ou pelo bot).
+function resolverEscolhas(e) {
+  const c = e.cenarioAtual;
+  const def = obterCenario(c.id);
+  const just = def.justificativas.find((x) => x.id === c.justificativaId);
+  if (!just) return e;
+
+  const j = jogadorAtual(e);
+  const w = carteira(e);
+  const metrica = def.opcoes.find((o) => o.id === c.metricaId);
+  const r = resolverDecisao({
+    nivel: j.nivel,
+    reputacao: w.reputacao,
+    valorBase: def.valor_base,
+    metricaCorreta: metrica.correta,
+    justificativaCorreta: justificativaConta(just.tipo),
+    confianca: c.confianca,
+    impacto: def.impacto,
+  });
+  w.dinheiro += r.delta;
+  const crise = mudarReputacao(w, r.deltaReputacao);
+
+  e.resultado = {
+    cenarioId: def.id,
+    metricaId: metrica.id,
+    justificativaId: just.id,
+    confianca: c.confianca,
+    metricaCorreta: metrica.correta,
+    justificativaCorreta: just.tipo === 'correta',
+    categoria: r.categoria,
+    delta: r.delta,
+    multiplicador: r.multiplicador,
+    deltaReputacao: r.deltaReputacao,
+    crise,
+  };
+  // Base do perfil de desempenho do fim de jogo (src/engine/desempenho.js).
+  j.historico.push({
+    cenario: def.id,
+    conceito: def.conceito,
+    metrica: metrica.id,
+    justificativa: just.id,
+    confianca: c.confianca,
+    resultado: r.categoria,
+    delta: r.delta,
+    equivocos: equivocosDaEscolha(metrica, just),
+  });
+  e.fase = 'MOSTRAR_RESULTADO';
+  return e;
+}
 
 function continuar(e) {
   e.cenarioAtual = null;

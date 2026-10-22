@@ -70,7 +70,7 @@ const cenarioNN = {
 | --- | --- |
 | `id` | Único entre todos os cenários. |
 | `setor` | Obrigatório e válido (ver [Setores](#setores)). No modo cooperativo define quem é o responsável pela decisão. |
-| `conceito` | Obrigatório, id de `CONCEITOS` em [src/scenarios/content/conceitos.js](../src/scenarios/content/conceitos.js). Diz o que o cenário avalia; o perfil de desempenho do fim de jogo agrega erros e acertos por conceito (`fisher.md` 4.6). Reutilize um conceito existente se o cenário treina a mesma ideia; para um novo, acrescente id e nome ao catálogo. |
+| `conceito` | Obrigatório, id de `CONCEITOS` em [src/scenarios/content/conceitos.js](../src/scenarios/content/conceitos.js). Diz o que o cenário avalia; o perfil de desempenho do fim de jogo agrega erros e acertos por conceito (`fisher.md` 4.6). Reutilize um conceito existente se o cenário treina a mesma ideia; para um novo, acrescente id e nome ao catálogo e, em [src/scenarios/content/materiais.js](../src/scenarios/content/materiais.js), o que revisar e os links de estudo sugeridos no relatório de fim de jogo (um teste exige materiais para todo conceito). |
 | `dificuldade` | Obrigatório, inteiro de 1 a 3 (`DIFICULDADE_MAX`). Ver [Dificuldade](#dificuldade). |
 | `contexto` | Narrativa e pergunta. Pode usar placeholders. |
 | `dica` | Opcional. Aparece só para jogadores de nível iniciante. |

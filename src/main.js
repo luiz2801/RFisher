@@ -1,8 +1,8 @@
-import { novoJogo } from './engine/state.js';
+import { novoJogo, jogadorAtual, ehBot } from './engine/state.js';
 import { reduzir } from './engine/machine.js';
 import { salvar, carregar, limpar } from './storage/persist.js';
 import { viewMenu, viewJogo } from './ui/views.js';
-import { MAX_JOGADORES } from './engine/config.js';
+import { MAX_JOGADORES, PERFIS_BOT } from './engine/config.js';
 import { NUM_CASAS, coordenadas } from './engine/board.js';
 import { dadoHtml } from './ui/components/dado.js';
 
@@ -17,6 +17,8 @@ function render({ focar = false } = {}) {
 
 function aplicarEstado(novo) {
   estado = novo;
+  // O rival decide assim que cai numa casa de Decisão; a pessoa vê direto o resultado dele.
+  if (estado.fase === 'ESCOLHER_METRICA' && ehBot(jogadorAtual(estado))) estado = reduzir(estado, { tipo: 'DECIDIR_BOT' });
   if (estado.fase === 'FIM_DE_JOGO') limpar();
   else salvar(estado);
   render({ focar: true });
@@ -31,11 +33,17 @@ function despachar(acao) {
 
 function iniciar(form) {
   const dados = new FormData(form);
-  const n = Math.min(MAX_JOGADORES, Math.max(1, Number(dados.get('n'))));
+  const solo = dados.get('modo') === 'solo';
+  const n = solo ? 1 : Math.min(MAX_JOGADORES, Math.max(1, Number(dados.get('n'))));
   const jogadores = Array.from({ length: n }, (_, i) => ({
     nome: String(dados.get(`nome_${i}`)).trim() || `Jogador ${i + 1}`,
     nivel: dados.get(`nivel_${i}`) === 'avancado' ? 'avancado' : 'iniciante',
   }));
+  // Solo é o competitivo contra um rival do computador, no mesmo nível da pessoa (mesmo valor das casas).
+  if (solo) {
+    const perfil = Object.hasOwn(PERFIS_BOT, dados.get('bot')) ? dados.get('bot') : 'medio';
+    jogadores.push({ nome: `Rival ${PERFIS_BOT[perfil].nome}`, nivel: jogadores[0].nivel, bot: perfil });
+  }
   const seedTexto = String(dados.get('seed')).trim();
   estado = novoJogo({
     jogadores,
@@ -152,6 +160,8 @@ app.addEventListener('click', (ev) => {
     botao.setAttribute('aria-expanded', 'true');
     form.scrollIntoView({ behavior: 'smooth', block: 'start' });
     form.querySelector('input')?.focus({ preventScroll: true });
+  } else if (acao === 'IMPRIMIR') {
+    window.print();
   } else if (acao === 'CONTINUAR_SALVA') {
     estado = carregar();
     render({ focar: true });
@@ -166,9 +176,14 @@ app.addEventListener('submit', (ev) => {
   iniciar(ev.target);
 });
 
+// No solo só a pessoa preenche o cadastro; o número de CEOs dá lugar à escolha do rival.
 app.addEventListener('change', (ev) => {
-  if (ev.target.name !== 'n') return;
-  const n = Number(ev.target.value);
+  if (ev.target.name !== 'n' && ev.target.name !== 'modo') return;
+  const form = ev.target.form;
+  const solo = form.elements.modo.value === 'solo';
+  const n = solo ? 1 : Number(form.elements.n.value);
+  form.querySelector('[data-campo="n"]').hidden = solo;
+  form.querySelector('[data-campo="bot"]').hidden = !solo;
   app.querySelectorAll('fieldset[data-jogador]').forEach((f) => {
     f.hidden = Number(f.dataset.jogador) >= n;
   });

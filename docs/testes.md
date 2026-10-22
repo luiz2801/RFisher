@@ -36,7 +36,7 @@ Funções puras do motor, testadas com valores calculados à mão a partir de `f
 - **Papéis** (`papeis.js`): `atribuirPapeis` para 1, 2 e 3 jogadores cobre as três diretorias sem repetição; todo setor de `SETORES` pertence a exatamente uma diretoria; `diretoriaDoSetor` para setor inexistente.
 - **Estado inicial** (`state.js`): `novoJogo` nos dois modos (empresa só no cooperativo, papéis só no cooperativo); `classificacao` e `vencedores` com empate de dinheiro e de reputação; `classificarEmpresa` em cada limite de faixa (exatamente 175 %, 125 %, 50 % do caixa inicial e reputação 75, 60).
 
-- **Perfil de desempenho** (`desempenho.js`): escala de certeza, evidência de domínio, os quatro diagnósticos, calibração, ordenação de pontos fortes e deficiências, equívocos pesados pela certeza, histórico antigo sem `conceito`, e o histórico gravado pela máquina numa partida inteira.
+- **Perfil de desempenho** (`desempenho.js`): escala de certeza, evidência de domínio, os quatro diagnósticos, calibração, ordenação de pontos fortes e deficiências, equívocos pesados pela certeza, histórico antigo sem `conceito`, o histórico gravado pela máquina numa partida inteira, e o relatório de fim de jogo (contagem de acertos, parciais e erros, ordem das sugestões, conceitos não vistos, partida sem decisões e materiais para todo conceito).
 
 **Situação:** `tests/scoring.test.js` cobre pontuação, multiplicador e anti-chute. `tests/desempenho.test.js` cobre o perfil de desempenho. Faltam `board.js`, `papeis.js`, `state.js` (empates, `classificarEmpresa` nos limites) e `receitaBalanco`.
 
@@ -114,6 +114,7 @@ Valida que o jogo premia conhecimento e não sorte (`fisher.md` 5.8 e 3.5).
 - Quem chuta termina com menos dinheiro que quem sabe tudo (já existe).
 - O dado não decide a partida (já existe).
 - Esperança do chute total ≈ −0,27 × V × confiança (já existe, em `scoring.test.js`).
+- Rival do modo solo (já existe, em `bot.test.js`): acerto empírico igual ao do perfil, confiança crescente com o perfil, partida reproduzível com save, taxa de vitória da referência decrescente do fácil ao difícil, chutador perde do fácil. A calibração em si fica em `scripts/simular-bot.mjs`, por ser lenta.
 - Jogador que acerta 70 % fica entre os dois (o `fisher.md` pede os três perfis; hoje só há dois).
 - Nos dois níveis (`iniciante`, `avancado`) e com 1, 2 e 3 jogadores.
 - Cooperativo: equipe que sabe tudo chega a faixa superior; equipe que chuta chega a `falencia` ou `sobrevivencia`; nenhuma faixa é inalcançável. A calibração das constantes de `config.js` é marcada como "a calibrar" e deve ser acompanhada por um teste de relatório, não de aprovação rígida.

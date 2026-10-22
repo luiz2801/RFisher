@@ -6,8 +6,9 @@ import { obterCenario, todosCenarios, validarCenario } from '../src/scenarios/lo
 import { CONCEITOS } from '../src/scenarios/content/conceitos.js';
 import { criarRng } from '../src/engine/rng.js';
 import {
-  certeza, evidencia, diagnosticar, calibrar, perfilDesempenho, equivocosDaEscolha,
+  certeza, evidencia, diagnosticar, calibrar, perfilDesempenho, equivocosDaEscolha, relatorioDesempenho,
 } from '../src/engine/desempenho.js';
+import { MATERIAIS } from '../src/scenarios/content/materiais.js';
 
 const h = (cenario, resultado, confianca, extra = {}) => ({ cenario, resultado, confianca, metrica: 'x', justificativa: 'y', delta: 0, ...extra });
 
@@ -122,4 +123,56 @@ test('a partida grava conceito e equívocos no histórico de cada decisão', () 
   const perfil = perfilDesempenho(e.jogadores[0]);
   assert.ok(perfil.deficiencias.length > 0 && perfil.pontosFortes.length === 0);
   assert.ok(perfil.deficiencias.every((c) => c.diagnostico === 'equivoco'));
+});
+
+test('relatório conta acertos, parciais e erros, e métricas e justificativas certas', () => {
+  const r = relatorioDesempenho({
+    historico: [
+      h('cenario_01_salarios', 'sucesso', 'certeza'),
+      h('cenario_02_sla', 'sorte', 'provavel'),
+      h('cenario_03_estoque', 'incoerencia', 'duvida'),
+      h('cenario_04_pecas', 'erro_total', 'certeza'),
+      h('cenario_07_envase', 'erro_total', 'chute'),
+    ],
+  });
+  assert.deepEqual(
+    [r.decisoes, r.acertos, r.parciais, r.erros, r.metricasCertas, r.justificativasCertas],
+    [5, 1, 2, 2, 2, 2],
+  );
+  assert.deepEqual(r.maisDomina.map((c) => c.id), ['mediana']);
+  // Errar com certeza pesa mais que errar no chute; acertos parciais (domínio 0) vêm depois, o mais convicto primeiro.
+  assert.deepEqual(r.menosDomina.map((c) => c.id), ['desvio_padrao', 'media', 'percentil']);
+});
+
+test('relatório sugere materiais das deficiências, depois do conhecimento inseguro', () => {
+  const r = relatorioDesempenho({
+    historico: [
+      h('cenario_01_salarios', 'sucesso', 'certeza'),
+      h('cenario_03_estoque', 'sucesso', 'chute'),
+      h('cenario_04_pecas', 'erro_total', 'certeza'),
+    ],
+  });
+  assert.deepEqual(r.sugestoes.map((s) => [s.conceito, s.motivo]), [['desvio_padrao', 'equivoco'], ['moda', 'inseguro']]);
+  for (const s of r.sugestoes) assert.ok(s.revisar && s.links.length > 0, s.conceito);
+});
+
+test('sem deficiências, o relatório sugere conceitos que a partida não cobrou', () => {
+  const r = relatorioDesempenho({ historico: [h('cenario_01_salarios', 'sucesso', 'certeza')] });
+  assert.equal(r.menosDomina.length, 0);
+  assert.ok(r.sugestoes.length > 0);
+  assert.ok(r.sugestoes.every((s) => s.motivo === 'nao_visto' && s.conceito !== 'mediana'));
+});
+
+test('relatório de quem não tomou nenhuma decisão fica vazio, sem quebrar', () => {
+  const r = relatorioDesempenho({ historico: [] });
+  assert.deepEqual([r.decisoes, r.acertos, r.erros, r.maisDomina.length, r.menosDomina.length], [0, 0, 0, 0, 0]);
+  assert.ok(r.materialGeral.url.startsWith('https://'));
+});
+
+test('todo conceito do catálogo tem o que revisar e materiais com link https', () => {
+  for (const id of Object.keys(CONCEITOS)) {
+    const m = MATERIAIS[id];
+    assert.ok(m?.revisar, id);
+    assert.ok(m.links.length > 0 && m.links.every((l) => l.titulo && l.fonte && l.url.startsWith('https://')), id);
+  }
 });

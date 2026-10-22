@@ -40,6 +40,7 @@ classDiagram
         +int posicao
         +int distancia
         +List~HistoricoDecisao~ historico
+        +PerfilBot bot
     }
 
     class HistoricoDecisao {
@@ -102,6 +103,12 @@ classDiagram
         +embaralhar(lista) Array
     }
 
+    class BotService {
+        +acertoEfetivo(perfil, dificuldade) number
+        +confiancaDaCerteza(certeza) Confianca
+        +decidirBot(def, perfil, rng) Escolha
+    }
+
     class DificuldadeService {
         +dificuldadeAlvo(progresso) number
         +pesoDificuldade(dificuldade, progresso) number
@@ -146,6 +153,7 @@ classDiagram
     GameState ..> RngService : utiliza seed/estado
     GameState ..> BoardService : consulta trilha
     GameState ..> DificuldadeService : sorteia cenário por progresso
+    GameState ..> BotService : decide a vez do rival (modo solo)
     ScenarioLoader ..> CenarioDef : gerencia/instancia
     ScoringEngine <.. GameState : calcula pontuação
     StorageService ..> GameState : serializa/deserializa
@@ -171,7 +179,8 @@ stateDiagram-v2
         ROLAR_DADO --> MOSTRAR_BALANCO : ROLAR (caiu em 'balanco')
         
         state FluxoDecisao {
-            ESCOLHER_METRICA --> ESCOLHER_JUSTIFICATIVA : METRICA(id)
+            ESCOLHER_METRICA --> ESCOLHER_JUSTIFICATIVA : METRICA(id) (só pessoa)
+            ESCOLHER_METRICA --> MOSTRAR_RESULTADO : DECIDIR_BOT (só rival do modo solo)
             ESCOLHER_JUSTIFICATIVA --> ESCOLHER_CONFIANCA : JUSTIFICATIVA(id)
             ESCOLHER_CONFIANCA --> MOSTRAR_RESULTADO : CONFIANCA('chute' | 'duvida' | 'provavel' | 'confiante' | 'certeza')
         }
@@ -239,6 +248,12 @@ sequenceDiagram
     Machine-->>UI: novoEstado
     deactivate Machine
     
+    opt Vez do rival (modo solo) e fase 'ESCOLHER_METRICA'
+        UI->>Machine: reduzir(estado, { tipo: 'DECIDIR_BOT' })
+        Machine->>Machine: decidirBot(def, perfil, rng) e pontua como uma pessoa
+        Machine-->>UI: novoEstado (fase: 'MOSTRAR_RESULTADO')
+    end
+
     UI->>Storage: salvar(novoEstado)
     UI->>UI: render()
     
@@ -275,8 +290,9 @@ graph TD
         STATE["state.js<br/>(Fábrica de Estado)"]
         BOARD["board.js<br/>(Trilha e Posições)"]
         DIFICULDADE["dificuldade.js<br/>(Sorteio por dificuldade)"]
+        BOT["bot.js<br/>(Rival do modo solo)"]
         SCORING["scoring.js<br/>(Cálculo de Pontos)"]
-        DESEMPENHO["desempenho.js<br/>(Perfil por conceito e certeza)"]
+        DESEMPENHO["desempenho.js<br/>(Perfil por conceito e relatório de fim de jogo)"]
         RNG["rng.js<br/>(Mulberry32 PRNG)"]
         CONFIG["config.js<br/>(Constantes Globais)"]
     end
@@ -284,7 +300,7 @@ graph TD
     subgraph Scenarios_Layer["Camada Cenários (src/scenarios/)"]
         LOADER["loader.js<br/>(Interpolação e Validação)"]
         GENERATORS["generators.js<br/>(Geração com Invariantes)"]
-        CONTENT["content/<br/>(iniciante.js, eventos.js, conceitos.js)"]
+        CONTENT["content/<br/>(iniciante.js, eventos.js, conceitos.js, materiais.js)"]
     end
 
     subgraph Stats_Layer["Camada Stats (src/stats/)"]
@@ -302,10 +318,14 @@ graph TD
     MAIN --> PERSIST
     VIEWS --> GRAFICO
     VIEWS --> HTML
+    VIEWS --> DESEMPENHO
 
     MACHINE --> STATE
     MACHINE --> BOARD
     MACHINE --> DIFICULDADE
+    MACHINE --> BOT
+    BOT --> CONFIG
+    BOT --> SCORING
     DIFICULDADE --> CONFIG
     MACHINE --> SCORING
     MACHINE --> RNG
@@ -332,10 +352,11 @@ graph TD
 | Módulo | Responsabilidade Principal |
 | :--- | :--- |
 | **`src/engine/machine.js`** | Máquina de estados finitos que orquestra as transições a partir de ações do jogador. |
-| **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`) e funções seletoras puras (`jogadorAtual`, `classificacao`, `progressoDoJogador`). |
+| **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`) e funções seletoras puras (`jogadorAtual`, `ehBot`, `classificacao`, `progressoDoJogador`). |
+| **`src/engine/bot.js`** | Rival do modo solo: acerta métrica e justificativa com a probabilidade do perfil (menor nos cenários difíceis), escolhe distratores ao errar e deriva a confiança de uma certeza interna ruidosa. Perfis em `config.js`, calibração em `scripts/simular-bot.mjs` (`fisher.md` 3.11). |
 | **`src/engine/dificuldade.js`** | Dificuldade-alvo a partir do progresso do jogador e sorteio ponderado de cenários do baralho. |
 | **`src/engine/rng.js`** | Gerador pseudo-aleatório determinístico baseado no algoritmo `mulberry32` com estado serializável em 32-bits. |
-| **`src/engine/desempenho.js`** | Perfil de desempenho do jogador a partir do histórico: domínio e diagnóstico por conceito, pontos fortes, deficiências, equívocos recorrentes e calibração da certeza (`fisher.md` 4.6). |
+| **`src/engine/desempenho.js`** | Perfil de desempenho do jogador a partir do histórico: domínio e diagnóstico por conceito, pontos fortes, deficiências, equívocos recorrentes e calibração da certeza; e o relatório de fim de jogo (`relatorioDesempenho`): acertos e erros, assuntos que mais e menos domina e sugestões de estudo com os materiais de `content/materiais.js` (`fisher.md` 4.6). |
 | **`src/engine/scoring.js`** | Algoritmos de pontuação, multiplicadores de reputação, regras de aposta e crise de imagem. |
 | **`src/scenarios/generators.js`** | Síntese de dados estatísticos com validação de invariantes conceituais. |
 | **`src/scenarios/loader.js`** | Instanciação de cenários, cálculo de resumo estatístico e substituição de variáveis nos enunciados. |
