@@ -48,13 +48,13 @@ test('o progresso usa as casas percorridas, contando as voltas, e satura em 1', 
   const e = novoJogo({ jogadores: [{ nome: 'A', nivel: 'iniciante' }], turnos: 10, seed: 1 });
   const j = e.jogadores[0];
   assert.equal(progressoDoJogador(e, j), 0);
-  j.distancia = 17.5;
+  j.distancia = 35;
   assert.equal(progressoDoJogador(e, j), 0.5);
   j.distancia = 500;
   assert.equal(progressoDoJogador(e, j), 1);
   delete j.distancia; // save antigo: vale a posição
   j.posicao = 7;
-  assert.equal(progressoDoJogador(e, j), 7 / 35);
+  assert.equal(progressoDoJogador(e, j), 7 / 70);
 });
 
 // Responde qualquer fase com uma ação válida (primeira opção, primeira justificativa, chute).

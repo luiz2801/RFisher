@@ -21,5 +21,5 @@ export const REPUTACAO_BALANCO_RH = 2;
 // Dificuldade crescente: cenários têm dificuldade de 1 a DIFICULDADE_MAX e o sorteio favorece
 // a que corresponde ao progresso do jogador na trilha (docs/criar-cenarios.md).
 export const DIFICULDADE_MAX = 3;
-export const PASSO_MEDIO_DADO = 3.5; // casas por jogada, para estimar o percurso total da partida
+export const PASSO_MEDIO_DADO = 7; // casas por jogada (soma de 2d6), para estimar o percurso total da partida
 export const SELETIVIDADE_DIFICULDADE = 4; // peso do cenário = 1 / (1 + k × distância²) até a dificuldade-alvo

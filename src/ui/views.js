@@ -1,6 +1,7 @@
 // Visões puras: estado -> string HTML. Os eventos são ligados em main.js por delegação (data-acao).
 import { esc } from './html.js';
 import { grafico, calcularDominio } from './components/grafico.js';
+import { parDadosHtml } from './components/dado.js';
 import { CASAS, NUM_CASAS, ROTULO_CASA, coordenadas } from '../engine/board.js';
 import { jogadorAtual, classificacao, vencedores, ehCooperativo, classificarEmpresa } from '../engine/state.js';
 import { DIRETORIAS } from '../engine/papeis.js';
@@ -199,9 +200,9 @@ function tabuleiro(e) {
     </div>`;
   }).join('');
   const vez = e.fase === 'FIM_DE_JOGO' ? 'Fim de jogo' : `Vez de ${esc(jogadorAtual(e).nome)}`;
-  const dado = e.dado ? `<span class="dado" aria-label="Dado: ${e.dado}">${e.dado}</span>` : '';
+  const dados = e.dados ? parDadosHtml(e.dados[0], e.dados[1], e.dado) : '';
   return `<div class="tabuleiro" role="group" aria-label="Tabuleiro com ${NUM_CASAS} casas">
-    ${casas}<div class="centro"><strong>${vez}</strong>${dado}</div>
+    ${casas}<div class="centro"><strong>${vez}</strong>${dados}</div>
   </div>`;
 }
 
@@ -273,13 +274,13 @@ function viewRolar(e) {
     e.turnoAtual === 1 && j.posicao === 0 && e.jogadores.every((x) => x.historico.length === 0)
       ? `<div class="cartao briefing-inaugural">
         <span class="tag-contexto">🏛️ Assembleia Inaugural do Conselho</span>
-        <p>Bem-vindos à sede corporativa da <strong>Fisher S.A.</strong>! Cada CEO acaba de assumir sua divisão com <strong>R$ 50.000 em caixa</strong> e <strong>50 pontos de reputação</strong>. Os mercados estão abertos: role o dado para liderar suas operações no primeiro trimestre!</p>
+        <p>Bem-vindos à sede corporativa da <strong>Fisher S.A.</strong>! Cada CEO acaba de assumir sua divisão com <strong>R$ 50.000 em caixa</strong> e <strong>50 pontos de reputação</strong>. Os mercados estão abertos: role os dados para liderar suas operações no primeiro trimestre!</p>
       </div>`
       : '';
 
   return `${inaugural}<h2>Vez de ${esc(j.nome)} <small>(${esc(cargo)})</small></h2>
-      <p>Você está na casa ${j.posicao + 1}. Role o dado para avançar na trilha e encarar os desafios do mercado.</p>
-      <button class="primario" data-acao="ROLAR">Rolar o dado</button>`;
+      <p>Você está na casa ${j.posicao + 1}. Role os dados para avançar na trilha e encarar os desafios do mercado.</p>
+      <button class="primario" data-acao="ROLAR">Rolar os dados</button>`;
 }
 
       function blocoCenario(e, marcadoresRevelacao) {

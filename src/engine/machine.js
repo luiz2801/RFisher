@@ -75,11 +75,14 @@ const TRANSICOES = {
     ROLAR(e) {
       const rng = criarRng(e.rng);
       const j = jogadorAtual(e);
-      const dado = rng.inteiro(1, 6);
+      const d1 = rng.inteiro(1, 6);
+      const d2 = rng.inteiro(1, 6);
+      const dado = d1 + d2;
       const { posicao, passouInicio } = avancar(j.posicao, dado);
       j.distancia = distanciaPercorrida(j) + dado;
       j.posicao = posicao;
       e.dado = dado;
+      e.dados = [d1, d2];
       e.balanco = passouInicio ? aplicarBalanco(e) : null;
 
       const casa = CASAS[posicao];
@@ -195,6 +198,7 @@ function continuar(e) {
   e.resultado = null;
   e.balanco = null;
   e.dado = null;
+  e.dados = null;
 
   if (e.jogadorAtual + 1 < e.jogadores.length) {
     e.jogadorAtual += 1;

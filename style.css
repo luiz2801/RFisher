@@ -266,6 +266,24 @@ select {
   }
 }
 
+.peao-fantasma {
+  place-self: center;
+  z-index: 5;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+  animation: peao-saltar .16s ease-out;
+}
+
+@keyframes peao-saltar {
+  0% { transform: translateY(0) scale(1); }
+  45% { transform: translateY(-40%) scale(1.2); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .peao-fantasma { animation: none; }
+}
+
 .centro {
   grid-area: 2 / 2 / 8 / 8;
   display: grid;
@@ -274,17 +292,83 @@ select {
   gap: .5rem;
 }
 
+.dados-par {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  justify-content: center;
+}
+
+.dado-total {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
 .dado {
-  display: inline-grid;
-  place-items: center;
-  width: 3rem;
-  height: 3rem;
-  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: .3rem;
+  gap: 2px;
   background: var(--surface);
   border: 2px solid var(--texto);
   border-radius: 10px;
-  font-size: 1.6rem;
-  font-weight: 700;
+}
+
+/* Só o giro inicial (enquanto sorteia) anima; o resultado final fica parado,
+   mesmo quando a tela inteira é redesenhada nas próximas escolhas do turno. */
+.dado-girando {
+  animation: dado-rolar .5s ease-out;
+}
+
+.dado .pip {
+  width: 65%;
+  height: 65%;
+  align-self: center;
+  justify-self: center;
+  border-radius: 50%;
+  background: var(--texto);
+  opacity: 0;
+}
+
+/* Layout clássico de pips num grid 3x3 (posições 1 a 9, linha a linha). */
+.dado[data-face="1"] .pip:nth-child(5) { opacity: 1; }
+
+.dado[data-face="2"] .pip:nth-child(1),
+.dado[data-face="2"] .pip:nth-child(9) { opacity: 1; }
+
+.dado[data-face="3"] .pip:nth-child(1),
+.dado[data-face="3"] .pip:nth-child(5),
+.dado[data-face="3"] .pip:nth-child(9) { opacity: 1; }
+
+.dado[data-face="4"] .pip:nth-child(1),
+.dado[data-face="4"] .pip:nth-child(3),
+.dado[data-face="4"] .pip:nth-child(7),
+.dado[data-face="4"] .pip:nth-child(9) { opacity: 1; }
+
+.dado[data-face="5"] .pip:nth-child(1),
+.dado[data-face="5"] .pip:nth-child(3),
+.dado[data-face="5"] .pip:nth-child(5),
+.dado[data-face="5"] .pip:nth-child(7),
+.dado[data-face="5"] .pip:nth-child(9) { opacity: 1; }
+
+.dado[data-face="6"] .pip:nth-child(1),
+.dado[data-face="6"] .pip:nth-child(3),
+.dado[data-face="6"] .pip:nth-child(4),
+.dado[data-face="6"] .pip:nth-child(6),
+.dado[data-face="6"] .pip:nth-child(7),
+.dado[data-face="6"] .pip:nth-child(9) { opacity: 1; }
+
+@keyframes dado-rolar {
+  0% { transform: rotate(0deg) scale(.7); }
+  60% { transform: rotate(240deg) scale(1.15); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dado-girando { animation: none; }
 }
 
 .placar {

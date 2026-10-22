@@ -42,7 +42,7 @@
 ### Core loop
 
 ```
-Rola o dado → cai numa casa → vê o cenário/gráfico → escolhe a métrica/ação
+Rola os dois dados (soma, 2 a 12) → cai numa casa → vê o cenário/gráfico → escolhe a métrica/ação
 → escolhe a justificativa → escolhe o nível de confiança (escala de 5 níveis, do chute à certeza) → vê o resultado
 → lê a explicação (sempre, inclusive quem acertou) → atualiza dinheiro e reputação → próximo jogador
 ```
@@ -51,7 +51,7 @@ Rola o dado → cai numa casa → vê o cenário/gráfico → escolhe a métrica
 
 1. **Errar custa dinheiro e ensina.** Toda decisão termina com a explicação correta, para quem errou e para quem acertou.
 2. **Acertar por sorte não pode compensar.** Aposta de confiança e justificativa obrigatória tornam o chute um mau negócio.
-3. **O conhecimento pesa mais que o dado.** O dado só decide onde o jogador cai.
+3. **O conhecimento pesa mais que o dado.** Os dois dados só decidem onde o jogador cai.
 4. **Ninguém é eliminado.** O jogo é educativo, então todos jogam até o fim, com mecanismos de recuperação.
 5. **Tudo é determinístico e testável.** Sem IA e sem rede, o comportamento é reproduzível.
 
@@ -90,7 +90,7 @@ Circuito de aproximadamente **20 casas**. Cada casa coloca pelo menos uma métri
 
 ### 3.2 Estrutura do turno
 
-1. Rola o dado e avança.
+1. Rola os dois dados e avança a soma.
 2. Resolve a casa (decisão, evento, duelo, mercado, auditoria ou balanço).
 3. Em casas de decisão: **métrica → justificativa → confiança → resultado → explicação**.
 4. Atualiza o estado e passa a vez.
@@ -191,6 +191,15 @@ A punição é ajustável. O ponto de partida é perda de dinheiro e reputação
 | 02 | SLA de e-commerce | Cauda longa de atrasos severos | **Percentil 90 (P90)** | A média oculta falhas graves na experiência do cliente |
 | 03 | Controle de estoque de calçados | Dados discretos categóricos | **Moda** | Aplicar tendência central contínua a itens discretos |
 | 04 | Precisão de peças industriais | Mesma média, variâncias distintas | **Desvio padrão** | Ignorar dispersão e olhar só a tendência central |
+| 05 | Avaliações do aplicativo | Bimodal (polarizado em 1 e 5) | **Distribuição de frequências** | A média cai num centro que ninguém escolheu |
+| 06 | Tempo de atendimento do SAC | Dispersão com *outliers* | **Amplitude interquartil (IQR)** | O desvio padrão é inflado por casos aberrantes |
+| 07 | Peso na linha de envase | Normal e simétrica | **Média** | Rejeitar a média mesmo quando ela é a ideal |
+| 08 | Teste A/B de conversão | Duas amostras, uma muito instável | **Desvio padrão e tamanho da amostra** | Tomar flutuação aleatória por ganho real |
+| 09 | Portão do centro de distribuição | Aproximadamente normal | **Máximo** | Usar valor típico quando todos precisam caber |
+| 10 | Tempo de resposta da API | Cauda longa de requisições lentas | **Percentil 95 (P95)** | Confundir percentis (P90 por P95) e confiar na média |
+| 11 | Resolução no primeiro contato | Assimetria à esquerda (*outliers* na base) | **Mediana** | Achar que só valores altos distorcem a média |
+| 12 | Caixa da folha de pagamento | Duas séries, a de média maior é volátil | **Desvio padrão** | Escolher pela média e ignorar o risco |
+| 13 | Projeção de receita (freemium) | Maioria de zeros | **Média** | Usar a mediana para projetar um total |
 
 ### 4.2 Cenários candidatos (nível avançado e eventos)
 
@@ -228,7 +237,7 @@ Cada cenário contém:
 ### 4.5 Progressão e reforço
 
 - Dificuldade crescente: de cenários com métrica única até cenários ambíguos, em que duas respostas são defensáveis e o contexto decide.
-- **Implementado (sorteio por progresso):** cada cenário tem `dificuldade` de 1 a 3 (1 = a métrica certa é a mais direta; 2 = exige reconhecer o formato dos dados; 3 = exige comparar dispersão ou amostras). Ao cair numa casa de Decisão, o jogo calcula o **progresso do jogador** (casas percorridas, contando as voltas, ÷ turnos da partida × 3,5, limitado a 1) e converte em uma dificuldade-alvo entre 1 e 3. Entre os cenários que ainda restam no baralho, o peso de sorteio é `1 / (1 + 4 × (dificuldade − alvo)²)`. Assim o começo da partida favorece os fáceis e o fim favorece os difíceis, mas nenhum fica excluído, para a partida não ser previsível. O baralho continua sem repetir cenário dentro de um ciclo. O progresso é individual: quem anda mais rápido recebe cenários mais difíceis antes.
+- **Implementado (sorteio por progresso):** cada cenário tem `dificuldade` de 1 a 3 (1 = a métrica certa é a mais direta; 2 = exige reconhecer o formato dos dados; 3 = exige comparar dispersão ou amostras). Ao cair numa casa de Decisão, o jogo calcula o **progresso do jogador** (casas percorridas, contando as voltas, ÷ turnos da partida × 7 — a média da soma de 2 dados de 6 faces —, limitado a 1) e converte em uma dificuldade-alvo entre 1 e 3. Entre os cenários que ainda restam no baralho, o peso de sorteio é `1 / (1 + 4 × (dificuldade − alvo)²)`. Assim o começo da partida favorece os fáceis e o fim favorece os difíceis, mas nenhum fica excluído, para a partida não ser previsível. O baralho continua sem repetir cenário dentro de um ciclo. O progresso é individual: quem anda mais rápido recebe cenários mais difíceis antes.
 - Conceitos errados voltam em cenários futuros com dados diferentes (repetição espaçada), em fase posterior. O perfil de desempenho (4.6) já identifica esses conceitos.
 
 ### 4.6 Perfil de desempenho (o que o jogador domina e onde tem deficiência)
@@ -302,7 +311,7 @@ tabuleiro-do-ceo/
 │   │   └── metrics.js        # média, mediana, moda, percentil, desvio padrão
 │   ├── ui/
 │   │   ├── screens/          # menu, tabuleiro, cenário, feedback, fim de jogo
-│   │   ├── components/       # gráfico, cartas, placar, dado
+│   │   ├── components/       # gráfico, cartas, placar, dados
 │   │   └── a11y.js           # descrições textuais e teclado
 │   └── storage/
 │       └── persist.js
@@ -534,7 +543,7 @@ A ideia original era validar justificativas escritas com IA no navegador. Ficou 
 | Fase | Entrega | Critério de sucesso |
 | --- | --- | --- |
 | **0. Protótipo em papel (opcional)** | 1 cenário, 6 cartas de justificativa, marcador de dinheiro, aposta de confiança | 2 a 3 pessoas jogam e discutem; o chute não compensa |
-| **1. MVP jogável** | Tabuleiro com 3 jogadores, dado, casas de decisão e evento, aposta de confiança, 4 cenários do nível iniciante, resultado e explicação | Uma partida completa roda do início ao fim sem erros |
+| **1. MVP jogável** | Tabuleiro com 3 jogadores, dois dados, casas de decisão e evento, aposta de confiança, 4 cenários do nível iniciante, resultado e explicação | Uma partida completa roda do início ao fim sem erros |
 | **2. Conteúdo e balanceamento** | 8+ cenários, Mercado, Duelo, Auditoria, geração por seed, testes de simulação | Chutar perde dinheiro; saber tudo ganha |
 | **3. Nível avançado** | Simpson, viés de sobrevivência, taxa-base, correlação vs. causalidade | Playtest com jogadores mistos equilibrado |
 | **4. Polimento** | Acessibilidade, persistência, glossário, tutorial | Pessoas novas jogam sem ajuda |

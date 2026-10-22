@@ -17,6 +17,7 @@ export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, seed = Date.now(),
     jogadorAtual: 0,
     fase: 'ROLAR_DADO',
     dado: null,
+    dados: null,
     balanco: null,
     jogadores: jogadores.map((j, id) => ({
       id,

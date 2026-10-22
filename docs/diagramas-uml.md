@@ -21,6 +21,7 @@ classDiagram
         +int jogadorAtual
         +Fase fase
         +int dado
+        +int[] dados
         +Balanco balanco
         +List~Jogador~ jogadores
         +List~string~ baralhoCenarios
@@ -205,11 +206,14 @@ sequenceDiagram
     participant Scoring as Scoring (scoring.js)
     participant Storage as Persist (persist.js)
 
-    Jogador->>UI: Clica em "Rolar dado" (data-acao="ROLAR")
+    Jogador->>UI: Clica em "Rolar os dados" (data-acao="ROLAR")
     UI->>Machine: reduzir(estado, { tipo: 'ROLAR' })
     activate Machine
     Machine->>RNG: inteiro(1, 6)
-    RNG-->>Machine: dado (ex: 4)
+    RNG-->>Machine: d1 (ex: 4)
+    Machine->>RNG: inteiro(1, 6)
+    RNG-->>Machine: d2 (ex: 3)
+    Note over Machine: dado = d1 + d2
     Machine->>Board: avancar(j.posicao, dado)
     Board-->>Machine: { posicao, passouInicio }
     
@@ -219,7 +223,7 @@ sequenceDiagram
         Note over Machine: Aplica balanço financeiro
     end
 
-    Note over Machine: distancia += dado; progresso = distancia / (turnos × 3,5)
+    Note over Machine: distancia += dado; progresso = distancia / (turnos × 7)
 
     alt Casa == 'decisao'
         Machine->>Machine: sacarCenario (peso por dificuldade vs. progresso)
