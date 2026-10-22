@@ -4,6 +4,7 @@ import { criarRng } from '../src/engine/rng.js';
 import { novoJogo, progressoDoJogador } from '../src/engine/state.js';
 import { dificuldadeAlvo, pesoDificuldade, escolherPorDificuldade } from '../src/engine/dificuldade.js';
 import { reduzir } from '../src/engine/machine.js';
+import { valorEsperado } from '../src/engine/calculo.js';
 import { todosCenarios, obterCenario, validarCenario } from '../src/scenarios/loader.js';
 import { DIFICULDADE_MAX } from '../src/engine/config.js';
 
@@ -63,6 +64,7 @@ function passo(e) {
   const acao = {
     ROLAR_DADO: () => ({ tipo: 'ROLAR' }),
     ESCOLHER_METRICA: () => ({ tipo: 'METRICA', valor: def.opcoes[0].id }),
+    INFORMAR_VALOR: () => ({ tipo: 'VALOR', valor: valorEsperado(def, e.cenarioAtual) }),
     ESCOLHER_JUSTIFICATIVA: () => ({ tipo: 'JUSTIFICATIVA', valor: def.justificativas[0].id }),
     ESCOLHER_CONFIANCA: () => ({ tipo: 'CONFIANCA', valor: 'chute' }),
   }[e.fase]?.() ?? { tipo: 'CONTINUAR' };

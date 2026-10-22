@@ -3,6 +3,7 @@ import {
   BOT_LIMIARES_CONFIANCA,
 } from './config.js';
 import { CONFIANCA } from './scoring.js';
+import { ehCalculo } from './calculo.js';
 
 // Rival do modo solo (fisher.md 3.11). Não resolve o cenário: acerta com a frequência do seu perfil,
 // erra escolhendo um distrator e aposta conforme uma certeza interna ruidosa. Usa só o rng recebido,
@@ -22,8 +23,10 @@ export function confiancaDaCerteza(certeza) {
 
 const qualquer = (lista, rng) => lista[rng.inteiro(0, lista.length - 1)];
 
-// `perfil`: { acerto }. Devolve os ids da métrica e da justificativa e a chave da confiança.
-export function decidirBot(def, perfil, rng) {
+// `perfil`: { acerto }. Devolve os ids da métrica e da justificativa e a chave da confiança. Em cenário de
+// cálculo (`num` = métricas dos dados sorteados), informa o valor exato da métrica escolhida: o acerto já
+// vem da escolha da métrica, e o rival não gasta sorteios a mais.
+export function decidirBot(def, perfil, rng, num) {
   const p = acertoEfetivo(perfil, def.dificuldade);
   const acertaMetrica = rng.prox() < p;
   const acertaJustificativa = rng.prox() < p;
@@ -32,5 +35,6 @@ export function decidirBot(def, perfil, rng) {
   // Quem acerta tende a se sentir mais seguro, mas com ruído: às vezes erra convicto.
   const acertos = Number(acertaMetrica) + Number(acertaJustificativa);
   const certeza = p + BOT_SINAL_CONFIANCA * (acertos - 1) + rng.normal(0, BOT_RUIDO_CONFIANCA);
-  return { metrica: metrica.id, justificativa: justificativa.id, confianca: confiancaDaCerteza(certeza) };
+  const escolha = { metrica: metrica.id, justificativa: justificativa.id, confianca: confiancaDaCerteza(certeza) };
+  return ehCalculo(def) && num ? { ...escolha, valor: num[metrica.chave] } : escolha;
 }

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { criarRng } from '../src/engine/rng.js';
 import { novoJogo, jogadorAtual, ehBot } from '../src/engine/state.js';
 import { reduzir } from '../src/engine/machine.js';
+import { valorEsperado } from '../src/engine/calculo.js';
 import { decidirBot, acertoEfetivo, confiancaDaCerteza } from '../src/engine/bot.js';
 import { CONFIANCA } from '../src/engine/scoring.js';
 import { PERFIS_BOT, BOT_ACERTO_MIN, BOT_ACERTO_MAX } from '../src/engine/config.js';
@@ -25,6 +26,7 @@ function proximaAcao(e) {
     {
       ROLAR_DADO: { tipo: 'ROLAR' },
       ESCOLHER_METRICA: def && { tipo: 'METRICA', valor: def.opcoes.find((o) => o.correta).id },
+      INFORMAR_VALOR: def && { tipo: 'VALOR', valor: valorEsperado(def, e.cenarioAtual) },
       ESCOLHER_JUSTIFICATIVA: def && { tipo: 'JUSTIFICATIVA', valor: def.justificativas.find((j) => j.tipo === 'correta').id },
       ESCOLHER_CONFIANCA: { tipo: 'CONFIANCA', valor: 'certeza' },
     }[e.fase] ?? { tipo: 'CONTINUAR' }

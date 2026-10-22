@@ -11,7 +11,9 @@ import { CONFIANCA, ROTULO_CONFIANCA, NIVEL } from '../engine/scoring.js';
 import { MAX_JOGADORES, TURNOS_PADRAO, PERFIS_BOT } from '../engine/config.js';
 import { obterCenario, preencher, valorDoMarcador } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
-import { brl, brlSinal } from '../stats/format.js';
+import { brl, brlSinal, formatar, unidade } from '../stats/format.js';
+import { contagens } from '../stats/metrics.js';
+import { ehCalculo, margemPct, notaDeMetodo } from '../engine/calculo.js';
 
 const NOME_NIVEL = { iniciante: 'Iniciante', avancado: 'Avançado' };
 const ROTULO_BOT = { facil: 'fácil', medio: 'médio', dificil: 'difícil' };
@@ -41,6 +43,13 @@ const TITULO_RESULTADO = {
   incoerencia: '△ Incoerência: conceito certo, métrica errada',
   erro_total: '✖ Erro total',
 };
+// Em cenário de cálculo, métrica certa com valor fora da margem não vale como acerto da métrica.
+function tituloResultado(r) {
+  if (r.valorCorreto !== false || r.metricaCorreta === false) return TITULO_RESULTADO[r.categoria];
+  return r.justificativaCorreta
+    ? '△ Métrica e justificativa certas, mas o valor calculado ficou fora da margem'
+    : '✖ Métrica certa, mas o valor calculado e a justificativa estão errados';
+}
 const MSG_JUSTIFICATIVA = {
   parcial: 'É verdadeira, mas incompleta: não explica por que a métrica escolhida é a melhor.',
   irrelevante: 'Pode até ser verdade, mas não sustenta a decisão.',
@@ -174,8 +183,8 @@ const cargoDe = (e, j) => {
 // Textos da decisão em segunda pessoa para quem joga, em terceira para o rival do computador.
 const autor = (e) =>
   ehBot(jogadorAtual(e))
-    ? { metrica: 'Métrica do rival', justificativa: 'Justificativa do rival', passou: 'O rival passou' }
-    : { metrica: 'Sua métrica', justificativa: 'Sua justificativa', passou: 'Você passou' };
+    ? { metrica: 'Métrica do rival', justificativa: 'Justificativa do rival', valor: 'Cálculo do rival', passou: 'O rival passou' }
+    : { metrica: 'Sua métrica', justificativa: 'Sua justificativa', valor: 'Seu cálculo', passou: 'Você passou' };
 
 export function viewJogo(e) {
   const turno = Math.min(e.turnoAtual, e.turnosPorJogador);
@@ -256,6 +265,7 @@ function placar(e) {
       return viewRolar(e);
       case 'ESCOLHER_CONFIANCA':
       case 'ESCOLHER_METRICA':
+      case 'INFORMAR_VALOR':
       case 'ESCOLHER_JUSTIFICATIVA':
       return viewDecisao(e);
       case 'MOSTRAR_RESULTADO':
@@ -304,12 +314,41 @@ function viewRolar(e) {
       <button class="primario" data-acao="ROLAR">Rolar os dados</button>`;
 }
 
+// Dados de um cenário de cálculo em tabela: os registros na ordem em que chegaram, ou valor e frequência.
+function tabelaDados(def, c) {
+  const { formato, rotulo_x: rotuloX, rotulo_y: rotuloY } = def.dados;
+  const valores = c.series[0].valores;
+  if (def.dados.tabela === 'frequencias') {
+    const linhas = [...contagens(valores)]
+      .sort((a, b) => a[0] - b[0])
+      .map(([v, q]) => `<tr><td>${esc(formatar(formato, v))}</td><td>${q}</td></tr>`)
+      .join('');
+    return `<table class="tabela-dados"><caption>Dados da tabela (${valores.length} registros)</caption>
+      <thead><tr><th scope="col">${esc(rotuloX)}</th><th scope="col">${esc(rotuloY)}</th></tr></thead>
+      <tbody>${linhas}</tbody>
+      <tfoot><tr><th scope="row">Total</th><td>${valores.length}</td></tr></tfoot></table>`;
+  }
+  // Vários blocos lado a lado quando a lista é longa; cada bloco lê de cima para baixo.
+  const blocos = valores.length > 12 ? 3 : valores.length > 6 ? 2 : 1;
+  const porBloco = Math.ceil(valores.length / blocos);
+  const cabecalho = Array.from({ length: blocos }, () => `<th scope="col">Nº</th><th scope="col">${esc(rotuloX)}</th>`).join('');
+  const linhas = Array.from({ length: porBloco }, (_, r) =>
+    Array.from({ length: blocos }, (_, b) => {
+      const i = b * porBloco + r;
+      return i < valores.length ? `<td>${i + 1}</td><td>${esc(formatar(formato, valores[i]))}</td>` : '<td></td><td></td>';
+    }).join(''),
+  ).map((l) => `<tr>${l}</tr>`).join('');
+  return `<table class="tabela-dados"><caption>Dados da tabela (${valores.length} registros)</caption>
+    <thead><tr>${cabecalho}</tr></thead><tbody>${linhas}</tbody></table>`;
+}
+
       function blocoCenario(e, marcadoresRevelacao) {
   const c = e.cenarioAtual;
       const def = obterCenario(c.id);
       const discreto = def.dados.tipo_grafico === 'barras_discretas';
       const dominio = calcularDominio(c.series, discreto);
-      const graficos = c.series
+      const mostraGrafico = !ehCalculo(def) || def.dados.exibir.includes('grafico');
+      const graficos = (mostraGrafico ? c.series : [])
     .map((serie, i) =>
       grafico({
         serie,
@@ -327,13 +366,14 @@ function viewRolar(e) {
       }),
       )
       .join('');
-      return {def, html: `<h2>${esc(def.titulo)}</h2><p class="contexto">${esc(preencher(def.contexto, c.vars))}</p>${graficos}` };
+      return {def, html: `<h2>${esc(def.titulo)}</h2><p class="contexto">${esc(preencher(def.contexto, c.vars))}</p>${ehCalculo(def) ? tabelaDados(def, c) : ''}${graficos}` };
 }
 
       function viewDecisao(e) {
   const j = jogadorAtual(e);
       const c = e.cenarioAtual;
       const {def, html} = blocoCenario(e);
+      const calculo = ehCalculo(def);
       let passo;
 
       // Normalmente o main.js já despacha DECIDIR_BOT; o botão cobre uma partida retomada nesta fase.
@@ -348,10 +388,24 @@ function viewRolar(e) {
         .map((id) => def.opcoes.find((o) => o.id === id))
         .map((o) => `<button class="opcao" data-acao="METRICA" data-valor="${o.id}">${esc(preencher(o.texto, c.vars))}</button>`)
         .join('')}</div>`;
+  } else if (e.fase === 'INFORMAR_VALOR') {
+    const escolhida = def.opcoes.find((o) => o.id === c.metricaId);
+    const un = unidade(def.dados.formato);
+    const nota = notaDeMetodo(escolhida.chave);
+    passo = `<h3>2. Qual valor você calculou?</h3>
+      <p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong></p>
+      <p class="ajuda">Calcule com os dados da tabela. Aceitamos uma <strong>margem de erro de ±${String(margemPct(def, escolhida)).replace('.', ',')}%</strong> sobre o valor correto, então arredondamentos pequenos não são problema.${nota ? ` ${esc(nota)}` : ''}</p>
+      <form class="form-valor" data-form="valor" novalidate>
+        <label>Valor calculado${un ? ` (em ${esc(un)})` : ''}
+          <input name="valor" type="text" inputmode="decimal" autocomplete="off" required aria-describedby="erro-valor" placeholder="ex.: 1234,5">
+        </label>
+        <button class="primario" type="submit">Confirmar valor</button>
+        <p class="erro-campo" id="erro-valor" role="alert" hidden>Digite só o número, por exemplo 1234,5.</p>
+      </form>`;
   } else if (e.fase === 'ESCOLHER_JUSTIFICATIVA') {
     const escolhida = def.opcoes.find((o) => o.id === c.metricaId);
-      passo = `<h3>2. Por que essa é a melhor decisão?</h3>
-      <p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong></p>
+      passo = `<h3>${calculo ? 3 : 2}. Por que essa é a melhor decisão?</h3>
+      <p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong>${calculo ? ` · Seu valor: <strong>${esc(formatar(def.dados.formato, c.valorInformado))}</strong>` : ''}</p>
       <div class="opcoes">${c.ordemJustificativas
         .map((id) => def.justificativas.find((x) => x.id === id))
         .map((x) => `<button class="opcao" data-acao="JUSTIFICATIVA" data-valor="${x.id}">${esc(preencher(x.texto, c.vars))}</button>`)
@@ -368,9 +422,9 @@ function viewRolar(e) {
     const escolhida = def.opcoes.find((o) => o.id === c.metricaId);
     const justEscolhida = def.justificativas.find((x) => x.id === c.justificativaId);
       const resumo = escolhida && justEscolhida
-      ? `<p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong><br>Sua justificativa: <strong>${esc(preencher(justEscolhida.texto, c.vars))}</strong></p>`
+      ? `<p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong>${calculo ? `<br>Seu valor: <strong>${esc(formatar(def.dados.formato, c.valorInformado))}</strong>` : ''}<br>Sua justificativa: <strong>${esc(preencher(justEscolhida.texto, c.vars))}</strong></p>`
       : '';
-      passo = `<h3>3. Quão confiante você está na sua resposta?</h3>
+      passo = `<h3>${calculo ? 4 : 3}. Quão confiante você está na sua resposta?</h3>
       ${resumo}
       <p class="ajuda">Aposte: quanto maior a confiança, maior o ganho e a perda.</p>
       <div class="opcoes">${Object.keys(CONFIANCA).map(linha).join('')}</div>`;
@@ -397,19 +451,20 @@ function viewRolar(e) {
     const quem = autor(e);
     // A decisão do rival não aparece em nenhuma etapa anterior, então o resultado a mostra.
     const escolhasRival = ehBot(jogadorAtual(e))
-      ? `<p class="ajuda">${quem.metrica}: <strong>${esc(preencher(escolhida.texto, vars))}</strong><br>${quem.justificativa}: <strong>${esc(preencher(just.texto, vars))}</strong><br>Confiança: <strong>${ROTULO_CONFIANCA[r.confianca]}</strong></p>`
+      ? `<p class="ajuda">${quem.metrica}: <strong>${esc(preencher(escolhida.texto, vars))}</strong>${r.calculo ? `<br>Valor do rival: <strong>${esc(formatar(def.dados.formato, r.calculo.informado))}</strong>` : ''}<br>${quem.justificativa}: <strong>${esc(preencher(just.texto, vars))}</strong><br>Confiança: <strong>${ROTULO_CONFIANCA[r.confianca]}</strong></p>`
       : '';
     const explicacoes = [`<p>${esc(preencher(fb.explicacao_correta, vars))}</p>`];
-    if (!r.metricaCorreta) {
+    if (!escolhida.correta) {
       explicacoes.push(`<p><strong>${quem.metrica}:</strong> ${esc(preencher(fb.por_equivoco[escolhida.equivoco], vars))}</p>`);
   }
+    if (r.calculo) explicacoes.push(blocoCalculo(def, r, escolhida, certa, c, quem));
     if (!r.justificativaCorreta) {
     const msg = fb.por_equivoco[just.equivoco] ?? MSG_JUSTIFICATIVA[just.tipo];
     explicacoes.push(`<p><strong>${quem.justificativa}:</strong> ${esc(preencher(msg, vars))}</p>`);
   }
 
     const gabarito = [];
-    if (!r.metricaCorreta) gabarito.push(`<li>Métrica certa: ${esc(preencher(certa.texto, vars))}</li>`);
+    if (!escolhida.correta) gabarito.push(`<li>Métrica certa: ${esc(preencher(certa.texto, vars))}</li>`);
     if (!r.justificativaCorreta) gabarito.push(`<li>Justificativa certa: ${esc(preencher(justCerta.texto, vars))}</li>`);
 
     const rep = r.deltaReputacao ? ` · Reputação ${r.deltaReputacao > 0 ? '+' : '−'}${Math.abs(r.deltaReputacao)}` : '';
@@ -417,7 +472,7 @@ function viewRolar(e) {
 
     return `${bannerBalanco(e)}${titulo}${escolhasRival}
     <div class="resultado ${r.categoria}">
-      <h3>${TITULO_RESULTADO[r.categoria]}</h3>
+      <h3>${tituloResultado(r)}</h3>
       <p class="delta">${r.delta === 0 ? 'Nenhuma variação de dinheiro' : brlSinal(r.delta)}${mult}${rep}</p>
       ${r.crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}
     </div>
@@ -425,6 +480,24 @@ function viewRolar(e) {
     ${gabarito.length ? `<ul class="gabarito">${gabarito.join('')}</ul>` : ''}
     ${graficos}
     ${botaoContinuar}`;
+}
+
+// Confronto entre o valor informado e o valor exato, com a margem aceita e a explicação do cálculo.
+function blocoCalculo(def, r, escolhida, certa, c0, quem) {
+  const vars = c0.vars;
+  const f = (v) => esc(formatar(def.dados.formato, v));
+  const c = r.calculo;
+  const veredito = c.dentro ? 'dentro da margem' : 'fora da margem';
+  const pct = String(c.margemPct).replace('.', ',');
+  const outra = escolhida.correta
+    ? ''
+    : `<tr><th scope="row">Valor da métrica certa (${esc(certa.texto)})</th><td>${f(c0.num[certa.chave])}</td></tr>`;
+  return `<table class="calculo-resultado"><caption>${quem.valor}</caption><tbody>
+    <tr><th scope="row">Valor informado</th><td>${f(c.informado)} (${veredito})</td></tr>
+    <tr><th scope="row">Valor correto de ${esc(escolhida.texto)}</th><td>${f(c.esperado)}</td></tr>
+    <tr><th scope="row">Margem aceita (±${pct}%)</th><td>de ${f(c.minimo)} a ${f(c.maximo)}</td></tr>${outra}
+  </tbody></table>
+  <p><strong>Como calcular:</strong> ${esc(preencher(def.feedback.como_calcular, vars))}</p>`;
 }
 
     function viewEvento(e) {

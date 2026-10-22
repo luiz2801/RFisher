@@ -66,8 +66,8 @@ A reprodutibilidade por seed é pilar do projeto (partida salva, invariantes, si
 
 `reduzir(estado, acao)` é uma função pura; cada fase tem um conjunto fixo de ações válidas.
 
-- **Tabela de transições:** para cada fase (`ROLAR_DADO`, `ESCOLHER_METRICA`, `ESCOLHER_JUSTIFICATIVA`, `ESCOLHER_CONFIANCA`, `MOSTRAR_RESULTADO`, `MOSTRAR_EVENTO`, `MOSTRAR_BALANCO`, `FIM_DE_JOGO`) × cada tipo de ação, só a combinação válida muda o estado; as demais devolvem o mesmo objeto.
-- **Ordem da decisão:** métrica → justificativa → confiança (ver `docs/diagramas-uml.md`).
+- **Tabela de transições:** para cada fase (`ROLAR_DADO`, `ESCOLHER_METRICA`, `INFORMAR_VALOR`, `ESCOLHER_JUSTIFICATIVA`, `ESCOLHER_CONFIANCA`, `MOSTRAR_RESULTADO`, `MOSTRAR_EVENTO`, `MOSTRAR_BALANCO`, `FIM_DE_JOGO`) × cada tipo de ação, só a combinação válida muda o estado; as demais devolvem o mesmo objeto.
+- **Ordem da decisão:** métrica → justificativa → confiança (ver `docs/diagramas-uml.md`); em cenário de cálculo, métrica → valor → justificativa → confiança. Coberto em `tests/calculo.test.js`: `INFORMAR_VALOR` só aceita número (ou texto pt-BR) e só nessa fase, e o cenário comum não passa por ela.
 - **Entradas inválidas:** métrica ou justificativa que não pertence ao cenário, confiança fora da escala (`chute`, `duvida`, `provavel`, `confiante`, `certeza`), `valor` ausente.
 - **Pureza:** o estado anterior não é alterado (`structuredClone`).
 - **Fim de turno e de jogo:** rotação de jogadores, incremento de `turnoAtual`, `FIM_DE_JOGO` após `turnosPorJogador`, ninguém eliminado.
@@ -103,7 +103,8 @@ Cenários e eventos são dados; o conteúdo é validado como código.
 - Ids de cenário e de evento únicos; todo evento tem setor válido, dinheiro e reputação numéricos.
 - **Coerência pedagógica:** `cenario.opcoes[correta]` corresponde ao gabarito calculado a partir dos dados (por exemplo, a opção correta do cenário 1 é a mediana, e o valor mostrado vem de `resumo`).
 - Distribuição por setor: todo setor de `SETORES` tem pelo menos um cenário e um evento (necessário para o cooperativo).
-- Contagem de cenários e eventos igual à do README (13 cenários, 18 eventos).
+- Contagem de cenários e eventos igual à do README (18 cenários, 18 eventos).
+- **Cenários de cálculo** (`tests/calculo.test.js`): o validador recusa opção que revela o valor, opção sem `chave`, falta de `como_calcular`, margem inválida e `exibir` sem tabela; margem relativa com piso para valor zero e sobreposição por opção; valor conferido contra a métrica escolhida (e não a correta); valor fora da margem invalida a métrica; o rival informa o valor exato; `lerNumero` entende pt-BR; a tela do valor mostra tabela, margem e campo sem revelar a resposta; o resultado mostra valor informado, exato, faixa e como calcular; partida inteira reproduzível com save a cada ação.
 
 **Situação:** `tests/scenarios.test.js` cobre a validação geral, ids únicos, placeholders e setores. Faltam os testes negativos restantes, coerência do gabarito, cobertura por setor e contagem.
 

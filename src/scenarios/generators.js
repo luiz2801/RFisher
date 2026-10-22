@@ -13,6 +13,16 @@ function padronizado(n, alvoMedia, alvoDp, rng, nCasas) {
   return z.map((v) => casas(alvoMedia + ((v - m) / s) * alvoDp, nCasas));
 }
 
+function sortearComPesos(n, pesos, primeiro, rng) {
+  const total = pesos.reduce((s, w) => s + w, 0);
+  return Array.from({ length: n }, () => {
+    let r = rng.prox() * total;
+    let idx = 0;
+    while (idx < pesos.length - 1 && r >= pesos[idx]) r -= pesos[idx++];
+    return primeiro + idx;
+  });
+}
+
 const GERADORES = {
   assimetria_direita: {
     gerar(p, rng) {
@@ -200,6 +210,30 @@ const GERADORES = {
       return mediana(v) === 0 && zeros / v.length >= 0.55 && media(v) > 0.1 * Math.max(...v);
     },
   },
+
+  // Poucas medições (para calcular à mão): o ponto é o cálculo, não a forma dos dados.
+  // O invariante garante valores positivos e um desvio padrão próximo do pedido, com amplitude bem maior que ele.
+  amostra_pequena: {
+    gerar(p, rng) {
+      return { series: [{ nome: 'Medições', valores: padronizado(p.n, p.media, p.dp, rng, p.casas ?? 0) }] };
+    },
+    invariante([v], p) {
+      const dp = desvioPadrao(v);
+      return Math.min(...v) > 0 && Math.abs(dp - p.dp) <= 0.1 * p.dp && Math.max(...v) - Math.min(...v) > 1.8 * dp;
+    },
+  },
+
+  // Contagens inteiras com cauda à direita (0, 1, 2, ...): moda e mediana ficam abaixo da média,
+  // e o P90 bem acima dela. Projetar um total pede a média.
+  contagens_assimetricas: {
+    gerar(p, rng) {
+      return { series: [{ nome: 'Contagens', valores: sortearComPesos(p.n, p.pesos, 0, rng) }] };
+    },
+    invariante([v]) {
+      const m = media(v);
+      return m - mediana(v) >= 0.2 && Math.abs(m - moda(v)) >= 0.5 && percentil(v, 90) > 1.5 * m;
+    },
+  },
 };
 
 export function tiposDeGerador() {
@@ -207,7 +241,7 @@ export function tiposDeGerador() {
 }
 
 export function verificarInvariante(gerador, series) {
-  return GERADORES[gerador.tipo].invariante(series.map((s) => s.valores));
+  return GERADORES[gerador.tipo].invariante(series.map((s) => s.valores), gerador.parametros);
 }
 
 export function gerar(gerador, rng) {

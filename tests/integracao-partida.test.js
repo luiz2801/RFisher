@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { novoJogo } from '../src/engine/state.js';
 import { reduzir } from '../src/engine/machine.js';
+import { valorEsperado } from '../src/engine/calculo.js';
 import { obterCenario } from '../src/scenarios/loader.js';
 import { salvar, carregar } from '../src/storage/persist.js';
 
@@ -18,6 +19,8 @@ function proximaAcao(e) {
       return { tipo: 'CONFIANCA', valor: 'certeza' };
     case 'ESCOLHER_METRICA':
       return { tipo: 'METRICA', valor: def.opcoes.find((o) => o.correta).id };
+    case 'INFORMAR_VALOR':
+      return { tipo: 'VALOR', valor: valorEsperado(def, e.cenarioAtual) };
     case 'ESCOLHER_JUSTIFICATIVA':
       return { tipo: 'JUSTIFICATIVA', valor: def.justificativas.find((j) => j.tipo === 'correta').id };
     default:

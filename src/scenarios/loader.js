@@ -1,11 +1,14 @@
-import { CENARIOS } from './content/iniciante.js';
+import { CENARIOS as CENARIOS_BASE } from './content/iniciante.js';
+import { CENARIOS_CALCULO } from './content/calculo.js';
 import { CONCEITOS } from './content/conceitos.js';
 import { gerar } from './generators.js';
 import { resumo } from '../stats/metrics.js';
 import { formatar } from '../stats/format.js';
 import { SETORES } from '../engine/papeis.js';
-import { DIFICULDADE_MAX } from '../engine/config.js';
+import { DIFICULDADE_MAX, MARGEM_CALCULO_MAX_PCT } from '../engine/config.js';
+import { ehCalculo } from '../engine/calculo.js';
 
+const CENARIOS = [...CENARIOS_BASE, ...CENARIOS_CALCULO];
 const POR_ID = new Map(CENARIOS.map((c) => [c.id, c]));
 
 export const obterCenario = (id) => POR_ID.get(id);
@@ -42,10 +45,28 @@ export function instanciar(def, rng) {
 }
 
 function textosDe(def) {
-  const t = [def.contexto, def.dica, def.feedback.explicacao_correta];
+  const t = [def.contexto, def.dica, def.feedback.explicacao_correta, def.feedback.como_calcular ?? ''];
   t.push(...def.opcoes.map((o) => o.texto), ...def.justificativas.map((j) => j.texto));
   t.push(...Object.values(def.feedback.por_equivoco));
   return t;
+}
+
+// Cenário de cálculo (fisher.md 4.7): cada métrica aponta para um número calculável, a margem é razoável,
+// as opções não entregam o valor e há explicação do cálculo.
+function validarCalculo(def, num, err) {
+  const m = def.calculo?.margem_pct;
+  if (!(m > 0 && m <= MARGEM_CALCULO_MAX_PCT)) err(`calculo.margem_pct deve ficar entre 0 e ${MARGEM_CALCULO_MAX_PCT}: ${m}`);
+  const exibir = def.dados.exibir ?? [];
+  if (!exibir.includes('tabela') || exibir.some((x) => !['tabela', 'grafico'].includes(x))) {
+    err('dados.exibir deve incluir "tabela" e só aceita "tabela" e "grafico"');
+  }
+  if (def.dados.tabela && !['valores', 'frequencias'].includes(def.dados.tabela)) err(`dados.tabela inválido: ${def.dados.tabela}`);
+  if (typeof def.feedback.como_calcular !== 'string') err('feedback.como_calcular é obrigatório em cenário de cálculo');
+  for (const o of def.opcoes) {
+    if (!(o.chave in num)) err(`opção sem chave de métrica calculável: ${o.id}`);
+    if (o.texto.includes('{{')) err(`o texto da opção não pode revelar o valor: ${o.id}`);
+    if (o.margem_pct !== undefined && !(o.margem_pct > 0 && o.margem_pct <= MARGEM_CALCULO_MAX_PCT)) err(`margem_pct inválida: ${o.id}`);
+  }
 }
 
 // Devolve a lista de problemas do cenário (vazia se estiver tudo certo).
@@ -73,6 +94,7 @@ export function validarCenario(def, rng) {
   for (const o of def.opcoes) if (!o.correta && !o.equivoco) err(`opção errada sem equívoco: ${o.id}`);
 
   const { vars, num } = instanciar(def, rng);
+  if (ehCalculo(def)) validarCalculo(def, num, err);
   for (const texto of textosDe(def)) {
     for (const [, chave] of texto.matchAll(/\{\{(\w+)\}\}/g)) {
       if (!(chave in vars)) err(`placeholder inexistente: {{${chave}}}`);

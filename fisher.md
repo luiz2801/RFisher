@@ -71,6 +71,7 @@ Rola os dois dados (soma, 2 a 12) → cai numa casa → vê o cenário/gráfico 
 | 8 | **Níveis por jogador** (recomendação, a confirmar) | Iniciante e avançado podem jogar juntos, com multiplicadores compensando o risco |
 | 9 | **Modo cooperativo** com diretorias, ao lado do competitivo (fase 1 implementada) | Caixa compartilhado resolve a recuperação de quem está atrás e mantém a discussão entre papéis. Ver [docs/modo-cooperativo.md](docs/modo-cooperativo.md) |
 | 10 | **Modo solo**: competitivo contra um rival do computador, que acerta com a frequência de um perfil, calibrado por simulação (implementado) | Uma pessoa sozinha não tinha contra quem competir. Um rival estocástico usa as mesmas regras e é balanceado pela taxa de vitória, sem IA nem rubber-banding (3.11) |
+| 11 | **Cenários de cálculo** (implementado, seção 4.7): a pessoa recebe os dados em tabela, escolhe a métrica, **calcula e informa o valor** (aceito dentro de uma margem), justifica e declara a confiança | Escolher a métrica certa não prova que se sabe calculá-la. O valor informado, com margem para arredondamentos, exige fazer a conta, sem mudar a matriz de pontuação (3.5) |
 
 ---
 
@@ -93,7 +94,7 @@ Circuito de aproximadamente **20 casas**. Cada casa coloca pelo menos uma métri
 
 1. Rola os dois dados e avança a soma.
 2. Resolve a casa (decisão, evento, duelo, mercado, auditoria ou balanço).
-3. Em casas de decisão: **métrica → justificativa → confiança → resultado → explicação**.
+3. Em casas de decisão: **métrica → justificativa → confiança → resultado → explicação**. Nos cenários de cálculo (4.7), entre a métrica e a justificativa entra a etapa **valor calculado**.
 4. Atualiza o estado e passa a vez.
 
 ### 3.3 Decisão em duas etapas
@@ -102,6 +103,8 @@ Circuito de aproximadamente **20 casas**. Cada casa coloca pelo menos uma métri
 - **Etapa 2, justificativa:** o jogador escolhe a afirmação que sustenta a decisão, em um **pool único** por cenário (6 a 8 afirmações, embaralhadas a cada jogada), igual para qualquer alternativa escolhida.
 
 Cada afirmação do pool é marcada com um tipo: `correta`, `parcial`, `erro_conceitual` (com o equívoco associado), `afirmacao_falsa` ou `irrelevante`.
+
+**Cenários de cálculo.** Alguns cenários (4.7) entregam os dados numa tabela e pedem, além da métrica, o **valor calculado** dela. A decisão fica em quatro etapas: métrica → valor → justificativa → confiança. O valor vale se ficar dentro de uma margem do valor exato (4.7).
 
 ### 3.4 Aposta de confiança
 
@@ -127,6 +130,8 @@ Cada casa de decisão tem um valor **V** (proposta inicial: R$ 10.000 a R$ 50.00
 | Certa | Errada | Sorte / prepotência | **+0,2V × confiança** |
 | Errada | Certa | Incoerência (conceito certo, métrica errada) | **0** |
 | Errada | Errada | Erro total | **−0,5V × confiança** |
+
+**Cenários de cálculo.** A matriz é a mesma, e a coluna "Métrica" passa a significar *métrica certa **e** valor dentro da margem*. Quem escolhe a métrica certa mas informa um valor fora da margem cai em "Errada" (incoerência, se a justificativa estiver certa; erro total, se não). O valor é conferido contra a métrica que a pessoa escolheu, então calcular bem a métrica errada também não pontua (4.7).
 
 **Verificação de sanidade (anti-chute).** Com 5 alternativas e 6 afirmações no pool (uma só correta), um jogador que chuta tudo tem esperança de ganho de aproximadamente **−0,27 × V × confiança** por casa. Ou seja, chutar perde dinheiro em média. Essa conta deve ser refeita se mudar o número de alternativas, o tamanho do pool ou a possibilidade de crédito parcial.
 
@@ -187,7 +192,7 @@ A punição é ajustável. O ponto de partida é perda de dinheiro e reputação
 **O rival não resolve o cenário.** Ele acerta com a frequência do seu perfil:
 
 1. **Acerto efetivo:** `p = acerto − 0,08 × (dificuldade − 1)`, limitado a 0,05–0,98. O rival sente a dificuldade crescente (4.5) como uma pessoa.
-2. **Métrica e justificativa:** cada uma acerta com probabilidade `p`, de forma independente. Ao errar, escolhe ao acaso entre os distratores, que são equívocos reais. Por isso a tela de resultado mostra o equívoco do rival, e o erro dele também ensina.
+2. **Métrica e justificativa:** cada uma acerta com probabilidade `p`, de forma independente. Ao errar, escolhe ao acaso entre os distratores, que são equívocos reais. Por isso a tela de resultado mostra o equívoco do rival, e o erro dele também ensina. Nos cenários de cálculo (4.7) o rival informa o valor exato da métrica que escolheu: o acerto da métrica continua sendo `p`, e o calibrado em 3.11 vale sem mudança. Ele não sorteia nada a mais para isso.
 3. **Confiança:** vem de uma certeza interna `p + 0,1 × (acertos − 1) + ruído normal (dp 0,15)`, em que `acertos` vai de 0 a 2. Os limiares 0,30 · 0,45 · 0,60 · 0,75 separam os cinco níveis, do chute à certeza. Quem acerta tende a apostar mais alto, mas às vezes o rival erra convicto.
 4. **Determinismo:** o rival usa o rng da partida (ação `DECIDIR_BOT`), então a seed reproduz também as jogadas dele, inclusive depois de salvar e retomar.
 
@@ -226,6 +231,11 @@ A variância é alta: em 10 turnos cada jogador decide cerca de 6 vezes, e a dif
 | 11 | Resolução no primeiro contato | Assimetria à esquerda (*outliers* na base) | **Mediana** | Achar que só valores altos distorcem a média |
 | 12 | Caixa da folha de pagamento | Duas séries, a de média maior é volátil | **Desvio padrão** | Escolher pela média e ignorar o risco |
 | 13 | Projeção de receita (freemium) | Maioria de zeros | **Média** | Usar a mediana para projetar um total |
+| 14 | Aluguel típico do bairro (**cálculo**) | Assimetria à direita, 11 registros | **Mediana** | Calcular a mediana à mão e não se deixar levar pela média |
+| 15 | Espera no pronto-atendimento (**cálculo**) | Cauda longa, 21 registros | **Percentil 90 (P90)** | Calcular um percentil por posição na lista ordenada |
+| 16 | Chamados de suporte por cliente (**cálculo**) | Contagens com cauda à direita, tabela de frequências | **Média** | Calcular a média de uma tabela de frequências para projetar um total |
+| 17 | Regularidade da embaladora (**cálculo**) | 8 tempos de ciclo | **Desvio padrão** | Calcular o desvio padrão amostral e distingui-lo da amplitude |
+| 18 | Estabilidade da carga noturna (**cálculo**) | Dispersão com uma execução travada, 11 registros | **Amplitude interquartil (IQR)** | Calcular quartis e perceber que o IQR resiste ao outlier |
 
 ### 4.2 Cenários candidatos (nível avançado e eventos)
 
@@ -298,6 +308,24 @@ Os limiares (0,5; 0,5; 0,15) são pontos de partida, a calibrar no playtest. His
 
 Como o save é apagado em `FIM_DE_JOGO`, o relatório não sobrevive a recarregar a página; o botão **Imprimir relatório** abre a impressão do navegador (que também salva em PDF) só com o painel de fim de jogo. Os equívocos recorrentes ainda não aparecem no relatório, porque os ids de equívoco não têm rótulo legível.
 
+### 4.7 Cenários de cálculo
+
+**Implementado** (`tipo: 'calculo'` no cenário; `src/engine/calculo.js`; conteúdo em `src/scenarios/content/calculo.js`, cenários 14 a 18). São cenários de decisão em que a pessoa precisa **fazer a conta**, não só reconhecer a métrica.
+
+**Dados.** Poucas observações (8 a 40), para dar para calcular à mão, em **tabela** e, em alguns cenários, também em gráfico (`dados.exibir`). A tabela mostra os registros na ordem em que chegaram (a pessoa precisa ordená-los) ou, em dados discretos, valor e frequência (`dados.tabela`). Os dados continuam gerados por seed, com invariantes (geradores `amostra_pequena` e `contagens_assimetricas`, e os já existentes com `n` pequeno).
+
+**Fluxo.** Métrica → **valor calculado** → justificativa → confiança. Nas opções de métrica não aparece valor algum (nos cenários comuns aparece, para comparação). Cada opção aponta (`chave`) para a métrica calculável, então a pessoa pode calcular o valor de qualquer opção que escolher.
+
+**Margem.** O valor é aceito se `|informado − exato| ≤ máx(exato × margem%, 0,005)`. A margem é relativa ao valor exato da **métrica escolhida**, definida por cenário (`calculo.margem_pct`, de 1% a 3% hoje; o validador limita a 10%) e pode ser sobreposta numa opção. O piso absoluto trata o valor exato zero (por exemplo, uma moda 0). A margem aparece na tela do valor ("margem de erro de ±N%") e a faixa aceita no resultado. Ela absorve arredondamentos, mas não erros de método.
+
+**Convenções avisadas na tela do valor,** porque mudam o resultado: percentis e quartis pelo método linear (`PERCENTIL.INC` e `QUARTIL.INC` das planilhas, posição `p × (n − 1) + 1`) e desvio padrão amostral (divisor `n − 1`).
+
+**Pontuação.** Sem mudar a matriz de 3.5: a métrica só conta como certa se a opção for a correta **e** o valor estiver dentro da margem. Valor fora da margem com a métrica certa equivale a métrica errada (incoerência se a justificativa estiver certa, erro total se não). A tela de resultado mostra o valor informado, o valor exato, a faixa aceita e um passo a passo do cálculo (`feedback.como_calcular`), e o título do resultado diz quando o erro foi só de cálculo. O histórico guarda `valor` e `valorCorreto`.
+
+**Decisão de projeto.** "Margem" foi lida como a **tolerância aceita no valor calculado**, e não como uma margem de erro que a pessoa declara junto com o valor. Se for desejada a segunda leitura (a pessoa informa o valor e um intervalo), é uma extensão da etapa de valor, ainda não implementada.
+
+**Fora do escopo por ora:** cenários de cálculo com duas séries; métricas sem número (frequência por nota); o relatório de fim de jogo ainda não separa acerto de método de acerto de cálculo (só a categoria do resultado entra no perfil).
+
 ---
 
 ## 5. Arquitetura técnica
@@ -366,7 +394,7 @@ INICIO_TURNO
    └─> ROLAR_DADO
         └─> MOVER
              └─> RESOLVER_CASA
-                  ├─ Decisão ─> ESCOLHER_METRICA ─> ESCOLHER_JUSTIFICATIVA ─> ESCOLHER_CONFIANCA ─> MOSTRAR_RESULTADO ─> MOSTRAR_EXPLICACAO
+                  ├─ Decisão ─> ESCOLHER_METRICA ─> [INFORMAR_VALOR, só em cenário de cálculo] ─> ESCOLHER_JUSTIFICATIVA ─> ESCOLHER_CONFIANCA ─> MOSTRAR_RESULTADO ─> MOSTRAR_EXPLICACAO
                   ├─ Evento ──> MOSTRAR_EVENTO ─> APLICAR_EFEITO
                   ├─ Duelo ───> (jogador A e B respondem em tela oculta) ─> COMPARAR ─> MOSTRAR_EXPLICACAO
                   ├─ Mercado ─> COMPRAR_OU_PASSAR
@@ -466,6 +494,8 @@ O schema original foi atualizado para refletir o pool único, os equívocos e a 
   "impacto": { "reputacao_acerto": 5, "reputacao_erro": -10 }
 }
 ```
+
+**Cenário de cálculo (4.7).** Acrescenta ao schema acima: `tipo: "calculo"`; `calculo: { margem_pct }`; em `dados`, `exibir` (`["tabela"]` ou `["tabela", "grafico"]`) e `tabela` (`"valores"` ou `"frequencias"`); em cada opção, `chave` (métrica calculável) e, opcionalmente, `margem_pct`; em `feedback`, `como_calcular`. O texto das opções não pode ter placeholders. O validador confere tudo isso.
 
 ### 5.6 Geração de dados por seed
 

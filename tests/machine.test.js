@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { criarRng } from '../src/engine/rng.js';
 import { novoJogo, vencedores } from '../src/engine/state.js';
 import { reduzir } from '../src/engine/machine.js';
+import { valorEsperado } from '../src/engine/calculo.js';
 import { obterCenario } from '../src/scenarios/loader.js';
 import { DINHEIRO_INICIAL } from '../src/engine/config.js';
 import { CONFIANCA } from '../src/engine/scoring.js';
@@ -20,6 +21,7 @@ function jogar(config, politica) {
       ROLAR_DADO: () => ({ tipo: 'ROLAR' }),
       ESCOLHER_CONFIANCA: () => ({ tipo: 'CONFIANCA', valor: politica.confianca }),
       ESCOLHER_METRICA: () => ({ tipo: 'METRICA', valor: politica.metrica(def) }),
+      INFORMAR_VALOR: () => ({ tipo: 'VALOR', valor: valorEsperado(def, e.cenarioAtual) }),
       ESCOLHER_JUSTIFICATIVA: () => ({ tipo: 'JUSTIFICATIVA', valor: politica.justificativa(def) }),
     }[e.fase]?.() ?? { tipo: 'CONTINUAR' };
     e = reduzir(e, acao);
@@ -112,6 +114,7 @@ test('o estado sobrevive a JSON (salvar/retomar partida)', () => {
       ROLAR_DADO: { tipo: 'ROLAR' },
       ESCOLHER_CONFIANCA: { tipo: 'CONFIANCA', valor: 'chute' },
       ESCOLHER_METRICA: { tipo: 'METRICA', valor: def?.opcoes[0].id },
+      INFORMAR_VALOR: { tipo: 'VALOR', valor: def && valorEsperado(def, e.cenarioAtual) },
       ESCOLHER_JUSTIFICATIVA: { tipo: 'JUSTIFICATIVA', valor: def?.justificativas[0].id },
     }[e.fase] ?? { tipo: 'CONTINUAR' };
     e = reduzir(copia, acao);
@@ -145,6 +148,7 @@ test('simulação: quem chuta termina com menos dinheiro que quem sabe tudo', ()
         ROLAR_DADO: { tipo: 'ROLAR' },
         ESCOLHER_CONFIANCA: { tipo: 'CONFIANCA', valor: p.confianca },
         ESCOLHER_METRICA: { tipo: 'METRICA', valor: def && p.metrica(def) },
+        INFORMAR_VALOR: { tipo: 'VALOR', valor: def && valorEsperado(def, e.cenarioAtual) },
         ESCOLHER_JUSTIFICATIVA: { tipo: 'JUSTIFICATIVA', valor: def && p.justificativa(def) },
       }[e.fase] ?? { tipo: 'CONTINUAR' };
       e = reduzir(e, acao);

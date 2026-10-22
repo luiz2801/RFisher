@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { novoJogo } from '../src/engine/state.js';
 import { reduzir } from '../src/engine/machine.js';
+import { valorEsperado } from '../src/engine/calculo.js';
 import { obterCenario } from '../src/scenarios/loader.js';
 import { viewMenu, viewJogo } from '../src/ui/views.js';
 import { esc } from '../src/ui/html.js';
@@ -33,6 +34,8 @@ test('todas as telas de uma partida renderizam sem placeholders soltos nem HTML 
       ROLAR_DADO: { tipo: 'ROLAR' },
       ESCOLHER_CONFIANCA: { tipo: 'CONFIANCA', valor: 'certeza' },
       ESCOLHER_METRICA: { tipo: 'METRICA', valor: def && def.opcoes.find((o) => o.correta === certo).id },
+      // valor exato quando "acerta" e fora da margem quando "erra", para cobrir os dois feedbacks
+      INFORMAR_VALOR: { tipo: 'VALOR', valor: def && (certo ? 1 : 1.5) * valorEsperado(def, e.cenarioAtual) + (certo ? 0 : 1) },
       ESCOLHER_JUSTIFICATIVA: {
         tipo: 'JUSTIFICATIVA',
         valor: def && def.justificativas[certo ? 0 : 1 + (i % (def.justificativas.length - 1))].id,
@@ -46,7 +49,7 @@ test('todas as telas de uma partida renderizam sem placeholders soltos nem HTML 
   assert.match(fim, /Bia<\/h3>/);
   assert.match(fim, /Sugestões de estudo|Não caiu em nenhuma casa de Decisão/);
   assert.ok(!fim.includes(nomeMalicioso), 'nome não escapado no relatório');
-  for (const fase of ['ROLAR_DADO', 'ESCOLHER_CONFIANCA', 'ESCOLHER_METRICA', 'ESCOLHER_JUSTIFICATIVA', 'MOSTRAR_RESULTADO', 'MOSTRAR_EVENTO']) {
+  for (const fase of ['ROLAR_DADO', 'ESCOLHER_CONFIANCA', 'ESCOLHER_METRICA', 'INFORMAR_VALOR', 'ESCOLHER_JUSTIFICATIVA', 'MOSTRAR_RESULTADO', 'MOSTRAR_EVENTO']) {
     assert.ok(fasesVistas.has(fase), `fase nunca exibida: ${fase}`);
   }
 });
@@ -67,6 +70,7 @@ test('as telas do modo cooperativo renderizam até o fim', () => {
       ROLAR_DADO: { tipo: 'ROLAR' },
       ESCOLHER_CONFIANCA: { tipo: 'CONFIANCA', valor: 'chute' },
       ESCOLHER_METRICA: { tipo: 'METRICA', valor: def?.opcoes[0].id },
+      INFORMAR_VALOR: { tipo: 'VALOR', valor: def && valorEsperado(def, e.cenarioAtual) },
       ESCOLHER_JUSTIFICATIVA: { tipo: 'JUSTIFICATIVA', valor: def?.justificativas[0].id },
     }[e.fase] ?? { tipo: 'CONTINUAR' };
     e = reduzir(e, acao);

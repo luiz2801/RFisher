@@ -5,6 +5,7 @@ import { viewMenu, viewJogo } from './ui/views.js';
 import { MAX_JOGADORES, PERFIS_BOT } from './engine/config.js';
 import { NUM_CASAS, coordenadas } from './engine/board.js';
 import { dadoHtml } from './ui/components/dado.js';
+import { lerNumero } from './stats/format.js';
 
 const app = document.getElementById('app');
 let estado = null;
@@ -171,10 +172,28 @@ app.addEventListener('click', (ev) => {
 });
 
 app.addEventListener('submit', (ev) => {
-  if (ev.target.id !== 'form-menu') return;
-  ev.preventDefault();
-  iniciar(ev.target);
+  if (ev.target.id === 'form-menu') {
+    ev.preventDefault();
+    iniciar(ev.target);
+  } else if (ev.target.dataset.form === 'valor') {
+    ev.preventDefault();
+    informarValor(ev.target);
+  }
 });
+
+// Valor calculado de um cenário de cálculo: texto livre em pt-BR; se não for número, avisa e não avança.
+function informarValor(form) {
+  const campo = form.elements.valor;
+  const valor = lerNumero(campo.value);
+  const erro = form.querySelector('.erro-campo');
+  if (Number.isNaN(valor)) {
+    erro.hidden = false;
+    campo.setAttribute('aria-invalid', 'true');
+    campo.focus();
+    return;
+  }
+  despachar({ tipo: 'VALOR', valor });
+}
 
 // No solo só a pessoa preenche o cadastro; o número de CEOs dá lugar à escolha do rival.
 app.addEventListener('change', (ev) => {

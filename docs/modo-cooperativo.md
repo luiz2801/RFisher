@@ -58,6 +58,8 @@ Quando um jogador cai numa casa de decisão de **outro** setor:
 4. O decisor aceita ou rejeita o parecer. A confiança continua sendo dele.
 5. Se o parecer acertou, o diretor ganha **pontos de mérito**. Se errou e foi seguido, perde reputação pessoal.
 
+Nos cenários de cálculo (`fisher.md` 4.7), o decisor também informa o valor calculado; o parecer do diretor indica só a métrica, e o cálculo continua sendo dele.
+
 Assim ninguém vira "quarterback": cada um responde pelo seu papel. A regra mantém a discussão, que é onde se aprende (decisão nº 6 do histórico).
 
 ---

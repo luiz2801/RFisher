@@ -9,6 +9,8 @@ Referências: regras em [fisher.md](../fisher.md) (seções 3 e 4), schema origi
 | O quê | Arquivo |
 | --- | --- |
 | Cenários (lista `CENARIOS`) | [src/scenarios/content/iniciante.js](../src/scenarios/content/iniciante.js) |
+| Cenários de cálculo (lista `CENARIOS_CALCULO`) | [src/scenarios/content/calculo.js](../src/scenarios/content/calculo.js) |
+| Margem, valor exato e notas de método dos cenários de cálculo | [src/engine/calculo.js](../src/engine/calculo.js) |
 | Cartas de evento (lista `EVENTOS`) | [src/scenarios/content/eventos.js](../src/scenarios/content/eventos.js) |
 | Geradores de dados e invariantes | [src/scenarios/generators.js](../src/scenarios/generators.js) |
 | Placeholders, instanciação e validador | [src/scenarios/loader.js](../src/scenarios/loader.js) |
@@ -31,7 +33,9 @@ Consequência prática: **nunca escreva um número de dado à mão no texto**. U
 3. Escreva o objeto do cenário em `iniciante.js` seguindo o [modelo](#modelo-de-cenário).
 4. Inclua o cenário no array exportado `CENARIOS`, no final do arquivo.
 5. Rode `npm test`. O validador e os testes de invariante rodam sobre todos os cenários automaticamente.
-6. Adicione um teste específico do invariante em `tests/generators.test.js` (como os dos cenários 1 e 4 a 13).
+6. Adicione um teste específico do invariante em `tests/generators.test.js` (como os dos cenários 1 e 4 a 18).
+
+Para um cenário em que a pessoa **calcula** o valor, siga o passo a passo acima e depois a seção [Cenários de cálculo](#cenários-de-cálculo).
 7. Atualize a documentação (ver [Checklist](#checklist-antes-de-concluir)).
 
 ### Modelo de cenário
@@ -76,6 +80,7 @@ const cenarioNN = {
 | `dica` | Opcional. Aparece só para jogadores de nível iniciante. |
 | `valor_base` | V da matriz de pontuação (`fisher.md` 3.5). Hoje todos usam 20.000; o nível avançado multiplica por 1,5. |
 | `dados.formato` | Define a formatação de todos os placeholders numéricos. |
+| `tipo` | Opcional. `'calculo'` para um cenário em que a pessoa calcula e informa o valor (ver [Cenários de cálculo](#cenários-de-cálculo)). Ausente é um cenário comum. |
 | `dados.tipo_grafico` | `barras_discretas` para dados inteiros e poucos valores (numerações, notas); qualquer outro valor vira histograma. |
 | `dados.descricao_acessivel` | Obrigatória por convenção: é a descrição textual do gráfico (`fisher.md` 5.9). |
 | `impacto` | Variação de reputação por acerto e por erro. Reutilize a constante `impacto` do arquivo, salvo motivo para variar. |
@@ -86,9 +91,9 @@ O jogo sorteia cenários com dificuldade crescente ao longo da partida (`fisher.
 
 | Valor | Critério | Cenários atuais |
 | --- | --- | --- |
-| 1 | A métrica correta é a mais direta (centro de um conjunto com ou sem um único valor atípico, a categoria mais frequente, ou o máximo quando todos precisam caber). | 01, 03, 07, 09 |
-| 2 | Exige reconhecer o formato dos dados (cauda longa, bimodal, assimetria à esquerda), ler a definição de um percentil ou pensar em dispersão. | 02, 04, 05, 10, 11 |
-| 3 | Exige comparar dispersão robusta com sensível a outliers, comparar amostras, pesar risco contra média, ou perceber que o objetivo (um total) muda a métrica. | 06, 08, 12, 13 |
+| 1 | A métrica correta é a mais direta (centro de um conjunto com ou sem um único valor atípico, a categoria mais frequente, ou o máximo quando todos precisam caber). | 01, 03, 07, 09, 14 |
+| 2 | Exige reconhecer o formato dos dados (cauda longa, bimodal, assimetria à esquerda), ler a definição de um percentil ou pensar em dispersão. | 02, 04, 05, 10, 11, 15, 17 |
+| 3 | Exige comparar dispersão robusta com sensível a outliers, comparar amostras, pesar risco contra média, ou perceber que o objetivo (um total) muda a métrica. | 06, 08, 12, 13, 16, 18 |
 
 Mantenha ao menos um cenário em cada nível, senão o início ou o fim da partida perde o efeito (há teste para isso). O peso de sorteio e o passo médio do dado estão em `src/engine/config.js`; a lógica, em `src/engine/dificuldade.js`.
 
@@ -163,7 +168,7 @@ Em cenários com mais de uma série, use o sufixo da série: `{{media_a}}`, `{{d
 
 ### Formatos
 
-`dados.formato` aceita: `brl` (R$ 1.234), `dias`, `minutos`, `gramas`, `porcento`, `mm` (duas casas), `cm` e `ms` (inteiros) e qualquer outro valor, que usa o formato numérico simples (`numero`). Todos usam separadores de `pt-BR`. Para um formato novo, acrescente um `case` em [src/stats/format.js](../src/stats/format.js) e um teste.
+`dados.formato` aceita: `brl` (R$ 1.234), `dias`, `minutos`, `gramas`, `porcento`, `mm` (duas casas), `cm` e `ms` (inteiros), `seg` (segundos, até uma casa), `decimal` (até três casas, sem unidade, para médias como 1,325) e qualquer outro valor, que usa o formato numérico simples (`numero`, até uma casa). Todos usam separadores de `pt-BR`. Para um formato novo, acrescente um `case` em [src/stats/format.js](../src/stats/format.js) e um teste.
 
 ### Setores
 
@@ -198,6 +203,12 @@ Ajuste só os `parametros` e o texto do cenário.
 | `limite_fisico` | `n`, `media`, `dp` (valores inteiros) | máximo − P95 ≥ 0,25 × dp e máximo > média + 1,5 × dp | 09 |
 | `assimetria_esquerda` | `n`, `base`, `ruido`, `outliers[{valor, qtd}]` | mediana − média > 6 % da mediana e mínimo < metade da mediana | 11 |
 | `inflado_em_zero` | `n`, `proporcaoZero`, `valorMin`, `valorMax` | mediana = 0, ao menos 55 % de zeros e média > 10 % do máximo | 13 |
+| `amostra_pequena` | `n`, `media`, `dp`, `casas` (padrão 0) | valores positivos, dp dentro de 10 % do pedido e amplitude > 1,8 × dp | 17 |
+| `contagens_assimetricas` | `n`, `pesos[]` (contagens 0, 1, 2, ...) | média ≥ 0,2 acima da mediana, a ≥ 0,5 da moda e P90 > 1,5 × média | 16 |
+
+Os cenários 14, 15 e 18 reaproveitam `assimetria_direita`, `cauda_longa` e `dispersao_outliers` com `n` pequeno.
+
+Um invariante recebe também os `parametros` do cenário como segundo argumento (`invariante(series, parametros)`), então pode depender deles (como `amostra_pequena` faz).
 
 Atenção: alguns invariantes têm números fixos do cenário original (por exemplo, média ≈ 500 em `distribuicao_normal_simetrica`). Mudar os parâmetros para fora desse intervalo faz o gerador falhar. Se precisar de outros valores, torne o invariante dependente dos parâmetros.
 
@@ -211,6 +222,50 @@ Atenção: alguns invariantes têm números fixos do cenário original (por exem
 6. Se o cenário usar o gráfico discreto, confirme que os valores são inteiros.
 
 Dicas: `padronizado(n, media, dp, rng, casas)` gera uma série com média e desvio exatos; os invariantes devem ter folga para que o sorteio passe em poucas tentativas.
+
+## Cenários de cálculo
+
+Um cenário `tipo: 'calculo'` entrega os dados numa **tabela** (e, se quiser, também num gráfico) e pede que a pessoa escolha a métrica, **calcule o valor** com os dados, justifique e declare a confiança (`fisher.md` 4.7). O modelo é o de um cenário comum, com estas diferenças:
+
+```js
+const cenarioNN = {
+  id: 'cenario_NN_exemplo',
+  tipo: 'calculo',
+  /* setor, conceito, dificuldade, titulo, contexto, dica, valor_base como no modelo comum */
+  calculo: { margem_pct: 2 },             // margem aceita no valor informado, em % do valor exato (0 a 10)
+  dados: {
+    gerador: { tipo: 'cauda_longa', parametros: { n: 21, /* ... */ } },   // poucos registros, para calcular à mão
+    formato: 'minutos',
+    exibir: ['tabela'],                   // 'tabela' é obrigatório; acrescente 'grafico' para mostrar também o gráfico
+    tabela: 'valores',                    // 'valores' (registros na ordem sorteada) ou 'frequencias' (valor e quantidade)
+    rotulo_x: 'Espera (min)',             // cabeçalho da coluna de valores
+    rotulo_y: 'Pacientes',
+    tipo_grafico: 'histograma',
+    descricao_acessivel: '...',
+  },
+  opcoes: [
+    // `chave` é a métrica calculável (uma de `num`: media, mediana, moda, p25, p75, p90, p95, iqr, amplitude, dp, maximo, minimo, ponto_medio).
+    // O texto NÃO pode ter placeholders: revelaria o valor.
+    { id: 'p90', chave: 'p90', texto: 'Percentil 90 (P90)', correta: true },
+    { id: 'media', chave: 'media', texto: 'Média', correta: false, equivoco: 'media_oculta_falhas' },
+  ],
+  feedback: {
+    /* por_equivoco e explicacao_correta como no modelo comum (podem usar placeholders) */
+    como_calcular: 'Passo a passo do cálculo, com os valores sorteados ({{p90}}).',   // obrigatório
+    revelacao: { marcadores: [] },        // pode ficar vazio se o cenário não mostra gráfico
+  },
+};
+```
+
+Regras e cuidados:
+
+- **Poucos registros** (de 8 a 40) e valores que dê para ordenar e somar à mão. A tabela mostra os registros na ordem sorteada, então a pessoa precisa ordená-los.
+- **A margem** (`calculo.margem_pct`) vale para qualquer métrica escolhida e pode ser sobreposta por opção (`margem_pct` na opção). Escolha-a pelo que uma pessoa que arredonda de forma razoável erra: 1% para valores que são elementos da tabela (mediana, percentil em posição inteira), 2% a 3% para médias e desvios. Abaixo disso o jogo pune arredondamento; acima de 10% o validador recusa. Há um piso absoluto (`MARGEM_CALCULO_PISO`) para quando o valor exato é zero.
+- **Convenções:** percentis e quartis usam o método linear (posição `p × (n − 1) + 1`, como `PERCENTIL.INC` e `QUARTIL.INC`) e o desvio padrão é o amostral (`n − 1`). A tela de valor avisa isso. Se a convenção mudar o resultado além da margem, o cenário é injusto: ajuste `n` para o percentil cair numa posição inteira, como nos cenários 15 e 18.
+- **Todas as opções precisam de número:** não use métricas sem valor (como "distribuição de frequências").
+- **O valor é conferido contra a métrica escolhida,** não contra a correta. A métrica só conta como certa com a opção correta **e** o valor dentro da margem (pontuação em `fisher.md` 3.5 e 4.7).
+- **Escreva `como_calcular` com a conta,** usando placeholders. É o que o jogador lê ao errar.
+- O rival do computador informa o valor exato da métrica que escolher, então não precisa de nada a mais.
 
 ## Criar uma carta de evento
 
@@ -252,6 +307,7 @@ Em `eventos.js`, acrescente um objeto a `EVENTOS`:
 - Unicidade dos `id` dos cenários.
 - `dificuldade` inteira de 1 a 3 em todo cenário, com ao menos um cenário por nível.
 - Invariantes de todos os geradores em 1.000 seeds.
+- Cenários de cálculo: `calculo.margem_pct` entre 0 e 10, `dados.exibir` com `tabela`, cada opção com `chave` calculável e sem placeholders no texto, e `feedback.como_calcular` presente.
 - Todas as telas renderizam sem `{{`, sem `undefined` e sem HTML injetado.
 - Todo evento tem setor válido.
 
@@ -265,6 +321,7 @@ O validador **não** confere que a opção marcada `correta` é de fato a corret
 - [ ] Nenhum número de dado escrito à mão; só placeholders.
 - [ ] O invariante prova o ponto pedagógico e passa em 1.000 seeds.
 - [ ] Teste específico do gerador adicionado ou atualizado.
+- [ ] Cenário de cálculo: margem escolhida, convenção de percentil/desvio avisada na tela e `como_calcular` escrito.
 - [ ] `dados.formato` e rótulos dos eixos corretos; `descricao_acessivel` escrita.
 - [ ] Cenário incluído em `CENARIOS` (ou evento em `EVENTOS`).
 - [ ] README atualizado: contagem e lista de cenários e eventos (obrigatório pelo `CLAUDE.md`).

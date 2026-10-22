@@ -138,3 +138,57 @@ test('cenário 13: maioria de zeros, mediana zero e média positiva', () => {
     assert.ok(media(v) > 0.1 * Math.max(...v));
   }
 });
+
+test('cenário 14: um aluguel muito alto isolado, em 11 registros', () => {
+  const g = geradorDe('cenario_14_alugueis');
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.equal(v.length, 11);
+    assert.ok(media(v) > 1.5 * mediana(v));
+    assert.ok(Math.max(...v) > 10 * mediana(v));
+  }
+});
+
+test('cenário 15: com 21 espera, o P90 é o menor valor da cauda e fica acima de 3 × a média', () => {
+  const g = geradorDe('cenario_15_espera');
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.equal(v.length, 21);
+    assert.ok(percentil(v, 90) > 3 * media(v));
+    assert.ok(percentil(v, 90) >= 200, 'a posição 19 cai na cauda');
+  }
+});
+
+test('cenário 16: contagens inteiras com cauda à direita; média acima de mediana e moda', () => {
+  const g = geradorDe('cenario_16_chamados');
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.equal(v.length, 40);
+    assert.ok(v.every((x) => Number.isInteger(x) && x >= 0));
+    assert.ok(media(v) - mediana(v) >= 0.2);
+    assert.ok(Math.abs(media(v) - moda(v)) >= 0.5);
+    assert.ok(percentil(v, 90) > 1.5 * media(v));
+  }
+});
+
+test('cenário 17: 8 tempos inteiros e positivos, com desvio padrão próximo de 12', () => {
+  const g = geradorDe('cenario_17_embaladora');
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.equal(v.length, 8);
+    assert.ok(v.every((x) => Number.isInteger(x) && x > 0));
+    assert.ok(Math.abs(desvioPadrao(v) - 12) <= 1.2);
+    assert.ok(Math.max(...v) - Math.min(...v) > 1.8 * desvioPadrao(v));
+  }
+});
+
+test('cenário 18: o desvio padrão é inflado pela execução travada e o IQR não', () => {
+  const g = geradorDe('cenario_18_carga_noturna');
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.equal(v.length, 11);
+    const iqr = percentil(v, 75) - percentil(v, 25);
+    assert.ok(desvioPadrao(v) > 3 * iqr);
+    assert.ok(iqr > 0 && iqr < 12, 'o IQR reflete só os valores do meio');
+  }
+});

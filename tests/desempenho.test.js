@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { novoJogo } from '../src/engine/state.js';
 import { reduzir } from '../src/engine/machine.js';
+import { valorEsperado } from '../src/engine/calculo.js';
 import { obterCenario, todosCenarios, validarCenario } from '../src/scenarios/loader.js';
 import { CONCEITOS } from '../src/scenarios/content/conceitos.js';
 import { criarRng } from '../src/engine/rng.js';
@@ -108,6 +109,7 @@ test('a partida grava conceito e equívocos no histórico de cada decisão', () 
     const acao = {
       ROLAR_DADO: { tipo: 'ROLAR' },
       ESCOLHER_METRICA: { tipo: 'METRICA', valor: errada?.id },
+      INFORMAR_VALOR: { tipo: 'VALOR', valor: def && valorEsperado(def, e.cenarioAtual) },
       ESCOLHER_JUSTIFICATIVA: { tipo: 'JUSTIFICATIVA', valor: def?.justificativas.find((x) => x.tipo === 'correta').id },
       ESCOLHER_CONFIANCA: { tipo: 'CONFIANCA', valor: 'certeza' },
     }[e.fase] ?? { tipo: 'CONTINUAR' };

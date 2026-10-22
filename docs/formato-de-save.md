@@ -50,7 +50,7 @@ Versão do formato: **`versao: 1`**.
 | `eventoAtual` | objeto \| `null` | Carta de evento em exibição. |
 | `resultado` | objeto \| `null` | Resultado da última decisão, na tela de resultado. |
 
-Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `ESCOLHER_JUSTIFICATIVA`, `ESCOLHER_CONFIANCA`, `MOSTRAR_RESULTADO`, `MOSTRAR_EVENTO`, `MOSTRAR_BALANCO`, `FIM_DE_JOGO`.
+Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `INFORMAR_VALOR`, `ESCOLHER_JUSTIFICATIVA`, `ESCOLHER_CONFIANCA`, `MOSTRAR_RESULTADO`, `MOSTRAR_EVENTO`, `MOSTRAR_BALANCO`, `FIM_DE_JOGO`.
 
 ### `jogadores[]`
 
@@ -63,17 +63,17 @@ Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `ESCOLHER_JUSTIFICATIVA`, `
 | `reputacao` | 0–100 | Reputação individual. No cooperativo não muda. |
 | `posicao` | 0–27 | Casa no tabuleiro. |
 | `distancia` | inteiro ≥ 0 | Casas percorridas no total, contando as voltas (soma dos dados). Define a dificuldade dos cenários sorteados. Ausente em saves antigos (vale `posicao`). |
-| `historico` | lista | Decisões tomadas: `{ cenario, conceito, metrica, justificativa, confianca, resultado, delta, equivocos }`. `conceito` e `equivocos` (ids dos equívocos da opção e da justificativa escolhidas) alimentam o perfil de desempenho (`fisher.md` 4.6); ausentes em saves antigos, são recalculados a partir do conteúdo. |
+| `historico` | lista | Decisões tomadas: `{ cenario, conceito, metrica, justificativa, confianca, resultado, delta, equivocos }`, mais `valor` (o número informado) e `valorCorreto` (dentro da margem) nas decisões de cenários de cálculo (`fisher.md` 4.7). `conceito` e `equivocos` (ids dos equívocos da opção e da justificativa escolhidas) alimentam o perfil de desempenho (`fisher.md` 4.6); ausentes em saves antigos, são recalculados a partir do conteúdo. |
 | `bot` | `'facil'` \| `'medio'` \| `'dificil'` \| `null` | Perfil do rival controlado pelo computador (modo solo, `fisher.md` 3.11); `null` para uma pessoa. Ausente em saves antigos (vale pessoa). |
 | `papeis` | lista de ids de diretoria | Só no cooperativo; vazio no competitivo. |
 | `merito`, `habilidadeUsos` | inteiros | Reservados para o cooperativo; **ainda não usados** pelo motor. |
 
 ### Campos de contexto da fase
 
-- **`cenarioAtual`**: `{ id, series, num, vars, ordemOpcoes, ordemJustificativas, confianca, metricaId, justificativaId }`. `series` são os dados sorteados; `num` as métricas calculadas; `vars` os textos já formatados para os placeholders. As escolhas começam em `null` e são preenchidas conforme a fase avança.
+- **`cenarioAtual`**: `{ id, series, num, vars, ordemOpcoes, ordemJustificativas, confianca, metricaId, valorInformado, justificativaId }`. `series` são os dados sorteados; `num` as métricas calculadas; `vars` os textos já formatados para os placeholders. `valorInformado` é o número calculado pela pessoa (ou pelo rival) e só é preenchido em cenários de cálculo; ausente em saves antigos (vale `null`). As escolhas começam em `null` e são preenchidas conforme a fase avança.
 - **`eventoAtual`**: `{ id, crise, dinheiro }`. `dinheiro` já inclui o amortecimento do cooperativo.
 - **`confianca`** (em `historico`, `cenarioAtual` e `resultado`): uma das chaves `chute`, `duvida`, `provavel`, `confiante` ou `certeza`. Saves antigos, que só usavam `chute` e `certeza`, continuam válidos.
-- **`resultado`**: `{ cenarioId, metricaId, justificativaId, confianca, metricaCorreta, justificativaCorreta, categoria, delta, multiplicador, deltaReputacao, crise }`.
+- **`resultado`**: `{ cenarioId, metricaId, justificativaId, confianca, metricaCorreta, justificativaCorreta, categoria, delta, multiplicador, deltaReputacao, crise }`. Em cenários de cálculo acrescenta `valorCorreto` e `calculo: { chave, informado, esperado, margemPct, minimo, maximo, dentro }`. `metricaCorreta` diz se a *opção* era a correta; a `categoria` já considera também o valor (`fisher.md` 4.7). Ausentes em saves antigos e em cenários comuns.
 - **`balanco`**: `{ receita, custos, liquido }` e, no cooperativo, `bonusRh` e `meta: { valor, cumprida, dinheiro, reputacao, crise }`.
 
 Os campos de contexto só existem nas fases em que fazem sentido e são zerados em `CONTINUAR`.
@@ -148,5 +148,6 @@ Como o save referencia ids do conteúdo, alterar o conteúdo também pode quebra
 | 1 (sem incremento) | Acrescentado `jogadores[].distancia`; o sorteio de cenários passa a ser ponderado pela dificuldade. | Compatível: save sem `distancia` usa `posicao` |
 | 1 (sem incremento) | Acrescentados `conceito` e `equivocos` em `jogadores[].historico[]`, para o perfil de desempenho. | Compatível: entradas sem esses campos são completadas pelo conteúdo |
 | 1 (sem incremento) | Acrescentado `jogadores[].bot`, para o rival do modo solo. O modo solo grava `modo: 'competitivo'`. | Compatível: jogador sem `bot` é uma pessoa |
+| 1 (sem incremento) | Nova fase `INFORMAR_VALOR`; `cenarioAtual.valorInformado`; `resultado.valorCorreto` e `resultado.calculo`; `historico[].valor` e `historico[].valorCorreto`, para os cenários de cálculo (`fisher.md` 4.7). | Compatível: saves antigos não têm esses campos e nunca estiveram na nova fase; o código trata a ausência como cenário comum |
 
 Ao mudar o formato, acrescente uma linha aqui.

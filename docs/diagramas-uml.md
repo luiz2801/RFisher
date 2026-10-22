@@ -52,11 +52,15 @@ classDiagram
         +CategoriaResultado resultado
         +number delta
         +List~string~ equivocos
+        +number valor
+        +boolean valorCorreto
     }
 
     class CenarioDef {
         +string id
         +int versao
+        +string tipo
+        +Object calculo
         +string idioma
         +Nivel nivel
         +int dificuldade
@@ -73,6 +77,8 @@ classDiagram
 
     class Opcao {
         +string id
+        +string chave
+        +number margem_pct
         +string texto
         +boolean correta
         +string equivoco
@@ -106,7 +112,15 @@ classDiagram
     class BotService {
         +acertoEfetivo(perfil, dificuldade) number
         +confiancaDaCerteza(certeza) Confianca
-        +decidirBot(def, perfil, rng) Escolha
+        +decidirBot(def, perfil, rng, num) Escolha
+    }
+
+    class CalculoService {
+        +ehCalculo(def) boolean
+        +margemPct(def, opcao) number
+        +avaliarCalculo(def, opcao, num, informado) AvaliacaoCalculo
+        +valorEsperado(def, cenarioAtual) number
+        +notaDeMetodo(chave) string
     }
 
     class DificuldadeService {
@@ -154,6 +168,8 @@ classDiagram
     GameState ..> BoardService : consulta trilha
     GameState ..> DificuldadeService : sorteia cenário por progresso
     GameState ..> BotService : decide a vez do rival (modo solo)
+    GameState ..> CalculoService : confere o valor dos cenários de cálculo
+    BotService ..> CalculoService : informa o valor no cenário de cálculo
     ScenarioLoader ..> CenarioDef : gerencia/instancia
     ScoringEngine <.. GameState : calcula pontuação
     StorageService ..> GameState : serializa/deserializa
@@ -179,7 +195,9 @@ stateDiagram-v2
         ROLAR_DADO --> MOSTRAR_BALANCO : ROLAR (caiu em 'balanco')
         
         state FluxoDecisao {
-            ESCOLHER_METRICA --> ESCOLHER_JUSTIFICATIVA : METRICA(id) (só pessoa)
+            ESCOLHER_METRICA --> ESCOLHER_JUSTIFICATIVA : METRICA(id) (só pessoa, cenário comum)
+            ESCOLHER_METRICA --> INFORMAR_VALOR : METRICA(id) (só pessoa, cenário de cálculo)
+            INFORMAR_VALOR --> ESCOLHER_JUSTIFICATIVA : VALOR(número ou texto pt-BR)
             ESCOLHER_METRICA --> MOSTRAR_RESULTADO : DECIDIR_BOT (só rival do modo solo)
             ESCOLHER_JUSTIFICATIVA --> ESCOLHER_CONFIANCA : JUSTIFICATIVA(id)
             ESCOLHER_CONFIANCA --> MOSTRAR_RESULTADO : CONFIANCA('chute' | 'duvida' | 'provavel' | 'confiante' | 'certeza')
@@ -250,14 +268,14 @@ sequenceDiagram
     
     opt Vez do rival (modo solo) e fase 'ESCOLHER_METRICA'
         UI->>Machine: reduzir(estado, { tipo: 'DECIDIR_BOT' })
-        Machine->>Machine: decidirBot(def, perfil, rng) e pontua como uma pessoa
+        Machine->>Machine: decidirBot(def, perfil, rng, num) e pontua como uma pessoa
         Machine-->>UI: novoEstado (fase: 'MOSTRAR_RESULTADO')
     end
 
     UI->>Storage: salvar(novoEstado)
     UI->>UI: render()
     
-    Note over Jogador, UI: O Jogador seleciona Métrica -> Justificativa -> Confiança
+    Note over Jogador, UI: O Jogador seleciona Métrica -> (Valor calculado, só em cenário de cálculo) -> Justificativa -> Confiança
     Jogador->>UI: Confirma Confiança ("certeza")
     UI->>Machine: reduzir(estado, { tipo: 'CONFIANCA', valor: 'certeza' })
     activate Machine
@@ -292,6 +310,7 @@ graph TD
         DIFICULDADE["dificuldade.js<br/>(Sorteio por dificuldade)"]
         BOT["bot.js<br/>(Rival do modo solo)"]
         SCORING["scoring.js<br/>(Cálculo de Pontos)"]
+        CALCULO["calculo.js<br/>(Margem e valor dos cenários de cálculo)"]
         DESEMPENHO["desempenho.js<br/>(Perfil por conceito e relatório de fim de jogo)"]
         RNG["rng.js<br/>(Mulberry32 PRNG)"]
         CONFIG["config.js<br/>(Constantes Globais)"]
@@ -300,7 +319,7 @@ graph TD
     subgraph Scenarios_Layer["Camada Cenários (src/scenarios/)"]
         LOADER["loader.js<br/>(Interpolação e Validação)"]
         GENERATORS["generators.js<br/>(Geração com Invariantes)"]
-        CONTENT["content/<br/>(iniciante.js, eventos.js, conceitos.js, materiais.js)"]
+        CONTENT["content/<br/>(iniciante.js, calculo.js, eventos.js, conceitos.js, materiais.js)"]
     end
 
     subgraph Stats_Layer["Camada Stats (src/stats/)"]
@@ -324,7 +343,14 @@ graph TD
     MACHINE --> BOARD
     MACHINE --> DIFICULDADE
     MACHINE --> BOT
+    MACHINE --> CALCULO
+    MACHINE --> FORMAT
     BOT --> CONFIG
+    BOT --> CALCULO
+    CALCULO --> CONFIG
+    VIEWS --> CALCULO
+    VIEWS --> FORMAT
+    MAIN --> FORMAT
     BOT --> SCORING
     DIFICULDADE --> CONFIG
     MACHINE --> SCORING
@@ -340,6 +366,7 @@ graph TD
     LOADER --> CONTENT
     LOADER --> METRICS
     LOADER --> FORMAT
+    LOADER --> CALCULO
 
     GENERATORS --> METRICS
     SCORING --> CONFIG
@@ -357,9 +384,11 @@ graph TD
 | **`src/engine/dificuldade.js`** | Dificuldade-alvo a partir do progresso do jogador e sorteio ponderado de cenários do baralho. |
 | **`src/engine/rng.js`** | Gerador pseudo-aleatório determinístico baseado no algoritmo `mulberry32` com estado serializável em 32-bits. |
 | **`src/engine/desempenho.js`** | Perfil de desempenho do jogador a partir do histórico: domínio e diagnóstico por conceito, pontos fortes, deficiências, equívocos recorrentes e calibração da certeza; e o relatório de fim de jogo (`relatorioDesempenho`): acertos e erros, assuntos que mais e menos domina e sugestões de estudo com os materiais de `content/materiais.js` (`fisher.md` 4.6). |
+| **`src/engine/calculo.js`** | Cenários de cálculo (`fisher.md` 4.7): reconhece o tipo, avalia o valor informado contra o valor exato da métrica escolhida dentro de uma margem relativa e fornece as notas de método (percentil linear, desvio padrão amostral). |
 | **`src/engine/scoring.js`** | Algoritmos de pontuação, multiplicadores de reputação, regras de aposta e crise de imagem. |
 | **`src/scenarios/generators.js`** | Síntese de dados estatísticos com validação de invariantes conceituais. |
 | **`src/scenarios/loader.js`** | Instanciação de cenários, cálculo de resumo estatístico e substituição de variáveis nos enunciados. |
 | **`src/stats/metrics.js`** | Cálculos estatísticos fundamentais (média, mediana, moda, desvio padrão, percentil 90). |
+| **`src/stats/format.js`** | Formatação dos números por formato de cenário (R$, dias, minutos, s, ...) e leitura (`lerNumero`) do valor digitado em pt-BR. |
 | **`src/storage/persist.js`** | Camada de persistência em `window.localStorage` para salvamento automático a cada transição. |
 | **`src/ui/`** | Renderização reativa baseada em strings HTML puras e SVG (`grafico.js`), delegando ações de volta ao `main.js`. |

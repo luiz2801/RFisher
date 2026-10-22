@@ -8,6 +8,8 @@ import {
 import { resolverDecisao, receitaBalanco, justificativaConta, CONFIANCA } from './scoring.js';
 import { jogadorAtual, carteira, ehCooperativo, ehBot, distanciaPercorrida, progressoDoJogador } from './state.js';
 import { decidirBot } from './bot.js';
+import { ehCalculo, avaliarCalculo } from './calculo.js';
+import { lerNumero } from '../stats/format.js';
 import { escolherPorDificuldade } from './dificuldade.js';
 import { equivocosDaEscolha } from './desempenho.js';
 import { diretoriaDoSetor } from './papeis.js';
@@ -97,6 +99,7 @@ const TRANSICOES = {
           ordemJustificativas: rng.embaralhar(def.justificativas.map((x) => x.id)),
           confianca: null,
           metricaId: null,
+          valorInformado: null,
           justificativaId: null,
         };
         e.fase = 'ESCOLHER_METRICA';
@@ -122,7 +125,7 @@ const TRANSICOES = {
       if (ehBot(jogadorAtual(e))) return e;
       if (!obterCenario(e.cenarioAtual.id).opcoes.some((o) => o.id === valor)) return e;
       e.cenarioAtual.metricaId = valor;
-      e.fase = 'ESCOLHER_JUSTIFICATIVA';
+      e.fase = ehCalculo(obterCenario(e.cenarioAtual.id)) ? 'INFORMAR_VALOR' : 'ESCOLHER_JUSTIFICATIVA';
       return e;
     },
     // Vez do rival do modo solo: as três escolhas de uma vez, com o rng da partida.
@@ -130,12 +133,24 @@ const TRANSICOES = {
       const j = jogadorAtual(e);
       if (!ehBot(j)) return e;
       const rng = criarRng(e.rng);
-      const escolha = decidirBot(obterCenario(e.cenarioAtual.id), PERFIS_BOT[j.bot], rng);
+      const escolha = decidirBot(obterCenario(e.cenarioAtual.id), PERFIS_BOT[j.bot], rng, e.cenarioAtual.num);
       e.rng = rng.estado;
       e.cenarioAtual.metricaId = escolha.metrica;
+      e.cenarioAtual.valorInformado = escolha.valor ?? null;
       e.cenarioAtual.justificativaId = escolha.justificativa;
       e.cenarioAtual.confianca = escolha.confianca;
       return resolverEscolhas(e);
+    },
+  },
+
+  // Só em cenário de cálculo: o valor calculado pela pessoa (número ou texto em pt-BR).
+  INFORMAR_VALOR: {
+    VALOR(e, { valor }) {
+      const n = lerNumero(valor);
+      if (!Number.isFinite(n)) return e;
+      e.cenarioAtual.valorInformado = n;
+      e.fase = 'ESCOLHER_JUSTIFICATIVA';
+      return e;
     },
   },
 
@@ -170,11 +185,14 @@ function resolverEscolhas(e) {
   const j = jogadorAtual(e);
   const w = carteira(e);
   const metrica = def.opcoes.find((o) => o.id === c.metricaId);
+  // Em cenário de cálculo, métrica certa só vale com o valor dentro da margem (fisher.md 4.7).
+  const calculo = ehCalculo(def) ? avaliarCalculo(def, metrica, c.num, c.valorInformado) : null;
+  if (ehCalculo(def) && !Number.isFinite(c.valorInformado)) return e;
   const r = resolverDecisao({
     nivel: j.nivel,
     reputacao: w.reputacao,
     valorBase: def.valor_base,
-    metricaCorreta: metrica.correta,
+    metricaCorreta: metrica.correta && (calculo?.dentro ?? true),
     justificativaCorreta: justificativaConta(just.tipo),
     confianca: c.confianca,
     impacto: def.impacto,
@@ -189,6 +207,7 @@ function resolverEscolhas(e) {
     confianca: c.confianca,
     metricaCorreta: metrica.correta,
     justificativaCorreta: just.tipo === 'correta',
+    ...(calculo && { valorCorreto: calculo.dentro, calculo }),
     categoria: r.categoria,
     delta: r.delta,
     multiplicador: r.multiplicador,
@@ -205,6 +224,7 @@ function resolverEscolhas(e) {
     resultado: r.categoria,
     delta: r.delta,
     equivocos: equivocosDaEscolha(metrica, just),
+    ...(calculo && { valor: calculo.informado, valorCorreto: calculo.dentro }),
   });
   e.fase = 'MOSTRAR_RESULTADO';
   return e;

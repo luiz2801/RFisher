@@ -25,9 +25,10 @@ export function simularPartida({ perfis, seed, turnos = TURNOS_PADRAO, nivel = '
     let acao;
     if (e.fase === 'ROLAR_DADO') acao = { tipo: 'ROLAR' };
     else if (e.fase === 'ESCOLHER_METRICA') {
-      escolha = decidirBot(obterCenario(e.cenarioAtual.id), perfis[e.jogadorAtual], rngs[e.jogadorAtual]);
+      escolha = decidirBot(obterCenario(e.cenarioAtual.id), perfis[e.jogadorAtual], rngs[e.jogadorAtual], e.cenarioAtual.num);
       acao = { tipo: 'METRICA', valor: escolha.metrica };
-    } else if (e.fase === 'ESCOLHER_JUSTIFICATIVA') acao = { tipo: 'JUSTIFICATIVA', valor: escolha.justificativa };
+    } else if (e.fase === 'INFORMAR_VALOR') acao = { tipo: 'VALOR', valor: escolha.valor };
+    else if (e.fase === 'ESCOLHER_JUSTIFICATIVA') acao = { tipo: 'JUSTIFICATIVA', valor: escolha.justificativa };
     else if (e.fase === 'ESCOLHER_CONFIANCA') acao = { tipo: 'CONFIANCA', valor: escolha.confianca };
     else acao = { tipo: 'CONTINUAR' };
     e = reduzir(e, acao);
