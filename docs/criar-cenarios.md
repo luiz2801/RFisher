@@ -313,7 +313,7 @@ Em `eventos.js`, acrescente um objeto a `EVENTOS`:
 - `dificuldade` inteira de 1 a 3 em todo cenário, com ao menos um cenário por nível.
 - Invariantes de todos os geradores em 1.000 seeds.
 - Cenários de cálculo: `calculo.margem_pct` entre 0 e 10, `dados.exibir` com `tabela`, cada opção com `chave` calculável e sem placeholders no texto, e `feedback.como_calcular` presente.
-- Todas as telas renderizam sem `{{`, sem `undefined` e sem HTML injetado.
+- Todas as telas renderizam sem placeholder não substituído, sem `undefined` e sem HTML injetado.
 - Todo evento tem setor válido.
 
 O validador **não** confere que a opção marcada `correta` é de fato a correta matematicamente. Isso é responsabilidade do invariante e da revisão humana.

@@ -140,7 +140,7 @@ Observação: testes estatísticos devem usar seeds fixas e margens amplas para 
 
 As views são funções puras `estado → string HTML`, testáveis sem navegador.
 
-- Todas as telas de uma partida renderizam, em ambos os modos, sem `{{` solto e sem `undefined` (já existe).
+- Todas as telas de uma partida renderizam, em ambos os modos, sem placeholder não substituído e sem `undefined` (já existe).
 - Cada fase tem uma view e nenhuma fase cai no ramo padrão.
 - Conteúdo condicional: dica só para `iniciante`, oculta até ser pedida (`ABRIR_DICA`), com bônus de confiança reduzido nos ganhos; revelação de marcadores no resultado; aviso de crise; banner de balanço; meta do Balanço no cooperativo; placar competitivo versus painel da empresa; empate no fim de jogo; faixas de fim cooperativo.
 - Formatos numéricos em `pt-BR` e sinais (+/−) corretos nos deltas.
