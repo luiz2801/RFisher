@@ -3,7 +3,7 @@ import { DINHEIRO_INICIAL, REPUTACAO_INICIAL, TURNOS_PADRAO, PASSO_MEDIO_DADO, P
 import { atribuirPapeis } from './papeis.js';
 
 // `teste` (opcional) só serve para depurar: `{ casa, cenarios }` força a casa em que o peão cai e restringe o baralho.
-export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, seed = Date.now(), modo = 'competitivo', teste = null }) {
+export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, seed = Date.now(), modo = 'competitivo', teste = null, soConceitual = false }) {
   const semente = seed >>> 0;
   const cooperativo = modo === 'cooperativo';
   const papeis = atribuirPapeis(jogadores.length);
@@ -35,6 +35,8 @@ export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, seed = Date.now(),
       merito: 0,
       habilidadeUsos: 0,
     })),
+    // Sem papel, lápis ou planilha: o baralho exclui os cenários de cálculo. Ausente em saves antigos (vale `false`).
+    soConceitual: Boolean(soConceitual),
     baralhoCenarios: [],
     baralhoEventos: [],
     cenarioAtual: null,

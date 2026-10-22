@@ -109,3 +109,10 @@ test('o menu lista os atalhos de teste e a partida de teste exibe o selo', () =>
   assert.match(viewJogo(e), /Partida de teste/);
   assert.doesNotMatch(viewJogo({ ...e, teste: null }), /Partida de teste/);
 });
+
+test('o menu sugere material de apoio e deixa escolher só questões conceituais', () => {
+  const menu = viewMenu();
+  assert.match(menu, /Material de apoio/);
+  assert.match(menu, /planilha/);
+  assert.match(menu, /value="conceitual"/);
+});

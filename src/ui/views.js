@@ -165,8 +165,22 @@ export function viewMenu({ salvo } = {}) {
         <select name="turnos">${[2, 6, 8, 10, 12].map((n) => `<option value="${n}" ${n === TURNOS_PADRAO ? 'selected' : ''}>${n}</option>`).join('')}</select>
       </label>
       <label>Semente de mercado (opcional, para repetir uma partida)
-        <input name="seed" inputmode="numeric" pattern="[0-9]*" placeholder="aleatória">
+        <input name="seed" inputmode="numeric" pattern="[0-9]*" maxlength="256" placeholder="aleatória">
       </label>
+      <fieldset class="apoio">
+        <legend>Material de apoio</legend>
+        <p>Alguns cenários trazem uma tabela de dados e pedem que você faça a conta (mediana, percentil, desvio padrão, quartis). Para esses, o ideal é ter à mão:</p>
+        <ul>
+          <li>uma <strong>planilha</strong> (Excel, Google Planilhas ou LibreOffice): o botão "Copiar tabela" cola os dados direto nela, e as funções <code>MED</code>, <code>PERCENTIL.INC</code>, <code>DESVPAD.A</code> e <code>QUARTIL.INC</code> conferem o resultado; ou</li>
+          <li><strong>lápis e papel</strong> (com calculadora), para ordenar os registros e contar posições.</li>
+        </ul>
+        <label>Como você quer jogar?
+          <select name="apoio">
+            <option value="completo">Tenho planilha, ou lápis e papel: incluir os cenários de cálculo</option>
+            <option value="conceitual">Não tenho: só questões conceituais (sem contas)</option>
+          </select>
+        </label>
+      </fieldset>
       <details class="atalhos-teste">
         <summary>Atalhos de teste</summary>
         <label>Casa em que o peão cai

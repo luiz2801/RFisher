@@ -178,7 +178,7 @@ Exigida pelo `fisher.md` 5.9.
 - Fluxo ponta a ponta: menu → configurar → jogar uma partida inteira → fim → nova partida.
 - Retomar partida salva depois de recarregar a página.
 - Despacho de ações pelos `data-acao`; `NOVA` pede confirmação durante a partida; `ABRIR_CONFIG`, `CONTINUAR_SALVA`; mudança do nº de jogadores mostra/esconde os campos.
-- Saneamento do formulário: `n` limitado a 1–`MAX_JOGADORES`, nome vazio vira "Jogador N", nível e modo inválidos caem no padrão, seed vazia gera aleatória e seed numérica reproduz.
+- Saneamento do formulário: `n` limitado a 1–`MAX_JOGADORES`, nome vazio vira "Jogador N", nível e modo inválidos caem no padrão, seed vazia gera aleatória, seed numérica reproduz e a seed é limitada a 256 caracteres.
 - Partida terminada limpa o save.
 
 Duas opções, a decidir (ver abaixo): (a) extrair a lógica de `iniciar` para um módulo puro testável com `node:test`; (b) adotar um teste de navegador (Playwright), o que quebra a regra "sem dependências".

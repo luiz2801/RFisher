@@ -49,6 +49,7 @@ Versão do formato: **`versao: 1`**.
 | `cenarioAtual` | objeto \| `null` | Decisão em andamento. |
 | `eventoAtual` | objeto \| `null` | Carta de evento em exibição. |
 | `resultado` | objeto \| `null` | Resultado da última decisão, na tela de resultado. |
+| `soConceitual` | booleano | Partida sem cenários de cálculo (jogador sem planilha ou papel; `fisher.md` 4.7). Ausente em saves antigos (vale `false`). |
 | `teste` | objeto \| `null` | Atalhos de teste do menu (`fisher.md` 5.8.1): `{ casa, cenarios }`, com `casa` em `'decisao'`, `'evento'`, `'balanco'` ou `null` (normal) e `cenarios` uma lista de ids que restringe o baralho, ou `null` (todos). `null` em partida normal. Ausente em saves antigos (vale `null`). |
 
 Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `INFORMAR_VALOR`, `ESCOLHER_JUSTIFICATIVA`, `ESCOLHER_CONFIANCA`, `MOSTRAR_RESULTADO`, `MOSTRAR_EVENTO`, `MOSTRAR_BALANCO`, `FIM_DE_JOGO`.
@@ -151,5 +152,6 @@ Como o save referencia ids do conteúdo, alterar o conteúdo também pode quebra
 | 1 (sem incremento) | Acrescentado `jogadores[].bot`, para o rival do modo solo. O modo solo grava `modo: 'competitivo'`. | Compatível: jogador sem `bot` é uma pessoa |
 | 1 (sem incremento) | Nova fase `INFORMAR_VALOR`; `cenarioAtual.valorInformado`; `resultado.valorCorreto` e `resultado.calculo`; `historico[].valor` e `historico[].valorCorreto`, para os cenários de cálculo (`fisher.md` 4.7). | Compatível: saves antigos não têm esses campos e nunca estiveram na nova fase; o código trata a ausência como cenário comum |
 | 1 (sem incremento) | Acrescentado `teste`, com os atalhos de teste do menu (casa forçada e baralho restrito). | Compatível: save sem `teste` é uma partida normal |
+| 1 (sem incremento) | Acrescentado `soConceitual`, para jogar sem os cenários de cálculo. | Compatível: save sem `soConceitual` inclui todos os cenários |
 
 Ao mudar o formato, acrescente uma linha aqui.

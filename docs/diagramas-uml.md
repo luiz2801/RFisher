@@ -30,6 +30,7 @@ classDiagram
         +EventoAtual eventoAtual
         +Resultado resultado
         +Teste teste
+        +boolean soConceitual
     }
 
     class Jogador {
@@ -381,7 +382,7 @@ graph TD
 | Módulo | Responsabilidade Principal |
 | :--- | :--- |
 | **`src/engine/machine.js`** | Máquina de estados finitos que orquestra as transições a partir de ações do jogador. |
-| **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`, que aceita os atalhos de teste do menu: casa forçada e baralho restrito, ver `fisher.md` 5.8.1) e funções seletoras puras (`jogadorAtual`, `ehBot`, `classificacao`, `progressoDoJogador`). |
+| **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`, que aceita `soConceitual`, para excluir os cenários de cálculo, e os atalhos de teste do menu: casa forçada e baralho restrito, ver `fisher.md` 5.8.1) e funções seletoras puras (`jogadorAtual`, `ehBot`, `classificacao`, `progressoDoJogador`). |
 | **`src/engine/bot.js`** | Rival do modo solo: acerta métrica e justificativa com a probabilidade do perfil (menor nos cenários difíceis), escolhe distratores ao errar e deriva a confiança de uma certeza interna ruidosa. Perfis em `config.js`, calibração em `scripts/simular-bot.mjs` (`fisher.md` 3.11). |
 | **`src/engine/dificuldade.js`** | Dificuldade-alvo a partir do progresso do jogador e sorteio ponderado de cenários do baralho. |
 | **`src/engine/rng.js`** | Gerador pseudo-aleatório determinístico baseado no algoritmo `mulberry32` com estado serializável em 32-bits. |

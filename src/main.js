@@ -60,12 +60,13 @@ function iniciar(form) {
     const perfil = Object.hasOwn(PERFIS_BOT, dados.get('bot')) ? dados.get('bot') : 'medio';
     jogadores.push({ nome: `Rival ${PERFIS_BOT[perfil].nome}`, nivel: jogadores[0].nivel, bot: perfil });
   }
-  const seedTexto = String(dados.get('seed')).trim();
+  const seedTexto = String(dados.get('seed')).trim().slice(0, 256);
   estado = novoJogo({
     jogadores,
     turnos: Number(dados.get('turnos')),
     modo: dados.get('modo') === 'cooperativo' ? 'cooperativo' : 'competitivo',
     seed: seedTexto ? Number(seedTexto) : Math.floor(Math.random() * 2 ** 32),
+    soConceitual: dados.get('apoio') === 'conceitual',
     teste: lerTeste(dados),
   });
   salvar(estado);

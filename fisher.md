@@ -326,6 +326,8 @@ Como o save é apagado em `FIM_DE_JOGO`, o relatório não sobrevive a recarrega
 
 **Decisão de projeto.** "Margem" foi lida como a **tolerância aceita no valor calculado**, e não como uma margem de erro que a pessoa declara junto com o valor. Se for desejada a segunda leitura (a pessoa informa o valor e um intervalo), é uma extensão da etapa de valor, ainda não implementada.
 
+**Sem material de apoio.** Antes de iniciar, o menu sugere ter uma planilha (o botão de copiar a tabela cola nela) ou lápis, papel e calculadora, e oferece a opção **"só questões conceituais"** para quem não tem nada disso. Com ela, o baralho exclui os cenários de cálculo (`soConceitual` no estado); as regras e a pontuação não mudam, e o jogador só recebe cenários em que basta reconhecer a métrica. Se um atalho de teste (5.8.1) escolhe cenários, ele tem precedência. Vale para todos os jogadores da partida (a escolha é por partida, não por jogador), inclusive no cooperativo e no solo.
+
 **Fora do escopo por ora:** cenários de cálculo com duas séries; métricas sem número (frequência por nota); o relatório de fim de jogo ainda não separa acerto de método de acerto de cálculo (só a categoria do resultado entra no perfil).
 
 ---

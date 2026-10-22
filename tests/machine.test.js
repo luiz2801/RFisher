@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { criarRng } from '../src/engine/rng.js';
 import { novoJogo, vencedores } from '../src/engine/state.js';
 import { reduzir } from '../src/engine/machine.js';
-import { valorEsperado } from '../src/engine/calculo.js';
+import { valorEsperado, ehCalculo } from '../src/engine/calculo.js';
 import { obterCenario } from '../src/scenarios/loader.js';
 import { DINHEIRO_INICIAL } from '../src/engine/config.js';
 import { CONFIANCA } from '../src/engine/scoring.js';
@@ -293,4 +293,20 @@ test('atalhos de teste: casa de Evento ou Balanço forçada; partida normal não
   const b = reduzir(novoJogo({ ...base, teste: { casa: 'balanco' } }), { tipo: 'ROLAR' });
   assert.equal(b.fase, 'MOSTRAR_BALANCO');
   assert.ok(b.balanco, 'o Balanço forçado também calcula o resultado');
+});
+
+test('sem material de apoio, o baralho exclui os cenários de cálculo', () => {
+  const base = { jogadores: jogadores('iniciante'), turnos: 12, seed: 5, teste: { casa: 'decisao' } };
+  assert.equal(novoJogo(base).soConceitual, false);
+  let e = novoJogo({ ...base, soConceitual: true });
+  assert.equal(e.soConceitual, true);
+  for (let i = 0; i < 60 && e.fase !== 'FIM_DE_JOGO'; i++) {
+    e = reduzir(e, { tipo: 'ROLAR' });
+    assert.ok(!ehCalculo(obterCenario(e.cenarioAtual.id)), 'nenhum cenário de cálculo');
+    e = reduzir({ ...e, fase: 'MOSTRAR_RESULTADO' }, { tipo: 'CONTINUAR' });
+  }
+  // O atalho de teste que escolhe um cenário tem precedência.
+  const alvo = 'cenario_14_alugueis';
+  const t = reduzir(novoJogo({ ...base, soConceitual: true, teste: { casa: 'decisao', cenarios: [alvo] } }), { tipo: 'ROLAR' });
+  assert.equal(t.cenarioAtual.id, alvo);
 });

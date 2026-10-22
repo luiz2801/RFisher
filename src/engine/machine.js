@@ -27,7 +27,8 @@ function sacar(e, chave, todos, rng) {
 // Cenário do baralho com dificuldade mais próxima do progresso do jogador (sem repetir no ciclo).
 function sacarCenario(e, progresso, rng) {
   // Em partida de teste o baralho se limita aos cenários escolhidos no menu.
-  const todos = e.teste?.cenarios ?? idsCenarios();
+  // Sem material de apoio (`soConceitual`) saem os de cálculo; o atalho de teste, se houver, tem precedência.
+  const todos = e.teste?.cenarios ?? (e.soConceitual ? idsCenarios().filter((id) => !ehCalculo(obterCenario(id))) : idsCenarios());
   if (!e.baralhoCenarios.length) e.baralhoCenarios = rng.embaralhar(todos);
   else {
     // Partida salva antes de um cenário existir: ele entra no baralho em vez de esperar o próximo ciclo.
