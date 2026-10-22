@@ -27,6 +27,11 @@ function sacar(e, chave, todos, rng) {
 // Cenário do baralho com dificuldade mais próxima do progresso do jogador (sem repetir no ciclo).
 function sacarCenario(e, progresso, rng) {
   if (!e.baralhoCenarios.length) e.baralhoCenarios = rng.embaralhar(idsCenarios());
+  else {
+    // Partida salva antes de um cenário existir: ele entra no baralho em vez de esperar o próximo ciclo.
+    const vistos = new Set(e.jogadores.flatMap((j) => j.historico.map((h) => h.cenario)));
+    for (const id of idsCenarios()) if (!vistos.has(id) && !e.baralhoCenarios.includes(id)) e.baralhoCenarios.push(id);
+  }
   const candidatos = e.baralhoCenarios.map((id) => ({ id, dificuldade: obterCenario(id).dificuldade }));
   const id = escolherPorDificuldade(candidatos, progresso, rng);
   e.baralhoCenarios.splice(e.baralhoCenarios.indexOf(id), 1);
@@ -98,6 +103,7 @@ const TRANSICOES = {
           ordemOpcoes: rng.embaralhar(def.opcoes.map((o) => o.id)),
           ordemJustificativas: rng.embaralhar(def.justificativas.map((x) => x.id)),
           confianca: null,
+          dicaUsada: false,
           metricaId: null,
           valorInformado: null,
           justificativaId: null,
@@ -121,6 +127,13 @@ const TRANSICOES = {
   },
 
   ESCOLHER_METRICA: {
+    // Só quem joga no nível iniciante e cujo cenário tem dica pode abri-la; o bônus de confiança cai (3.4).
+    ABRIR_DICA(e) {
+      const j = jogadorAtual(e);
+      if (ehBot(j) || j.nivel !== 'iniciante' || !obterCenario(e.cenarioAtual.id).dica) return e;
+      e.cenarioAtual.dicaUsada = true;
+      return e;
+    },
     METRICA(e, { valor }) {
       if (ehBot(jogadorAtual(e))) return e;
       if (!obterCenario(e.cenarioAtual.id).opcoes.some((o) => o.id === valor)) return e;
@@ -196,6 +209,7 @@ function resolverEscolhas(e) {
     justificativaCorreta: justificativaConta(just.tipo),
     confianca: c.confianca,
     impacto: def.impacto,
+    dicaUsada: c.dicaUsada === true,
   });
   w.dinheiro += r.delta;
   const crise = mudarReputacao(w, r.deltaReputacao);
@@ -205,6 +219,7 @@ function resolverEscolhas(e) {
     metricaId: metrica.id,
     justificativaId: just.id,
     confianca: c.confianca,
+    dicaUsada: c.dicaUsada === true,
     metricaCorreta: metrica.correta,
     justificativaCorreta: just.tipo === 'correta',
     ...(calculo && { valorCorreto: calculo.dentro, calculo }),

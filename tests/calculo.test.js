@@ -323,3 +323,16 @@ test('uma partida inteira com cenários de cálculo termina e é reproduzível c
   assert.deepEqual(a.e, b.e);
   assert.ok(a.viuValor && b.viuValor, 'a partida passou por um cenário de cálculo');
 });
+
+test('uma partida salva antes dos cenários de cálculo passa a sorteá-los sem esperar o fim do ciclo', () => {
+  const e = novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante' }], turnos: 10, seed: 3 });
+  e.baralhoCenarios = ['cenario_01_salarios', 'cenario_02_sla']; // baralho de um save antigo
+  e.jogadores[0].historico = [{ cenario: 'cenario_03_estoque', resultado: 'sucesso', confianca: 'chute' }];
+  e.jogadores[0].posicao = 0;
+  const depois = reduzir(e, { tipo: 'ROLAR' });
+  if (depois.fase === 'ESCOLHER_METRICA') {
+    const restantes = [depois.cenarioAtual.id, ...depois.baralhoCenarios];
+    assert.ok(restantes.some((id) => ehCalculo(obterCenario(id))), 'os cenários novos entraram no baralho');
+    assert.ok(!restantes.includes('cenario_03_estoque'), 'o já visto não volta');
+  }
+});
