@@ -292,7 +292,7 @@ graph TD
         DIFICULDADE["dificuldade.js<br/>(Sorteio por dificuldade)"]
         BOT["bot.js<br/>(Rival do modo solo)"]
         SCORING["scoring.js<br/>(Cálculo de Pontos)"]
-        DESEMPENHO["desempenho.js<br/>(Perfil por conceito e certeza)"]
+        DESEMPENHO["desempenho.js<br/>(Perfil por conceito e relatório de fim de jogo)"]
         RNG["rng.js<br/>(Mulberry32 PRNG)"]
         CONFIG["config.js<br/>(Constantes Globais)"]
     end
@@ -300,7 +300,7 @@ graph TD
     subgraph Scenarios_Layer["Camada Cenários (src/scenarios/)"]
         LOADER["loader.js<br/>(Interpolação e Validação)"]
         GENERATORS["generators.js<br/>(Geração com Invariantes)"]
-        CONTENT["content/<br/>(iniciante.js, eventos.js, conceitos.js)"]
+        CONTENT["content/<br/>(iniciante.js, eventos.js, conceitos.js, materiais.js)"]
     end
 
     subgraph Stats_Layer["Camada Stats (src/stats/)"]
@@ -318,6 +318,7 @@ graph TD
     MAIN --> PERSIST
     VIEWS --> GRAFICO
     VIEWS --> HTML
+    VIEWS --> DESEMPENHO
 
     MACHINE --> STATE
     MACHINE --> BOARD
@@ -355,7 +356,7 @@ graph TD
 | **`src/engine/bot.js`** | Rival do modo solo: acerta métrica e justificativa com a probabilidade do perfil (menor nos cenários difíceis), escolhe distratores ao errar e deriva a confiança de uma certeza interna ruidosa. Perfis em `config.js`, calibração em `scripts/simular-bot.mjs` (`fisher.md` 3.11). |
 | **`src/engine/dificuldade.js`** | Dificuldade-alvo a partir do progresso do jogador e sorteio ponderado de cenários do baralho. |
 | **`src/engine/rng.js`** | Gerador pseudo-aleatório determinístico baseado no algoritmo `mulberry32` com estado serializável em 32-bits. |
-| **`src/engine/desempenho.js`** | Perfil de desempenho do jogador a partir do histórico: domínio e diagnóstico por conceito, pontos fortes, deficiências, equívocos recorrentes e calibração da certeza (`fisher.md` 4.6). |
+| **`src/engine/desempenho.js`** | Perfil de desempenho do jogador a partir do histórico: domínio e diagnóstico por conceito, pontos fortes, deficiências, equívocos recorrentes e calibração da certeza; e o relatório de fim de jogo (`relatorioDesempenho`): acertos e erros, assuntos que mais e menos domina e sugestões de estudo com os materiais de `content/materiais.js` (`fisher.md` 4.6). |
 | **`src/engine/scoring.js`** | Algoritmos de pontuação, multiplicadores de reputação, regras de aposta e crise de imagem. |
 | **`src/scenarios/generators.js`** | Síntese de dados estatísticos com validação de invariantes conceituais. |
 | **`src/scenarios/loader.js`** | Instanciação de cenários, cálculo de resumo estatístico e substituição de variáveis nos enunciados. |

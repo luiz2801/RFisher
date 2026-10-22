@@ -1,6 +1,7 @@
 import { CONFIANCA } from './scoring.js';
 import { obterCenario } from '../scenarios/loader.js';
 import { CONCEITOS } from '../scenarios/content/conceitos.js';
+import { MATERIAIS, MATERIAL_GERAL } from '../scenarios/content/materiais.js';
 
 // Perfil de desempenho do fim de jogo (fisher.md 4.6): o que o jogador domina e onde tem
 // deficiência, por conceito, levando em conta a certeza declarada em cada decisão.
@@ -105,3 +106,42 @@ export function perfilDesempenho(jogador) {
   return { geral: resumir(decisoes), conceitos, pontosFortes, deficiencias, equivocos };
 }
 
+
+// Quantos assuntos o relatório lista em cada seção e quantos ainda não vistos sugere.
+export const MAX_ASSUNTOS = 3;
+export const MAX_NAO_VISTOS = 2;
+
+const sugestao = (id, motivo) => ({ conceito: id, nome: CONCEITOS[id] ?? id, motivo, ...MATERIAIS[id] });
+
+// Relatório de fim de jogo (fisher.md 4.6): acertos e erros, assuntos que mais e menos domina
+// e materiais de estudo. Sugere primeiro as deficiências, depois o conhecimento frágil (inseguro);
+// sem nenhum dos dois, os conceitos que a partida não chegou a cobrar.
+export function relatorioDesempenho(jogador) {
+  const perfil = perfilDesempenho(jogador);
+  const historico = jogador.historico ?? [];
+  const conta = (...cats) => historico.filter((h) => cats.includes(h.resultado)).length;
+
+  const inseguros = perfil.pontosFortes.filter((c) => c.diagnostico === 'inseguro').reverse();
+  let sugestoes = [...perfil.deficiencias, ...inseguros].slice(0, MAX_ASSUNTOS).map((c) => sugestao(c.id, c.diagnostico));
+  if (!sugestoes.length) {
+    const vistos = new Set(perfil.conceitos.map((c) => c.id));
+    sugestoes = Object.keys(MATERIAIS)
+      .filter((id) => !vistos.has(id))
+      .slice(0, MAX_NAO_VISTOS)
+      .map((id) => sugestao(id, 'nao_visto'));
+  }
+
+  return {
+    decisoes: historico.length,
+    acertos: conta('sucesso'),
+    parciais: conta('sorte', 'incoerencia'),
+    erros: conta('erro_total'),
+    metricasCertas: conta('sucesso', 'sorte'),
+    justificativasCertas: conta('sucesso', 'incoerencia'),
+    geral: perfil.geral,
+    maisDomina: perfil.pontosFortes.slice(0, MAX_ASSUNTOS),
+    menosDomina: perfil.deficiencias.slice(0, MAX_ASSUNTOS),
+    sugestoes,
+    materialGeral: MATERIAL_GERAL,
+  };
+}

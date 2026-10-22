@@ -268,7 +268,7 @@ Cada cenário contém:
 
 ### 4.6 Perfil de desempenho (o que o jogador domina e onde tem deficiência)
 
-**Implementado no motor, ainda sem tela** (`src/engine/desempenho.js`, função `perfilDesempenho(jogador)`). Cada decisão fica no `historico` do jogador com o **conceito** avaliado pelo cenário (campo `conceito`, catálogo em `src/scenarios/content/conceitos.js`), a categoria do resultado, a confiança declarada e os **equívocos** da opção e da justificativa escolhidas. No modo cooperativo o histórico continua individual: quem decidiu é quem tem o perfil.
+**Implementado, com relatório na tela de fim de jogo** (`src/engine/desempenho.js`, funções `perfilDesempenho(jogador)` e `relatorioDesempenho(jogador)`; ver *Relatório de fim de jogo* abaixo). Cada decisão fica no `historico` do jogador com o **conceito** avaliado pelo cenário (campo `conceito`, catálogo em `src/scenarios/content/conceitos.js`), a categoria do resultado, a confiança declarada e os **equívocos** da opção e da justificativa escolhidas. No modo cooperativo o histórico continua individual: quem decidiu é quem tem o perfil.
 
 Ao fim da partida, o perfil agrega as decisões por conceito (vários cenários podem avaliar o mesmo):
 
@@ -287,6 +287,16 @@ Ao fim da partida, o perfil agrega as decisões por conceito (vários cenários 
 - **Calibração** (geral e por conceito): certeza média − acerto médio. Acima de 0,15 é `superconfiante`, abaixo de −0,15 é `subconfiante`, senão `calibrado`.
 
 Os limiares (0,5; 0,5; 0,15) são pontos de partida, a calibrar no playtest. Históricos antigos, sem `conceito` nem `equivocos`, são completados a partir do conteúdo atual.
+
+**Relatório de fim de jogo.** A tela de fim de jogo (competitivo, cooperativo e solo) mostra um relatório para cada pessoa; o rival do computador do modo solo não tem relatório. Cada relatório traz:
+
+- **Acertos e erros:** acertos totais (`sucesso`), acertos parciais (`sorte` e `incoerencia`) e erros totais (`erro_total`), mais em quantas decisões acertou a métrica e a justificativa, e a calibração geral em uma frase.
+- **Assuntos que mais domina:** até 3 pontos fortes, na ordem acima, com o diagnóstico e a taxa de acerto do conceito.
+- **Assuntos que menos domina:** até 3 deficiências, na ordem acima.
+- **Sugestões de estudo:** até 3 conceitos, primeiro as deficiências e depois os `inseguro` (do menor domínio ao maior). Se não há nenhum dos dois, sugere até 2 conceitos do catálogo que a partida não cobrou. Cada sugestão tem uma frase do que revisar e links gratuitos em português (catálogo em `src/scenarios/content/materiais.js`, um item por conceito). Um curso geral (Khan Academy, Estatística e probabilidade) aparece sempre ao fim.
+- Quem não caiu em nenhuma casa de Decisão vê só um aviso e o curso geral.
+
+Como o save é apagado em `FIM_DE_JOGO`, o relatório não sobrevive a recarregar a página; o botão **Imprimir relatório** abre a impressão do navegador (que também salva em PDF) só com o painel de fim de jogo. Os equívocos recorrentes ainda não aparecem no relatório, porque os ids de equívoco não têm rótulo legível.
 
 ---
 
@@ -561,7 +571,7 @@ A ideia original era validar justificativas escritas com IA no navegador. Ficou 
 8. **Nome e identidade do jogo**, e o tom da narrativa.
 9. **Stack final:** HTML/JS puro ou React; Chart.js ou SVG próprio.
 10. **Plano de playtest:** quem testa, e quais métricas coletar (acerto por cenário, onde travam, o chute compensa?).
-11. **Exibição do perfil de desempenho (4.6):** como e onde mostrar pontos fortes e deficiências na tela de fim de jogo, e se o perfil deve sobreviver ao fim da partida (hoje o save é apagado em `FIM_DE_JOGO`).
+11. **Perfil de desempenho (4.6) depois do fim da partida:** o relatório já aparece na tela de fim de jogo e pode ser impresso, mas se apaga com o save em `FIM_DE_JOGO`. Falta decidir se deve ficar guardado (histórico entre partidas) e se os equívocos recorrentes entram no relatório (exigiria um rótulo legível para cada id de equívoco).
 
 ---
 

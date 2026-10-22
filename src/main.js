@@ -160,6 +160,8 @@ app.addEventListener('click', (ev) => {
     botao.setAttribute('aria-expanded', 'true');
     form.scrollIntoView({ behavior: 'smooth', block: 'start' });
     form.querySelector('input')?.focus({ preventScroll: true });
+  } else if (acao === 'IMPRIMIR') {
+    window.print();
   } else if (acao === 'CONTINUAR_SALVA') {
     estado = carregar();
     render({ focar: true });

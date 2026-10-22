@@ -36,7 +36,7 @@ Funções puras do motor, testadas com valores calculados à mão a partir de `f
 - **Papéis** (`papeis.js`): `atribuirPapeis` para 1, 2 e 3 jogadores cobre as três diretorias sem repetição; todo setor de `SETORES` pertence a exatamente uma diretoria; `diretoriaDoSetor` para setor inexistente.
 - **Estado inicial** (`state.js`): `novoJogo` nos dois modos (empresa só no cooperativo, papéis só no cooperativo); `classificacao` e `vencedores` com empate de dinheiro e de reputação; `classificarEmpresa` em cada limite de faixa (exatamente 175 %, 125 %, 50 % do caixa inicial e reputação 75, 60).
 
-- **Perfil de desempenho** (`desempenho.js`): escala de certeza, evidência de domínio, os quatro diagnósticos, calibração, ordenação de pontos fortes e deficiências, equívocos pesados pela certeza, histórico antigo sem `conceito`, e o histórico gravado pela máquina numa partida inteira.
+- **Perfil de desempenho** (`desempenho.js`): escala de certeza, evidência de domínio, os quatro diagnósticos, calibração, ordenação de pontos fortes e deficiências, equívocos pesados pela certeza, histórico antigo sem `conceito`, o histórico gravado pela máquina numa partida inteira, e o relatório de fim de jogo (contagem de acertos, parciais e erros, ordem das sugestões, conceitos não vistos, partida sem decisões e materiais para todo conceito).
 
 **Situação:** `tests/scoring.test.js` cobre pontuação, multiplicador e anti-chute. `tests/desempenho.test.js` cobre o perfil de desempenho. Faltam `board.js`, `papeis.js`, `state.js` (empates, `classificarEmpresa` nos limites) e `receitaBalanco`.
 

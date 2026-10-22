@@ -6,6 +6,7 @@ import { CASAS, NUM_CASAS, ROTULO_CASA, coordenadas } from '../engine/board.js';
 import { jogadorAtual, classificacao, vencedores, ehCooperativo, ehBot, classificarEmpresa } from '../engine/state.js';
 import { DIRETORIAS } from '../engine/papeis.js';
 import { metaTrimestral } from '../engine/machine.js';
+import { relatorioDesempenho } from '../engine/desempenho.js';
 import { CONFIANCA, ROTULO_CONFIANCA, NIVEL } from '../engine/scoring.js';
 import { MAX_JOGADORES, TURNOS_PADRAO, PERFIS_BOT } from '../engine/config.js';
 import { obterCenario, preencher, valorDoMarcador } from '../scenarios/loader.js';
@@ -467,6 +468,7 @@ function viewRolar(e) {
         return `<li><strong>${esc(j.nome)}</strong> (${esc(nomesPapeis(j))}): ${acertos} de ${j.historico.length} decisões com sucesso absoluto</li>`;
       })
       .join('')}</ol>
+    ${relatorios(e)}
     <button class="primario" data-acao="NOVA">Jogar de novo</button>`;
 }
 
@@ -484,5 +486,82 @@ function viewFim(e) {
         return `<li><strong>${esc(j.nome)}</strong>: ${brl(j.dinheiro)} · Rep. ${j.reputacao} · ${acertos} de ${j.historico.length} decisões com sucesso absoluto</li>`;
       })
       .join('')}</ol>
+    ${relatorios(e)}
     <button class="primario" data-acao="NOVA">Jogar de novo</button>`;
+}
+
+// ---------- relatório de desempenho (fim de jogo) ----------
+
+const pct = (x) => `${Math.round(x * 100)}%`;
+const DIAGNOSTICO = {
+  dominado: 'domina e confia no que sabe',
+  inseguro: 'acerta, mas sem confiança',
+  equivoco: 'erra com convicção',
+  lacuna: 'ainda não domina',
+};
+const MOTIVO_SUGESTAO = {
+  equivoco: 'Errou com convicção: revise antes que a confusão se fixe.',
+  lacuna: 'Ainda não domina: comece pelo básico.',
+  inseguro: 'Acertou, mas sem confiança: reforce para ganhar segurança.',
+  nao_visto: 'Não apareceu nesta partida: um próximo passo.',
+};
+const CALIBRACAO = {
+  superconfiante: 'Apostou mais certeza do que acertou: vale desconfiar da primeira impressão.',
+  subconfiante: 'Acertou mais do que apostou: pode confiar mais no que sabe.',
+  calibrado: 'A confiança apostada acompanhou o acerto.',
+};
+
+const linkMaterial = (m) =>
+  `<li><a href="${esc(m.url)}" target="_blank" rel="noopener noreferrer">${esc(m.titulo)}</a> <small>(${esc(m.fonte)})</small></li>`;
+
+function listaAssuntos(conceitos, vazio) {
+  if (!conceitos.length) return `<p class="ajuda">${vazio}</p>`;
+  return `<ul class="assuntos">${conceitos
+    .map((c) => `<li><strong>${esc(c.nome)}</strong>: ${DIAGNOSTICO[c.diagnostico]} <small>(acerto ${pct(c.taxaAcerto)} em ${c.decisoes} ${c.decisoes === 1 ? 'decisão' : 'decisões'})</small></li>`)
+    .join('')}</ul>`;
+}
+
+function relatorioJogador(j) {
+  const r = relatorioDesempenho(j);
+  if (!r.decisoes) {
+    return `<article class="cartao relatorio"><h3>${esc(j.nome)}</h3>
+      <p class="ajuda">Não caiu em nenhuma casa de Decisão nesta partida, então não há acertos nem erros para avaliar.</p>
+      <ul class="materiais">${linkMaterial(r.materialGeral)}</ul></article>`;
+  }
+  const sugestoes = r.sugestoes
+    .map(
+      (s) => `<li><strong>${esc(s.nome)}</strong> <small>${MOTIVO_SUGESTAO[s.motivo]}</small>
+        <p>${esc(s.revisar)}</p>
+        <ul class="materiais">${s.links.map(linkMaterial).join('')}</ul></li>`,
+    )
+    .join('');
+  return `<article class="cartao relatorio">
+    <h3>${esc(j.nome)}</h3>
+    <div class="placar-relatorio">
+      <div class="bom"><strong>${r.acertos}</strong><span>acertos totais</span></div>
+      <div class="parcial"><strong>${r.parciais}</strong><span>acertos parciais</span></div>
+      <div class="ruim"><strong>${r.erros}</strong><span>erros totais</span></div>
+    </div>
+    <p class="ajuda">${r.decisoes} ${r.decisoes === 1 ? 'decisão' : 'decisões'} · métrica certa em ${r.metricasCertas} · justificativa certa em ${r.justificativasCertas}. ${CALIBRACAO[r.geral.calibracao]}</p>
+    <h4>Assuntos que mais domina</h4>
+    ${listaAssuntos(r.maisDomina, 'Nenhum assunto com acerto consistente ainda.')}
+    <h4>Assuntos que menos domina</h4>
+    ${listaAssuntos(r.menosDomina, 'Nenhuma deficiência nos assuntos cobrados nesta partida.')}
+    <h4>Sugestões de estudo</h4>
+    <ol class="sugestoes">${sugestoes}</ol>
+    <p class="ajuda">Para uma revisão completa:</p>
+    <ul class="materiais">${linkMaterial(r.materialGeral)}</ul>
+  </article>`;
+}
+
+// Um relatório por pessoa; o rival do computador não estuda.
+function relatorios(e) {
+  const pessoas = e.jogadores.filter((j) => !ehBot(j));
+  if (!pessoas.length) return '';
+  return `<section class="relatorios" aria-labelledby="titulo-relatorios">
+    <h2 id="titulo-relatorios">Relatório de desempenho</h2>
+    <p class="ajuda">A partida salva é apagada no fim de jogo: imprima ou salve em PDF para guardar o relatório.</p>
+    ${pessoas.map(relatorioJogador).join('')}
+    <button class="discreto" data-acao="IMPRIMIR">Imprimir relatório</button>
+  </section>`;
 }

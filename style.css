@@ -911,3 +911,88 @@ html {
   font-size: 1.4rem;
   font-weight: 700;
 }
+
+/* Relatório de desempenho do fim de jogo */
+.relatorios {
+  margin: 1.5rem 0;
+}
+
+.relatorio h3 {
+  margin-top: 0;
+}
+
+.relatorio h4 {
+  margin: 1rem 0 .35rem;
+}
+
+.placar-relatorio {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .5rem;
+  margin: .5rem 0;
+}
+
+.placar-relatorio div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: .5rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.placar-relatorio strong {
+  font-size: 1.5rem;
+}
+
+.placar-relatorio span {
+  font-size: .8rem;
+  color: var(--suave);
+}
+
+.placar-relatorio .bom strong {
+  color: var(--bom);
+}
+
+.placar-relatorio .parcial strong {
+  color: var(--aviso);
+}
+
+.placar-relatorio .ruim strong {
+  color: var(--ruim);
+}
+
+.assuntos li,
+.sugestoes > li {
+  margin: .35rem 0;
+}
+
+.sugestoes p {
+  margin: .2rem 0;
+}
+
+.materiais {
+  margin: .2rem 0;
+  padding-left: 1.2rem;
+}
+
+.materiais a {
+  color: var(--primaria);
+}
+
+@media print {
+  .topo,
+  .lateral,
+  .painel button {
+    display: none;
+  }
+
+  .jogo {
+    display: block;
+  }
+
+  .relatorio {
+    break-inside: avoid;
+  }
+}
