@@ -2,9 +2,10 @@ import { novoJogo, jogadorAtual, ehBot } from './engine/state.js';
 import { reduzir } from './engine/machine.js';
 import { salvar, carregar, limpar } from './storage/persist.js';
 import { viewMenu, viewJogo, tabelaTsv } from './ui/views.js';
-import { obterCenario } from './scenarios/loader.js';
+import { obterCenario, todosCenarios } from './scenarios/loader.js';
 import { MAX_JOGADORES, PERFIS_BOT } from './engine/config.js';
 import { NUM_CASAS, coordenadas } from './engine/board.js';
+import { ehCalculo } from './engine/calculo.js';
 import { dadoHtml } from './ui/components/dado.js';
 import { lerNumero } from './stats/format.js';
 
@@ -33,6 +34,19 @@ function despachar(acao) {
   aplicarEstado(novo);
 }
 
+// Atalhos de teste do menu: casa forçada e/ou subconjunto de cenários. `null` é a partida normal.
+function lerTeste(dados) {
+  const casa = String(dados.get('teste_casa'));
+  const filtro = String(dados.get('teste_cenarios'));
+  const todos = todosCenarios();
+  const cenarios = {
+    '': null,
+    calculo: todos.filter(ehCalculo).map((c) => c.id),
+    comuns: todos.filter((c) => !ehCalculo(c)).map((c) => c.id),
+  }[filtro] ?? todos.filter((c) => c.id === filtro).map((c) => c.id);
+  return { casa: ['decisao', 'evento', 'balanco'].includes(casa) ? casa : null, cenarios };
+}
+
 function iniciar(form) {
   const dados = new FormData(form);
   const solo = dados.get('modo') === 'solo';
@@ -52,6 +66,7 @@ function iniciar(form) {
     turnos: Number(dados.get('turnos')),
     modo: dados.get('modo') === 'cooperativo' ? 'cooperativo' : 'competitivo',
     seed: seedTexto ? Number(seedTexto) : Math.floor(Math.random() * 2 ** 32),
+    teste: lerTeste(dados),
   });
   salvar(estado);
   render({ focar: true });

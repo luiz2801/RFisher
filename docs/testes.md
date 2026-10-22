@@ -78,7 +78,7 @@ A reprodutibilidade por seed é pilar do projeto (partida salva, invariantes, si
 - **Cooperativo:** `metaTrimestral` por trimestre e por nº de jogadores; meta cumprida (bônus) e falha (corte); bônus do RH; amortecimento do prejuízo de eventos do setor da diretoria (`REDUCAO_PREJUIZO_PASSIVA`) e nenhum amortecimento em ganhos ou setores sem diretor; caixa da empresa separado da carteira dos jogadores.
 - **Competitivo:** carteira individual, sem `empresa`.
 
-**Situação:** `tests/machine.test.js` cobre determinismo, fim de partida, ação inválida por fase, pureza, ordem da decisão, JSON e todo o cooperativo. Faltam entradas inválidas de `valor`, o esgotamento e reembaralhamento dos baralhos, a crise de imagem nos três pontos de origem e a tabela completa fase × ação.
+**Situação:** `tests/machine.test.js` cobre determinismo, os atalhos de teste (casa forçada e baralho restrito), fim de partida, ação inválida por fase, pureza, ordem da decisão, JSON e todo o cooperativo. Faltam entradas inválidas de `valor`, o esgotamento e reembaralhamento dos baralhos, a crise de imagem nos três pontos de origem e a tabela completa fase × ação.
 
 ## 5. Invariantes e propriedades dos geradores
 
@@ -142,7 +142,7 @@ As views são funções puras `estado → string HTML`, testáveis sem navegador
 
 - Todas as telas de uma partida renderizam, em ambos os modos, sem `{{` solto e sem `undefined` (já existe).
 - Cada fase tem uma view e nenhuma fase cai no ramo padrão.
-- Conteúdo condicional: dica só para `iniciante`; revelação de marcadores no resultado; aviso de crise; banner de balanço; meta do Balanço no cooperativo; placar competitivo versus painel da empresa; empate no fim de jogo; faixas de fim cooperativo.
+- Conteúdo condicional: dica só para `iniciante`, oculta até ser pedida (`ABRIR_DICA`), com bônus de confiança reduzido nos ganhos; revelação de marcadores no resultado; aviso de crise; banner de balanço; meta do Balanço no cooperativo; placar competitivo versus painel da empresa; empate no fim de jogo; faixas de fim cooperativo.
 - Formatos numéricos em `pt-BR` e sinais (+/−) corretos nos deltas.
 - **`grafico.js`**: `calcularBarras` (discreto: uma barra por inteiro; contínuo: 12 faixas, valor máximo cai na última faixa, soma das barras = nº de valores), `calcularDominio` (folga, série constante, discreto).
 - **Snapshots** opcionais de telas-chave, para detectar mudança involuntária de marcação (usar `assert.snapshot` do `node:test` somente se a versão do Node o suportar).

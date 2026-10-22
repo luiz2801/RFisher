@@ -120,6 +120,8 @@ Antes de revelar, o jogador escolhe quão certo está, numa escala crescente de 
 
 Quanto mais alto o nível, mais o jogador ganha ao acertar e mais perde ao errar. As pontas mantêm os valores originais (chute ×0,5, certeza ×1,5); os níveis intermediários permitem graduar a aposta em vez de uma escolha binária. Como a pontuação é linear na confiança, a verificação anti-chute (3.5) vale para todos os níveis.
 
+**Dica (nível iniciante).** A dica do cenário fica oculta e o jogador decide abri-la. Quem a abre tem o **bônus** da confiança (a parte acima de ×1) reduzido em 50% **nos ganhos**: confiante vira ×1,125 e certeza absoluta vira ×1,25 (+25% em vez de +50%). Confianças até ×1 e as perdas não mudam, para a dica não reduzir o risco de quem erra. O efeito vale só para a decisão em que a dica foi aberta. Decisão de projeto: a atenuação cobre apenas o bônus acima de ×1.
+
 ### 3.5 Matriz de pontuação
 
 Cada casa de decisão tem um valor **V** (proposta inicial: R$ 10.000 a R$ 50.000). Os números abaixo são ponto de partida, a calibrar no playtest.
@@ -160,7 +162,7 @@ A reputação precisa ter função mecânica, senão vira só um número na tela
 | --- | --- | --- |
 | Público | Quem não sabe nada de matemática | Quem já conhece média, mediana etc. |
 | Conteúdo | Média, mediana, moda, dispersão, gráficos enganosos | Paradoxo de Simpson, viés de sobrevivência, taxa-base, correlação vs. causalidade, tamanho de amostra, p-valor e intervalo de confiança |
-| Ajuda | Glossário e dicas gratuitas nas primeiras casas | Dicas só compradas no Mercado |
+| Ajuda | Glossário e dicas gratuitas nas primeiras casas (a dica fica oculta; abri-la reduz o bônus de confiança, ver 3.4) | Dicas só compradas no Mercado |
 | Valor das casas | ×1 | ×1,5 |
 
 **Recomendação:** nível **por jogador**, não por partida. O multiplicador de valor compensa a diferença de risco entre quem joga cada nível.
@@ -310,7 +312,7 @@ Como o save é apagado em `FIM_DE_JOGO`, o relatório não sobrevive a recarrega
 
 ### 4.7 Cenários de cálculo
 
-**Implementado** (`tipo: 'calculo'` no cenário; `src/engine/calculo.js`; conteúdo em `src/scenarios/content/calculo.js`, cenários 14 a 18). São cenários de decisão em que a pessoa precisa **fazer a conta**, não só reconhecer a métrica.
+**Implementado** (`tipo: 'calculo'` no cenário; `src/engine/calculo.js`; conteúdo em `src/scenarios/content/cenarios.json`, cenários 14 a 18). São cenários de decisão em que a pessoa precisa **fazer a conta**, não só reconhecer a métrica.
 
 **Dados.** Poucas observações (8 a 40), para dar para calcular à mão, em **tabela** (com botão que a copia para colar no Excel: colunas por tabulação, uma linha por registro) e, em alguns cenários, também em gráfico (`dados.exibir`). A tabela mostra os registros na ordem em que chegaram (a pessoa precisa ordená-los) ou, em dados discretos, valor e frequência (`dados.tabela`). Os dados continuam gerados por seed, com invariantes (geradores `amostra_pequena` e `contagens_assimetricas`, e os já existentes com `n` pequeno).
 
@@ -539,6 +541,15 @@ A justificativa do tipo `parcial` deve contar como correta, incorreta ou meio-te
 - **Testes de geradores:** invariantes da seção 5.6 em 1.000 seeds aleatórias.
 - **Teste de simulação:** 1.000 partidas com jogadores simulados (um que chuta, um que sabe 70%, um que sabe 100%). O que chuta deve terminar com menos dinheiro, e o que sabe tudo, com mais.
 - **Balanceamento do rival (modo solo, 3.11):** a taxa de vitória do jogador de referência cai do rival fácil ao difícil, e quem chuta perde quase sempre do fácil (`tests/bot.test.js`). A calibração fica em `scripts/simular-bot.mjs`.
+
+### 5.8.1 Atalhos de teste
+
+Para testar uma parte do jogo sem esperar o sorteio, o menu de nova partida tem a seção **Atalhos de teste** (fechada por padrão), com duas opções independentes:
+
+- **Casa em que o peão cai:** normal (pelo tabuleiro), sempre Decisão, sempre Evento ou sempre Balanço. O peão anda os dados normalmente, mas a casa resolvida é a forçada (no Balanço forçado o resultado do Balanço também é calculado).
+- **Cenários sorteados:** todos, só os de cálculo, só os sem cálculo ou um cenário específico. O baralho passa a conter apenas esses cenários (com um só, ele se repete a cada Decisão); o sorteio por dificuldade segue valendo dentro do subconjunto.
+
+Para testar os cenários de cálculo sempre: casa "Sempre Decisão" e cenários "Só os de cálculo". A partida de teste mostra o selo "Partida de teste" no topo. As regras, a pontuação e o fim de jogo não mudam; é só uma restrição do que cai a cada rolagem, gravada em `teste` no estado.
 
 ### 5.9 Acessibilidade e persistência
 

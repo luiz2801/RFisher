@@ -9,6 +9,10 @@ export const ROTULO_CONFIANCA = {
   confiante: 'Confiante',
   certeza: 'Certeza absoluta',
 };
+// Quem abre a dica tem o bônus da confiança (a parte acima de ×1) reduzido pela metade nos ganhos:
+// certeza ×1,5 vira ×1,25. Perdas e confianças até ×1 não mudam (seção 3.4).
+export const ATENUACAO_DICA = 0.5;
+export const confiancaEfetiva = (c, dicaUsada) => (dicaUsada && c > 1 ? 1 + (c - 1) * (1 - ATENUACAO_DICA) : c);
 export const NIVEL = { iniciante: 1, avancado: 1.5 };
 
 // Questão em aberto (seção 8, item 4): por ora a justificativa "parcial" conta como errada.
@@ -33,12 +37,13 @@ export function classificar(metricaCorreta, justificativaCorreta) {
   return 'erro_total';
 }
 
-export function resolverDecisao({ nivel, reputacao, valorBase, metricaCorreta, justificativaCorreta, confianca, impacto }) {
+export function resolverDecisao({ nivel, reputacao, valorBase, metricaCorreta, justificativaCorreta, confianca, impacto, dicaUsada = false }) {
   const V = valorBase * NIVEL[nivel];
   const c = CONFIANCA[confianca];
   const categoria = classificar(metricaCorreta, justificativaCorreta);
 
-  const bruto = { sucesso: V * c, sorte: 0.2 * V * c, incoerencia: 0, erro_total: -0.5 * V * c }[categoria];
+  const cGanho = confiancaEfetiva(c, dicaUsada);
+  const bruto = { sucesso: V * cGanho, sorte: 0.2 * V * cGanho, incoerencia: 0, erro_total: -0.5 * V * c }[categoria];
   const multiplicador = bruto > 0 ? multiplicadorReputacao(reputacao) : 1;
   const deltaReputacao = {
     sucesso: impacto.reputacao_acerto,

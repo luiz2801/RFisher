@@ -99,3 +99,13 @@ test('no modo solo o relatório de fim de jogo é só da pessoa, não do rival',
 test('esc neutraliza HTML', () => {
   assert.equal(esc('<a href="x">&</a>'), '&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;');
 });
+
+test('o menu lista os atalhos de teste e a partida de teste exibe o selo', () => {
+  const menu = viewMenu();
+  assert.match(menu, /Atalhos de teste/);
+  assert.match(menu, /Só os de cálculo/);
+  assert.match(menu, /cenario_14_alugueis/);
+  const e = novoJogo({ jogadores: [{ nome: 'A', nivel: 'iniciante' }], seed: 1, teste: { casa: 'decisao' } });
+  assert.match(viewJogo(e), /Partida de teste/);
+  assert.doesNotMatch(viewJogo({ ...e, teste: null }), /Partida de teste/);
+});

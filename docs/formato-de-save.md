@@ -49,6 +49,7 @@ Versão do formato: **`versao: 1`**.
 | `cenarioAtual` | objeto \| `null` | Decisão em andamento. |
 | `eventoAtual` | objeto \| `null` | Carta de evento em exibição. |
 | `resultado` | objeto \| `null` | Resultado da última decisão, na tela de resultado. |
+| `teste` | objeto \| `null` | Atalhos de teste do menu (`fisher.md` 5.8.1): `{ casa, cenarios }`, com `casa` em `'decisao'`, `'evento'`, `'balanco'` ou `null` (normal) e `cenarios` uma lista de ids que restringe o baralho, ou `null` (todos). `null` em partida normal. Ausente em saves antigos (vale `null`). |
 
 Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `INFORMAR_VALOR`, `ESCOLHER_JUSTIFICATIVA`, `ESCOLHER_CONFIANCA`, `MOSTRAR_RESULTADO`, `MOSTRAR_EVENTO`, `MOSTRAR_BALANCO`, `FIM_DE_JOGO`.
 
@@ -70,10 +71,10 @@ Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `INFORMAR_VALOR`, `ESCOLHER
 
 ### Campos de contexto da fase
 
-- **`cenarioAtual`**: `{ id, series, num, vars, ordemOpcoes, ordemJustificativas, confianca, metricaId, valorInformado, justificativaId }`. `series` são os dados sorteados; `num` as métricas calculadas; `vars` os textos já formatados para os placeholders. `valorInformado` é o número calculado pela pessoa (ou pelo rival) e só é preenchido em cenários de cálculo; ausente em saves antigos (vale `null`). As escolhas começam em `null` e são preenchidas conforme a fase avança.
+- **`cenarioAtual`**: `{ id, series, num, vars, ordemOpcoes, ordemJustificativas, confianca, dicaUsada, metricaId, valorInformado, justificativaId }`. `series` são os dados sorteados; `num` as métricas calculadas; `vars` os textos já formatados para os placeholders. `valorInformado` é o número calculado pela pessoa (ou pelo rival) e só é preenchido em cenários de cálculo; ausente em saves antigos (vale `null`). As escolhas começam em `null` e são preenchidas conforme a fase avança.
 - **`eventoAtual`**: `{ id, crise, dinheiro }`. `dinheiro` já inclui o amortecimento do cooperativo.
 - **`confianca`** (em `historico`, `cenarioAtual` e `resultado`): uma das chaves `chute`, `duvida`, `provavel`, `confiante` ou `certeza`. Saves antigos, que só usavam `chute` e `certeza`, continuam válidos.
-- **`resultado`**: `{ cenarioId, metricaId, justificativaId, confianca, metricaCorreta, justificativaCorreta, categoria, delta, multiplicador, deltaReputacao, crise }`. Em cenários de cálculo acrescenta `valorCorreto` e `calculo: { chave, informado, esperado, margemPct, minimo, maximo, dentro }`. `metricaCorreta` diz se a *opção* era a correta; a `categoria` já considera também o valor (`fisher.md` 4.7). Ausentes em saves antigos e em cenários comuns.
+- **`resultado`**: `{ cenarioId, metricaId, justificativaId, confianca, dicaUsada, metricaCorreta, justificativaCorreta, categoria, delta, multiplicador, deltaReputacao, crise }`. Em cenários de cálculo acrescenta `valorCorreto` e `calculo: { chave, informado, esperado, margemPct, minimo, maximo, dentro }`. `metricaCorreta` diz se a *opção* era a correta; a `categoria` já considera também o valor (`fisher.md` 4.7). Ausentes em saves antigos e em cenários comuns.
 - **`balanco`**: `{ receita, custos, liquido }` e, no cooperativo, `bonusRh` e `meta: { valor, cumprida, dinheiro, reputacao, crise }`.
 
 Os campos de contexto só existem nas fases em que fazem sentido e são zerados em `CONTINUAR`.
@@ -149,5 +150,6 @@ Como o save referencia ids do conteúdo, alterar o conteúdo também pode quebra
 | 1 (sem incremento) | Acrescentados `conceito` e `equivocos` em `jogadores[].historico[]`, para o perfil de desempenho. | Compatível: entradas sem esses campos são completadas pelo conteúdo |
 | 1 (sem incremento) | Acrescentado `jogadores[].bot`, para o rival do modo solo. O modo solo grava `modo: 'competitivo'`. | Compatível: jogador sem `bot` é uma pessoa |
 | 1 (sem incremento) | Nova fase `INFORMAR_VALOR`; `cenarioAtual.valorInformado`; `resultado.valorCorreto` e `resultado.calculo`; `historico[].valor` e `historico[].valorCorreto`, para os cenários de cálculo (`fisher.md` 4.7). | Compatível: saves antigos não têm esses campos e nunca estiveram na nova fase; o código trata a ausência como cenário comum |
+| 1 (sem incremento) | Acrescentado `teste`, com os atalhos de teste do menu (casa forçada e baralho restrito). | Compatível: save sem `teste` é uma partida normal |
 
 Ao mudar o formato, acrescente uma linha aqui.

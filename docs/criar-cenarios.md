@@ -8,8 +8,7 @@ Referências: regras em [fisher.md](../fisher.md) (seções 3 e 4), schema origi
 
 | O quê | Arquivo |
 | --- | --- |
-| Cenários (lista `CENARIOS`) | [src/scenarios/content/iniciante.js](../src/scenarios/content/iniciante.js) |
-| Cenários de cálculo (lista `CENARIOS_CALCULO`) | [src/scenarios/content/calculo.js](../src/scenarios/content/calculo.js) |
+| Banco de cenários, incluindo os de cálculo (array JSON) | [src/scenarios/content/cenarios.json](../src/scenarios/content/cenarios.json) |
 | Margem, valor exato e notas de método dos cenários de cálculo | [src/engine/calculo.js](../src/engine/calculo.js) |
 | Cartas de evento (lista `EVENTOS`) | [src/scenarios/content/eventos.js](../src/scenarios/content/eventos.js) |
 | Geradores de dados e invariantes | [src/scenarios/generators.js](../src/scenarios/generators.js) |
@@ -30,8 +29,8 @@ Consequência prática: **nunca escreva um número de dado à mão no texto**. U
 
 1. Defina o **equívoco** que o cenário ensina (por exemplo, "usar a média quando há outliers") e a **métrica correta**.
 2. Escolha ou crie um **gerador** que produza dados em que essa métrica é claramente a correta (ver [Geradores](#geradores)).
-3. Escreva o objeto do cenário em `iniciante.js` seguindo o [modelo](#modelo-de-cenário).
-4. Inclua o cenário no array exportado `CENARIOS`, no final do arquivo.
+3. Escreva o objeto do cenário seguindo o [modelo](#modelo-de-cenário).
+4. Acrescente-o ao array de `cenarios.json`. O arquivo é JSON puro: aspas duplas em chaves e textos, sem comentários nem vírgula final. O loader o importa com `import ... with { type: 'json' }` (Node 20.10+ e navegadores recentes).
 5. Rode `npm test`. O validador e os testes de invariante rodam sobre todos os cenários automaticamente.
 6. Adicione um teste específico do invariante em `tests/generators.test.js` (como os dos cenários 1 e 4 a 18).
 
@@ -40,8 +39,9 @@ Para um cenário em que a pessoa **calcula** o valor, siga o passo a passo acima
 
 ### Modelo de cenário
 
-```js
-const cenarioNN = {
+```jsonc
+// Um elemento do array de cenarios.json (comentários e aspas simples só neste exemplo; o arquivo é JSON puro).
+{
   id: 'cenario_09_exemplo',          // único; snake_case
   setor: 'logistica',                // um de SETORES (ver tabela de setores)
   conceito: 'percentil',             // id de CONCEITOS (src/scenarios/content/conceitos.js)
@@ -64,7 +64,7 @@ const cenarioNN = {
   opcoes: [ /* exatamente 5 */ ],
   justificativas: [ /* de 6 a 8 */ ],
   feedback: { por_equivoco: { /* ... */ }, explicacao_correta: '...', revelacao: { marcadores: [ /* ... */ ] } },
-  impacto,                           // constante { reputacao_acerto: 5, reputacao_erro: -10 }
+  impacto: { reputacao_acerto: 5, reputacao_erro: -10 },
 };
 ```
 
@@ -77,13 +77,13 @@ const cenarioNN = {
 | `conceito` | Obrigatório, id de `CONCEITOS` em [src/scenarios/content/conceitos.js](../src/scenarios/content/conceitos.js). Diz o que o cenário avalia; o perfil de desempenho do fim de jogo agrega erros e acertos por conceito (`fisher.md` 4.6). Reutilize um conceito existente se o cenário treina a mesma ideia; para um novo, acrescente id e nome ao catálogo e, em [src/scenarios/content/materiais.js](../src/scenarios/content/materiais.js), o que revisar e os links de estudo sugeridos no relatório de fim de jogo (um teste exige materiais para todo conceito). |
 | `dificuldade` | Obrigatório, inteiro de 1 a 3 (`DIFICULDADE_MAX`). Ver [Dificuldade](#dificuldade). |
 | `contexto` | Narrativa e pergunta. Pode usar placeholders. |
-| `dica` | Opcional. Aparece só para jogadores de nível iniciante. |
+| `dica` | Opcional. Só para jogadores de nível iniciante, e oculta por padrão: o jogador precisa pedir ("Mostrar dica"), e isso reduz pela metade o bônus de confiança nos ganhos daquela decisão (`fisher.md` 3.4). |
 | `valor_base` | V da matriz de pontuação (`fisher.md` 3.5). Hoje todos usam 20.000; o nível avançado multiplica por 1,5. |
 | `dados.formato` | Define a formatação de todos os placeholders numéricos. |
 | `tipo` | Opcional. `'calculo'` para um cenário em que a pessoa calcula e informa o valor (ver [Cenários de cálculo](#cenários-de-cálculo)). Ausente é um cenário comum. |
 | `dados.tipo_grafico` | `barras_discretas` para dados inteiros e poucos valores (numerações, notas); qualquer outro valor vira histograma. |
 | `dados.descricao_acessivel` | Obrigatória por convenção: é a descrição textual do gráfico (`fisher.md` 5.9). |
-| `impacto` | Variação de reputação por acerto e por erro. Reutilize a constante `impacto` do arquivo, salvo motivo para variar. |
+| `impacto` | Variação de reputação por acerto e por erro. Todos os cenários usam `{ reputacao_acerto: 5, reputacao_erro: -10 }`, salvo motivo para variar. |
 
 ### Dificuldade
 
@@ -227,8 +227,8 @@ Dicas: `padronizado(n, media, dp, rng, casas)` gera uma série com média e desv
 
 Um cenário `tipo: 'calculo'` entrega os dados numa **tabela** (e, se quiser, também num gráfico) e pede que a pessoa escolha a métrica, **calcule o valor** com os dados, justifique e declare a confiança (`fisher.md` 4.7). O modelo é o de um cenário comum, com estas diferenças:
 
-```js
-const cenarioNN = {
+```jsonc
+{
   id: 'cenario_NN_exemplo',
   tipo: 'calculo',
   /* setor, conceito, dificuldade, titulo, contexto, dica, valor_base como no modelo comum */
@@ -323,7 +323,7 @@ O validador **não** confere que a opção marcada `correta` é de fato a corret
 - [ ] Teste específico do gerador adicionado ou atualizado.
 - [ ] Cenário de cálculo: margem escolhida, convenção de percentil/desvio avisada na tela e `como_calcular` escrito.
 - [ ] `dados.formato` e rótulos dos eixos corretos; `descricao_acessivel` escrita.
-- [ ] Cenário incluído em `CENARIOS` (ou evento em `EVENTOS`).
+- [ ] Cenário incluído em `cenarios.json` (ou evento em `EVENTOS`).
 - [ ] README atualizado: contagem e lista de cenários e eventos (obrigatório pelo `CLAUDE.md`).
 - [ ] `fisher.md` atualizado se o conteúdo mudar a especificação (seção 4).
 - [ ] `docs/diagramas-uml.md` atualizado se a estrutura mudar (novo gerador ou módulo).

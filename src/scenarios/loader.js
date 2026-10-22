@@ -1,5 +1,4 @@
-import { CENARIOS as CENARIOS_BASE } from './content/iniciante.js';
-import { CENARIOS_CALCULO } from './content/calculo.js';
+import CENARIOS from './content/cenarios.json' with { type: 'json' };
 import { CONCEITOS } from './content/conceitos.js';
 import { gerar } from './generators.js';
 import { resumo } from '../stats/metrics.js';
@@ -8,7 +7,6 @@ import { SETORES } from '../engine/papeis.js';
 import { DIFICULDADE_MAX, MARGEM_CALCULO_MAX_PCT } from '../engine/config.js';
 import { ehCalculo } from '../engine/calculo.js';
 
-const CENARIOS = [...CENARIOS_BASE, ...CENARIOS_CALCULO];
 const POR_ID = new Map(CENARIOS.map((c) => [c.id, c]));
 
 export const obterCenario = (id) => POR_ID.get(id);

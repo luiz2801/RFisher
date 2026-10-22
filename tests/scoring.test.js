@@ -68,3 +68,11 @@ test('anti-chute: esperança do chute total é ≈ −0,27 × V × confiança (s
     pM * pJ * 1 + pM * (1 - pJ) * 0.2 + (1 - pM) * pJ * 0 + (1 - pM) * (1 - pJ) * -0.5;
   assert.ok(Math.abs(esperanca - -0.267) < 0.001, `esperança = ${esperanca}`);
 });
+
+test('dica reduz pela metade o bônus de confiança nos ganhos (seção 3.4)', () => {
+  assert.equal(jogada(true, true, 'certeza', { dicaUsada: true }).delta, 25000); // ×1,25 em vez de ×1,5
+  assert.equal(jogada(true, true, 'confiante', { dicaUsada: true }).delta, 22500); // ×1,125
+  assert.equal(jogada(true, true, 'provavel', { dicaUsada: true }).delta, 20000);
+  assert.equal(jogada(true, true, 'chute', { dicaUsada: true }).delta, 10000);
+  assert.equal(jogada(false, false, 'certeza', { dicaUsada: true }).delta, -15000); // perda não muda
+});

@@ -2,7 +2,8 @@ import { criarRng } from './rng.js';
 import { DINHEIRO_INICIAL, REPUTACAO_INICIAL, TURNOS_PADRAO, PASSO_MEDIO_DADO, PERFIS_BOT } from './config.js';
 import { atribuirPapeis } from './papeis.js';
 
-export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, seed = Date.now(), modo = 'competitivo' }) {
+// `teste` (opcional) só serve para depurar: `{ casa, cenarios }` força a casa em que o peão cai e restringe o baralho.
+export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, seed = Date.now(), modo = 'competitivo', teste = null }) {
   const semente = seed >>> 0;
   const cooperativo = modo === 'cooperativo';
   const papeis = atribuirPapeis(jogadores.length);
@@ -39,6 +40,8 @@ export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, seed = Date.now(),
     cenarioAtual: null,
     eventoAtual: null,
     resultado: null,
+    // Atalhos de teste do menu; ausente em saves antigos e em partidas normais (vale `null`).
+    teste: teste && (teste.casa || teste.cenarios?.length) ? { casa: teste.casa ?? null, cenarios: teste.cenarios?.length ? teste.cenarios : null } : null,
   };
 }
 

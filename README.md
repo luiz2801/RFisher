@@ -49,6 +49,7 @@ O workflow `.github/workflows/deploy.yml` publica o jogo no GitHub Pages a cada 
 - 18 cartas de eventos (9 positivas e 9 negativas) com lições estatísticas práticas (eixo truncado, correlação vs causalidade, viés de sobrevivência, regressão à média, paradoxo de Simpson, falácia do apostador, viés de autosseleção, comparações múltiplas, valor esperado, etc.). Todo setor tem ao menos um cenário e um evento.
 - Perfil de desempenho por jogador (`perfilDesempenho` em `src/engine/desempenho.js`, `fisher.md` 4.6): cada cenário declara o conceito que avalia (10 conceitos em `src/scenarios/content/conceitos.js`), e o histórico de decisões é agregado por conceito em pontos fortes e deficiências, cruzando acerto e certeza declarada (domina, inseguro, equívoco convicto, lacuna), com equívocos recorrentes e calibração da confiança.
 - Relatório de desempenho no fim de jogo, um por pessoa (o rival do computador fica de fora): acertos totais, parciais e erros, assuntos que mais e menos domina e sugestões de estudo com links gratuitos em português para cada um dos 10 conceitos (`src/scenarios/content/materiais.js`, `fisher.md` 4.6). Pode ser impresso ou salvo em PDF, já que o save é apagado no fim da partida.
+- Atalhos de teste no menu de nova partida (`fisher.md` 5.8.1): forçar a casa (Decisão, Evento ou Balanço) e restringir os cenários (só os de cálculo, só os sem cálculo ou um específico), para cair sempre no que se quer testar. A partida mostra o selo "Partida de teste".
 - Partida salva em `localStorage` a cada transição.
 
 Decisões tomadas onde a especificação deixava em aberto:
@@ -56,7 +57,7 @@ Decisões tomadas onde a especificação deixava em aberto:
 - Confiança em escala de 5 níveis (`chute`, `duvida`, `provavel`, `confiante`, `certeza`; ×0,5 a ×1,5 em degraus de 0,25), em vez do binário chute/certeza da especificação original. Ganhos e perdas são arredondados a centenas.
 - Justificativa `parcial` conta como errada (`PARCIAL_CONTA_COMO_CORRETA` em `src/engine/scoring.js`).
 - Reputação: 0 a 100, começa em 50; multiplica só os ganhos (×0,8 a ×1,3); em zero há multa de R$ 10.000.
-- Cenários em módulos JS (`src/scenarios/content/`) com o formato da seção 5.5, em vez de arquivos JSON.
+- Banco de cenários num único arquivo JSON (`src/scenarios/content/cenarios.json`, array com o formato da seção 5.5), em vez de um arquivo por cenário e do `schema.json` previsto; a validação é o `validarCenario`. Os cenários continuam sendo dados, sem lógica. Eventos, conceitos e materiais seguem em módulos JS.
 - Modo solo gravado como `modo: 'competitivo'` com um jogador `bot`, em vez de um terceiro modo: as regras são as mesmas do competitivo. O rival joga no nível da pessoa e decide numa única ação (`DECIDIR_BOT`), mostrada na tela de resultado.
 - Perfis do rival calibrados contra um jogador simulado de acerto 0,6, à falta de dados de playtest. Depois do playtest, trocar a referência pelo acerto real medido no `historico` e recalibrar.
 - Sugestões de estudo do relatório: deficiências primeiro, depois conceitos acertados sem confiança; sem nenhum dos dois, conceitos que a partida não cobrou. Materiais da Wikipédia em português por conceito e o curso de Estatística e probabilidade da Khan Academy para todos. Os equívocos recorrentes ainda não entram no relatório (faltam rótulos legíveis).

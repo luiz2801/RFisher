@@ -7,9 +7,9 @@ import { jogadorAtual, classificacao, vencedores, ehCooperativo, ehBot, classifi
 import { DIRETORIAS } from '../engine/papeis.js';
 import { metaTrimestral } from '../engine/machine.js';
 import { relatorioDesempenho } from '../engine/desempenho.js';
-import { CONFIANCA, ROTULO_CONFIANCA, NIVEL } from '../engine/scoring.js';
+import { CONFIANCA, ROTULO_CONFIANCA, NIVEL, confiancaEfetiva } from '../engine/scoring.js';
 import { MAX_JOGADORES, TURNOS_PADRAO, PERFIS_BOT } from '../engine/config.js';
-import { obterCenario, preencher, valorDoMarcador } from '../scenarios/loader.js';
+import { obterCenario, todosCenarios, preencher, valorDoMarcador } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
 import { brl, brlSinal, formatar, unidade } from '../stats/format.js';
 import { contagens } from '../stats/metrics.js';
@@ -167,6 +167,27 @@ export function viewMenu({ salvo } = {}) {
       <label>Semente de mercado (opcional, para repetir uma partida)
         <input name="seed" inputmode="numeric" pattern="[0-9]*" placeholder="aleatória">
       </label>
+      <details class="atalhos-teste">
+        <summary>Atalhos de teste</summary>
+        <label>Casa em que o peão cai
+          <select name="teste_casa">
+            <option value="">Normal (pelo tabuleiro)</option>
+            <option value="decisao">Sempre Decisão</option>
+            <option value="evento">Sempre Evento</option>
+            <option value="balanco">Sempre Balanço</option>
+          </select>
+        </label>
+        <label>Cenários sorteados
+          <select name="teste_cenarios">
+            <option value="">Todos</option>
+            <option value="calculo">Só os de cálculo</option>
+            <option value="comuns">Só os sem cálculo</option>
+            <optgroup label="Um cenário só">${todosCenarios()
+              .map((c) => `<option value="${esc(c.id)}">${esc(c.titulo)}${ehCalculo(c) ? ' (cálculo)' : ''}</option>`)
+              .join('')}</optgroup>
+          </select>
+        </label>
+      </details>
       <button class="primario" type="submit">Iniciar Disputa Corporativa</button>
     </form>
   </main>`;
@@ -191,6 +212,7 @@ export function viewJogo(e) {
   return `<header class="topo">
       <strong>Tabuleiro do CEO · Fisher S.A.</strong>
       <span>Trimestre ${turno} de ${e.turnosPorJogador}</span>
+      ${e.teste ? '<span class="selo-teste" title="Casa ou cenários forçados pelos atalhos de teste">Partida de teste</span>' : ''}
       <button data-acao="NOVA" class="discreto">Nova partida</button>
     </header>
     <div class="jogo">
@@ -396,7 +418,9 @@ function tabelaDados(def, c) {
   }
 
       if (e.fase === 'ESCOLHER_METRICA') {
-    const dica = j.nivel === 'iniciante' && def.dica ? `<p class="dica"><strong>Dica:</strong> ${esc(def.dica)}</p>` : '';
+    const dica = j.nivel !== 'iniciante' || !def.dica ? ''
+      : c.dicaUsada ? `<p class="dica"><strong>Dica:</strong> ${esc(def.dica)}</p>`
+      : '<button class="discreto" data-acao="ABRIR_DICA">Mostrar dica (reduz pela metade o bônus de confiança)</button>';
       passo = `<h3>1. Qual métrica você escolhe?</h3>${dica}
       <div class="opcoes">${c.ordemOpcoes
         .map((id) => def.opcoes.find((o) => o.id === id))
@@ -428,9 +452,10 @@ function tabelaDados(def, c) {
     const V = def.valor_base * NIVEL[j.nivel];
     const linha = (chave) => {
       const f = CONFIANCA[chave];
+      const fGanho = confiancaEfetiva(f, c.dicaUsada);
       return `<button class="opcao" data-acao="CONFIANCA" data-valor="${chave}">
         <strong>${ROTULO_CONFIANCA[chave]} (×${String(f).replace('.', ',')})</strong>
-        <span>Acerto total: até ${brlSinal(V * f)} · Erro total: ${brlSinal(-0.5 * V * f)}</span>
+        <span>Acerto total: até ${brlSinal(V * fGanho)} · Erro total: ${brlSinal(-0.5 * V * f)}</span>
       </button>`;
     };
     const escolhida = def.opcoes.find((o) => o.id === c.metricaId);
@@ -482,12 +507,13 @@ function tabelaDados(def, c) {
     if (!r.justificativaCorreta) gabarito.push(`<li>Justificativa certa: ${esc(preencher(justCerta.texto, vars))}</li>`);
 
     const rep = r.deltaReputacao ? ` · Reputação ${r.deltaReputacao > 0 ? '+' : '−'}${Math.abs(r.deltaReputacao)}` : '';
+    const usouDica = r.dicaUsada ? ' · Dica usada: bônus de confiança reduzido pela metade' : '';
     const mult = r.multiplicador !== 1 ? ` (bônus de reputação ×${r.multiplicador.toFixed(2).replace('.', ',')})` : '';
 
     return `${bannerBalanco(e)}${titulo}${escolhasRival}
     <div class="resultado ${r.categoria}">
       <h3>${tituloResultado(r)}</h3>
-      <p class="delta">${r.delta === 0 ? 'Nenhuma variação de dinheiro' : brlSinal(r.delta)}${mult}${rep}</p>
+      <p class="delta">${r.delta === 0 ? 'Nenhuma variação de dinheiro' : brlSinal(r.delta)}${mult}${rep}${usouDica}</p>
       ${r.crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}
     </div>
     ${explicacoes.join('')}

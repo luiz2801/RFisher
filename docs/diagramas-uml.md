@@ -29,6 +29,7 @@ classDiagram
         +CenarioInstanciado cenarioAtual
         +EventoAtual eventoAtual
         +Resultado resultado
+        +Teste teste
     }
 
     class Jogador {
@@ -195,6 +196,7 @@ stateDiagram-v2
         ROLAR_DADO --> MOSTRAR_BALANCO : ROLAR (caiu em 'balanco')
         
         state FluxoDecisao {
+            ESCOLHER_METRICA --> ESCOLHER_METRICA : ABRIR_DICA (só iniciante; marca dicaUsada e reduz o bônus de confiança)
             ESCOLHER_METRICA --> ESCOLHER_JUSTIFICATIVA : METRICA(id) (só pessoa, cenário comum)
             ESCOLHER_METRICA --> INFORMAR_VALOR : METRICA(id) (só pessoa, cenário de cálculo)
             INFORMAR_VALOR --> ESCOLHER_JUSTIFICATIVA : VALOR(número ou texto pt-BR)
@@ -319,7 +321,7 @@ graph TD
     subgraph Scenarios_Layer["Camada Cenários (src/scenarios/)"]
         LOADER["loader.js<br/>(Interpolação e Validação)"]
         GENERATORS["generators.js<br/>(Geração com Invariantes)"]
-        CONTENT["content/<br/>(iniciante.js, calculo.js, eventos.js, conceitos.js, materiais.js)"]
+        CONTENT["content/<br/>(cenarios.json, eventos.js, conceitos.js, materiais.js)"]
     end
 
     subgraph Stats_Layer["Camada Stats (src/stats/)"]
@@ -379,7 +381,7 @@ graph TD
 | Módulo | Responsabilidade Principal |
 | :--- | :--- |
 | **`src/engine/machine.js`** | Máquina de estados finitos que orquestra as transições a partir de ações do jogador. |
-| **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`) e funções seletoras puras (`jogadorAtual`, `ehBot`, `classificacao`, `progressoDoJogador`). |
+| **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`, que aceita os atalhos de teste do menu: casa forçada e baralho restrito, ver `fisher.md` 5.8.1) e funções seletoras puras (`jogadorAtual`, `ehBot`, `classificacao`, `progressoDoJogador`). |
 | **`src/engine/bot.js`** | Rival do modo solo: acerta métrica e justificativa com a probabilidade do perfil (menor nos cenários difíceis), escolhe distratores ao errar e deriva a confiança de uma certeza interna ruidosa. Perfis em `config.js`, calibração em `scripts/simular-bot.mjs` (`fisher.md` 3.11). |
 | **`src/engine/dificuldade.js`** | Dificuldade-alvo a partir do progresso do jogador e sorteio ponderado de cenários do baralho. |
 | **`src/engine/rng.js`** | Gerador pseudo-aleatório determinístico baseado no algoritmo `mulberry32` com estado serializável em 32-bits. |

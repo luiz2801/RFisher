@@ -26,11 +26,13 @@ function sacar(e, chave, todos, rng) {
 
 // Cenário do baralho com dificuldade mais próxima do progresso do jogador (sem repetir no ciclo).
 function sacarCenario(e, progresso, rng) {
-  if (!e.baralhoCenarios.length) e.baralhoCenarios = rng.embaralhar(idsCenarios());
+  // Em partida de teste o baralho se limita aos cenários escolhidos no menu.
+  const todos = e.teste?.cenarios ?? idsCenarios();
+  if (!e.baralhoCenarios.length) e.baralhoCenarios = rng.embaralhar(todos);
   else {
     // Partida salva antes de um cenário existir: ele entra no baralho em vez de esperar o próximo ciclo.
     const vistos = new Set(e.jogadores.flatMap((j) => j.historico.map((h) => h.cenario)));
-    for (const id of idsCenarios()) if (!vistos.has(id) && !e.baralhoCenarios.includes(id)) e.baralhoCenarios.push(id);
+    for (const id of todos) if (!vistos.has(id) && !e.baralhoCenarios.includes(id)) e.baralhoCenarios.push(id);
   }
   const candidatos = e.baralhoCenarios.map((id) => ({ id, dificuldade: obterCenario(id).dificuldade }));
   const id = escolherPorDificuldade(candidatos, progresso, rng);
@@ -93,7 +95,8 @@ const TRANSICOES = {
       e.dados = [d1, d2];
       e.balanco = passouInicio ? aplicarBalanco(e) : null;
 
-      const casa = CASAS[posicao];
+      const casa = e.teste?.casa ?? CASAS[posicao];
+      if (casa === 'balanco' && !e.balanco) e.balanco = aplicarBalanco(e); // casa forçada no teste
       if (casa === 'decisao') {
         const def = obterCenario(sacarCenario(e, progressoDoJogador(e, j), rng));
         const inst = instanciar(def, rng);

@@ -246,3 +246,51 @@ test('cooperativo: o estado sobrevive a JSON e a partida é determinística', ()
   assert.deepEqual(JSON.parse(JSON.stringify(e)), e);
   assert.deepEqual(jogar(cfg, saberTudo), e);
 });
+
+test('a dica começa oculta e abri-la marca o cenário (só iniciante)', () => {
+  const chegarNaDecisao = (nivel) => {
+    let e = novoJogo({ jogadores: jogadores(nivel), seed: 1 });
+    for (let i = 0; e.fase !== 'ESCOLHER_METRICA' && i < 20; i++) {
+      e = reduzir(e, { tipo: e.fase === 'ROLAR_DADO' ? 'ROLAR' : 'CONTINUAR' });
+    }
+    return e;
+  };
+  let e = chegarNaDecisao('iniciante');
+  const def = obterCenario(e.cenarioAtual.id);
+  assert.equal(e.cenarioAtual.dicaUsada, false);
+  assert.doesNotMatch(viewJogo(e), /class="dica"/);
+  e = reduzir(e, { tipo: 'ABRIR_DICA' });
+  assert.equal(e.cenarioAtual.dicaUsada, Boolean(def.dica));
+  if (def.dica) assert.match(viewJogo(e), /class="dica"/);
+
+  const av = chegarNaDecisao('avancado');
+  assert.equal(reduzir(av, { tipo: 'ABRIR_DICA' }).cenarioAtual.dicaUsada, false);
+});
+
+test('atalhos de teste: casa forçada e baralho restrito aos cenários escolhidos', () => {
+  const alvo = 'cenario_14_alugueis';
+  let e = novoJogo({
+    jogadores: jogadores('iniciante'),
+    turnos: 10,
+    seed: 3,
+    teste: { casa: 'decisao', cenarios: [alvo] },
+  });
+  for (let i = 0; i < 40; i++) {
+    e = reduzir(e, { tipo: 'ROLAR' });
+    assert.equal(e.fase, 'ESCOLHER_METRICA', 'toda rolagem cai em Decisão');
+    assert.equal(e.cenarioAtual.id, alvo, 'o baralho só tem o cenário escolhido');
+    e = { ...e, fase: 'MOSTRAR_RESULTADO' };
+    e = reduzir(e, { tipo: 'CONTINUAR' });
+    if (e.fase === 'FIM_DE_JOGO') break;
+  }
+});
+
+test('atalhos de teste: casa de Evento ou Balanço forçada; partida normal não tem teste', () => {
+  const base = { jogadores: jogadores('iniciante'), turnos: 10, seed: 3 };
+  assert.equal(novoJogo(base).teste, null);
+  assert.equal(novoJogo({ ...base, teste: { casa: null, cenarios: null } }).teste, null);
+  assert.equal(reduzir(novoJogo({ ...base, teste: { casa: 'evento' } }), { tipo: 'ROLAR' }).fase, 'MOSTRAR_EVENTO');
+  const b = reduzir(novoJogo({ ...base, teste: { casa: 'balanco' } }), { tipo: 'ROLAR' });
+  assert.equal(b.fase, 'MOSTRAR_BALANCO');
+  assert.ok(b.balanco, 'o Balanço forçado também calcula o resultado');
+});
