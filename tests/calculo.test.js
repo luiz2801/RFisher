@@ -374,7 +374,7 @@ test('a calculadora embutida aparece só na etapa do valor e calcula como a conf
 test('a calculadora recusa entradas inválidas', () => {
   assert.equal(calcularOperacao([1, 2, 3, 4], 'soma'), 10);
   assert.equal(calcularOperacao([1, 2, 3, 4], 'amplitude'), 3);
-  assert.equal(calcularOperacao([1, 2, 3, 4], 'variancia'), 5 / 3);
+  assert.ok(Math.abs(calcularOperacao([1, 2, 3, 4], 'variancia') - 5 / 3) < 1e-9);
   assert.equal(calcularOperacao([1, 2, 3, 4], 'percentil', 101), null);
   assert.equal(calcularOperacao([1, 2, 3, 4], 'percentil', NaN), null);
   assert.equal(calcularOperacao([5], 'dp'), null, 'desvio amostral precisa de 2 registros');
