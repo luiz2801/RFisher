@@ -1869,7 +1869,7 @@
       },
       {
         "id": "j2",
-        "texto": "A maioria dos pacientes espera pouco, então um número baseado nesse grupo descreve a experiência típica.",
+        "texto": "A maioria dos pacientes espera pouco, então um número baseando nesse grupo descreve a experiência típica.",
         "tipo": "parcial"
       },
       {
@@ -2050,7 +2050,7 @@
         "extremo_como_tipico": "O máximo ({{maximo}}) é o cliente mais ativo. Projetá-lo para todos superestima o total."
       },
       "explicacao_correta": "Para projetar um total, a média ({{media}} chamados por cliente) é a métrica certa: média × número de clientes devolve a soma. A mediana ({{mediana}}) e a moda ({{moda}}) ignoram quem abre muitos chamados.",
-      "como_calcular": "Multiplique cada número de chamados pela quantidade de clientes que o abriu, some tudo e divida por {{n}} (o total de clientes da amostra): {{media}} chamados por cliente.",
+      "como_calcular": "Multiplique cada número de chamados pela quantidade de clientes que o abriu, sume tudo e divida por {{n}} (o total de clientes da amostra): {{media}} chamados por cliente.",
       "revelacao": {
         "marcadores": [
           {
@@ -2331,6 +2331,287 @@
     },
     "impacto": {
       "reputacao_acerto": 5,
+      "reputacao_erro": -10
+    }
+  },
+  {
+    "id": "cenario_19_variabilidade_relativa",
+    "setor": "financeiro",
+    "conceito": "cv",
+    "versao": 1,
+    "idioma": "pt-BR",
+    "nivel": "intermediario",
+    "dificuldade": 3,
+    "titulo": "Comparando o risco de duas filiais",
+    "contexto": "Você quer saber qual filial tem o faturamento mais instável. A Filial A (pequena) fatura em média {{media_a}} com desvio padrão de {{dp_a}}. A Filial B (grande) fatura em média {{media_b}} com desvio padrão de {{dp_b}}. Qual métrica permite comparar de forma justa o risco das duas, mesmo tendo portes diferentes?",
+    "dica": "O desvio padrão absoluto de uma filial grande sempre parecerá maior. Procure a métrica que divide o desvio padrão pela média.",
+    "valor_base": 20000,
+    "dados": {
+      "gerador": {
+        "tipo": "comparacao_amostral",
+        "parametros": {
+          "nA": 12,
+          "mediaA": 10000,
+          "dpA": 2000,
+          "nB": 12,
+          "mediaB": 1000000,
+          "dpB": 100000,
+          "nomes": [
+            "Filial A",
+            "Filial B"
+          ]
+        }
+      },
+      "formato": "brl",
+      "rotulo_x": "Faturamento (R$)",
+      "rotulo_y": "Meses",
+      "tipo_grafico": "histograma",
+      "descricao_acessivel": "Gráficos com escalas muito diferentes, mostrando o faturamento mensal de uma filial pequena e uma grande."
+    },
+    "opcoes": [
+      {
+        "id": "cv",
+        "texto": "Coeficiente de Variação (CV)",
+        "correta": true
+      },
+      {
+        "id": "dp",
+        "texto": "Apenas o Desvio Padrão ({{dp_a}} e {{dp_b}})",
+        "correta": false,
+        "equivoco": "ignora_escala"
+      },
+      {
+        "id": "amplitude",
+        "texto": "Amplitude total",
+        "correta": false,
+        "equivoco": "confunde_dispersao"
+      },
+      {
+        "id": "media",
+        "texto": "Média de faturamento",
+        "correta": false,
+        "equivoco": "media_nao_e_risco"
+      },
+      {
+        "id": "iqr",
+        "texto": "Amplitude Interquartil (IQR)",
+        "correta": false,
+        "equivoco": "iqr_absoluto"
+      }
+    ],
+    "justificativas": [
+      {
+        "id": "j1",
+        "texto": "O Coeficiente de Variação ajusta o desvio padrão ao tamanho da média, permitindo comparar a volatilidade de negócios de tamanhos distintos.",
+        "tipo": "correta"
+      },
+      {
+        "id": "j2",
+        "texto": "O desvio padrão da Filial B é muito maior simplesmente porque ela fatura muito mais, não necessariamente por ser mais arriscada.",
+        "tipo": "erro_conceitual",
+        "equivoco": "ignora_escala"
+      }
+    ],
+    "feedback": {
+      "por_equivoco": {
+        "ignora_escala": "Comparar os desvios padrões brutos ({{dp_a}} vs {{dp_b}}) pune a Filial B só por ser maior. É preciso olhar a variação em percentual da média.",
+        "media_nao_e_risco": "A média mostra o tamanho da filial, não o quanto ela oscila mês a mês.",
+        "confunde_dispersao": "A amplitude sofre do mesmo problema do desvio padrão: os valores brutos da Filial grande engolem os da pequena.",
+        "iqr_absoluto": "O IQR também é uma medida absoluta e não resolve o problema da diferença de escalas."
+      },
+      "explicacao_correta": "O Coeficiente de Variação (CV = Desvio Padrão / Média) transforma a variação absoluta em uma porcentagem, sendo a única forma justa de comparar empresas em escalas diferentes.",
+      "revelacao": {
+        "marcadores": [
+          {
+            "chave": "cv",
+            "rotulo": "CV",
+            "correto": true
+          }
+        ]
+      }
+    },
+    "impacto": {
+      "reputacao_acerto": 10,
+      "reputacao_erro": -5
+    }
+  },
+  {
+    "id": "cenario_20_media_aparada",
+    "setor": "rh",
+    "conceito": "media_aparada",
+    "versao": 1,
+    "idioma": "pt-BR",
+    "nivel": "intermediario",
+    "dificuldade": 2,
+    "titulo": "Nota de clima e outliers comportamentais",
+    "contexto": "Na pesquisa de clima de {{n}} funcionários, uma minoria trollou a pesquisa (nota 0) e outros deram 10 cegamente. Você quer usar uma média para calcular os bônus, mas precisa anular esses comportamentos extremos de ambos os lados. Qual métrica usar?",
+    "dica": "Existe uma técnica que corta os percentuais mais baixos e mais altos antes de fazer o cálculo clássico da média.",
+    "valor_base": 20000,
+    "dados": {
+      "gerador": {
+        "tipo": "distribuicao_normal_simetrica",
+        "parametros": {
+          "n": 100,
+          "media": 7.5,
+          "dp": 1.2,
+          "outliers": [
+            {
+              "valor": 0,
+              "qtd": 3
+            },
+            {
+              "valor": 10,
+              "qtd": 5
+            }
+          ]
+        }
+      },
+      "formato": "decimal",
+      "rotulo_x": "Nota de Clima",
+      "rotulo_y": "Funcionários",
+      "tipo_grafico": "histograma",
+      "descricao_acessivel": "A maioria das notas forma um sino ao redor de 7 e 8, mas há pequenos picos anormais no 0 e no 10."
+    },
+    "opcoes": [
+      {
+        "id": "media_aparada",
+        "texto": "Média Aparada (Trimmed Mean)",
+        "correta": true
+      },
+      {
+        "id": "media",
+        "texto": "Média Aritmética Simples",
+        "correta": false,
+        "equivoco": "sensivel_a_extremos"
+      },
+      {
+        "id": "mediana",
+        "texto": "Mediana",
+        "correta": false,
+        "equivoco": "perde_informacao"
+      },
+      {
+        "id": "moda",
+        "texto": "Moda",
+        "correta": false,
+        "equivoco": "moda_inadequada"
+      }
+    ],
+    "justificativas": [
+      {
+        "id": "j1",
+        "texto": "A média aparada descarta (por exemplo) os 5% piores e melhores resultados, calculando a média apenas com os funcionários que responderam de forma representativa.",
+        "tipo": "correta"
+      },
+      {
+        "id": "j2",
+        "texto": "A média simples vai incorporar as notas cegas de 10 e os trolls de 0, distorcendo o resultado do bônus.",
+        "tipo": "erro_conceitual",
+        "equivoco": "sensivel_a_extremos"
+      }
+    ],
+    "feedback": {
+      "por_equivoco": {
+        "sensivel_a_extremos": "A média simples inclui as avaliações sem critério, puxando o resultado de forma injusta.",
+        "perde_informacao": "Embora a mediana anule os extremos, ela foca em uma única pessoa (a do meio), ignorando a distribuição e pequenas nuances das notas autênticas.",
+        "moda_inadequada": "A moda pega apenas a nota mais votada, mas em escalas contínuas (ex: 7.2), raramente reflete a equipe toda."
+      },
+      "explicacao_correta": "A Média Aparada resolve o problema eliminando deliberadamente uma fração das pontas (ex: 5% de cada lado) e tirando a média do resto, retendo a vantagem matemática da média sem o ruído dos extremos.",
+      "revelacao": {
+        "marcadores": [
+          {
+            "chave": "media_aparada",
+            "rotulo": "Média Aparada",
+            "correto": true
+          }
+        ]
+      }
+    },
+    "impacto": {
+      "reputacao_acerto": 5,
+      "reputacao_erro": -5
+    }
+  },
+  {
+    "id": "cenario_21_paradoxo_simpson",
+    "setor": "produto",
+    "conceito": "paradoxo_simpson",
+    "versao": 1,
+    "idioma": "pt-BR",
+    "nivel": "avancado",
+    "dificuldade": 3,
+    "titulo": "O mistério da taxa de conversão",
+    "contexto": "Sua conversão geral caiu de 4% para 3%. Ao olhar o dashboard, a conversão no Desktop SUBIU de 6% para 7%, e no Mobile SUBIU de 2% para 2.5%. Como é matematicamente possível que a métrica global caia enquanto todos os segmentos isolados sobem?",
+    "dica": "A conversão geral é uma média ponderada. Pense no que acontece se a maior parte do seu tráfego subitamente migrar para o dispositivo que converte menos.",
+    "valor_base": 20000,
+    "dados": {
+      "gerador": {
+        "tipo": "matriz_confusao",
+        "parametros": {}
+      },
+      "formato": "porcento",
+      "rotulo_x": "Dispositivo",
+      "rotulo_y": "Taxa de Conversão (%)",
+      "tipo_grafico": "barras_agrupadas",
+      "descricao_acessivel": "Gráfico de barras mostrando aumento no Mobile e no Desktop, mas ao lado a barra de Conversão Geral diminui."
+    },
+    "opcoes": [
+      {
+        "id": "mudanca_proporcao",
+        "texto": "Paradoxo de Simpson (mudança no peso/proporção dos grupos)",
+        "correta": true
+      },
+      {
+        "id": "erro_calculo",
+        "texto": "Erro de cálculo do painel de BI",
+        "correta": false,
+        "equivoco": "desconfia_ferramenta"
+      },
+      {
+        "id": "sazonalidade",
+        "texto": "Efeito de sazonalidade mensal",
+        "correta": false,
+        "equivoco": "nao_explica_matematica"
+      },
+      {
+        "id": "outliers",
+        "texto": "A conversão foi puxada para baixo por outliers",
+        "correta": false,
+        "equivoco": "taxa_nao_tem_outlier"
+      }
+    ],
+    "justificativas": [
+      {
+        "id": "j1",
+        "texto": "Isso é o Paradoxo de Simpson: ocorre quando a composição da amostra muda. Se o tráfego do Mobile (que tem taxa menor) aumentou muito em proporção, ele 'pesa' mais na média global, puxando-a para baixo.",
+        "tipo": "correta"
+      },
+      {
+        "id": "j2",
+        "texto": "Painéis de BI apenas agregam a matemática; não é um erro, é uma falha de interpretação da média ponderada.",
+        "tipo": "erro_conceitual",
+        "equivoco": "desconfia_ferramenta"
+      }
+    ],
+    "feedback": {
+      "por_equivoco": {
+        "desconfia_ferramenta": "O BI está correto. Isso é um efeito matemático real das médias ponderadas chamado Paradoxo de Simpson.",
+        "nao_explica_matematica": "A sazonalidade pode explicar o volume, mas não explica como a matemática faz a soma dos grupos ir contra os grupos isolados.",
+        "taxa_nao_tem_outlier": "Taxas de conversão agregadas não sofrem de 'outliers' numéricos do mesmo jeito que variáveis contínuas como salários."
+      },
+      "explicacao_correta": "Este é o clássico Paradoxo de Simpson! A conversão geral é uma média ponderada. Se o tráfego em massa migrou do Desktop (alta conversão) para o Mobile (baixa conversão), a média geral cai, mesmo que ambos tenham melhorado isoladamente.",
+      "revelacao": {
+        "marcadores": [
+          {
+            "chave": "paradoxo_simpson",
+            "rotulo": "Peso da Amostra",
+            "correto": true
+          }
+        ]
+      }
+    },
+    "impacto": {
+      "reputacao_acerto": 15,
       "reputacao_erro": -10
     }
   }
