@@ -55,6 +55,7 @@ export const OPERACOES_CALCULADORA = [
   { id: 'amplitude', rotulo: 'Amplitude (máximo − mínimo)', calcular: (v) => Math.max(...v) - Math.min(...v) },
   { id: 'q1', rotulo: '1º quartil (Q1)', calcular: (v) => percentil(v, 25) },
   { id: 'q3', rotulo: '3º quartil (Q3)', calcular: (v) => percentil(v, 75) },
+  { id: 'iqr', rotulo: 'Amplitude interquartil (IQR = Q3 − Q1)', calcular: (v) => percentil(v, 75) - percentil(v, 25) },
   { id: 'percentil', rotulo: 'Percentil (informe o P)', pedeP: true, calcular: (v, p) => percentil(v, p) },
   { id: 'variancia', rotulo: 'Variância amostral (n − 1)', calcular: (v) => desvioPadrao(v) ** 2 },
   { id: 'dp', rotulo: 'Desvio padrão amostral (n − 1)', calcular: desvioPadrao },

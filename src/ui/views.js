@@ -173,7 +173,7 @@ export function viewMenu({ salvo } = {}) {
         <legend>Material de apoio</legend>
         <p>Alguns cenários trazem uma tabela de dados e pedem que você faça a conta (mediana, percentil, desvio padrão, quartis). Para esses, o ideal é ter à mão:</p>
         <ul>
-          <li>a <strong>calculadora de estatísticas</strong> do próprio jogo (média, mediana, quartis, percentil, desvio padrão), disponível na etapa do valor; ou</li>
+          <li>a <strong>calculadora de estatísticas</strong> do próprio jogo (média, mediana, quartis, IQR, percentil, desvio padrão), disponível na etapa do valor; ou</li>
           <li>uma <strong>planilha</strong> (Excel, Google Planilhas ou LibreOffice): o botão "Copiar tabela" cola os dados direto nela, e as funções <code>MED</code>, <code>PERCENTIL.INC</code>, <code>DESVPAD.A</code> e <code>QUARTIL.INC</code> conferem o resultado; ou</li>
           <li><strong>lápis e papel</strong> (com calculadora), para ordenar os registros e contar posições.</li>
         </ul>

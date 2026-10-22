@@ -367,6 +367,7 @@ test('a calculadora embutida aparece só na etapa do valor e calcula como a conf
   assert.ok(Math.abs(calcularOperacao(v, 'media') - num.media) < 1e-9);
   assert.ok(Math.abs(calcularOperacao(v, 'mediana') - num.mediana) < 1e-9);
   assert.ok(Math.abs(calcularOperacao(v, 'q3') - num.p75) < 1e-9);
+  assert.ok(Math.abs(calcularOperacao(v, 'iqr') - num.iqr) < 1e-9);
   assert.ok(Math.abs(calcularOperacao(v, 'dp') - num.dp) < 1e-9);
   assert.ok(Math.abs(calcularOperacao(v, 'percentil', 90) - num.p90) < 1e-9);
 });
