@@ -46,7 +46,7 @@ Os números mostrados aos jogadores vêm de `src/stats/`; um erro aqui ensina es
 
 - `media`, `mediana` (quantidade par e ímpar), `moda` (empate resolve para o menor valor), `percentil` (interpolação linear, compatível com NumPy, p = 0 e 100, lista de um elemento), `desvioPadrao` (amostral, n − 1), `resumo` (todas as chaves, `iqr`, `amplitude`, `ponto_medio`).
 - Valores de referência conferidos contra uma fonte externa (NumPy ou planilha), registrados no teste.
-- `formatar` para cada tipo (`brl`, `dias`, `minutos`, `gramas`, `porcento`, `mm`, padrão), separadores `pt-BR`, arredondamento; `brl` e `brlSinal` com negativos e zero.
+- `formatar` para cada tipo (`brl`, `dias`, `minutos`, `gramas`, `porcento`, `mm`, `cm`, `ms`, padrão), separadores `pt-BR`, arredondamento; `brl` e `brlSinal` com negativos e zero.
 
 **Situação:** `tests/stats-metrics.test.js` cobre `metrics.js`: mediana de lista par e unitária, moda com empate, percentil p0/p100, lista unitária e interpolação, desvio padrão amostral e `resumo`. Os valores de referência foram calculados à mão e estão comentados no teste; falta a conferência registrada contra NumPy ou planilha. Falta todo o `format.js`.
 
@@ -103,7 +103,7 @@ Cenários e eventos são dados; o conteúdo é validado como código.
 - Ids de cenário e de evento únicos; todo evento tem setor válido, dinheiro e reputação numéricos.
 - **Coerência pedagógica:** `cenario.opcoes[correta]` corresponde ao gabarito calculado a partir dos dados (por exemplo, a opção correta do cenário 1 é a mediana, e o valor mostrado vem de `resumo`).
 - Distribuição por setor: todo setor de `SETORES` tem pelo menos um cenário e um evento (necessário para o cooperativo).
-- Contagem de cenários e eventos igual à do README (8 cenários, 10 eventos).
+- Contagem de cenários e eventos igual à do README (13 cenários, 18 eventos).
 
 **Situação:** `tests/scenarios.test.js` cobre a validação geral, ids únicos, placeholders e setores. Faltam os testes negativos restantes, coerência do gabarito, cobertura por setor e contagem.
 

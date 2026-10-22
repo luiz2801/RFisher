@@ -89,3 +89,52 @@ test('cenário 08: amostra pequena tem variabilidade significativamente maior qu
     assert.ok(media(b) > media(a));
   }
 });
+
+const geradorDe = (id) => todosCenarios().find((c) => c.id === id).dados.gerador;
+
+test('cenário 09: o máximo fica acima do P95, que fica acima da média', () => {
+  const g = geradorDe('cenario_09_portao');
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.ok(Math.max(...v) - percentil(v, 95) >= 0.25 * desvioPadrao(v));
+    assert.ok(percentil(v, 95) > media(v));
+  }
+});
+
+test('cenário 10: P95 e P90 caem na cauda, bem acima da média', () => {
+  const g = geradorDe('cenario_10_latencia');
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.ok(percentil(v, 90) > 3 * media(v));
+    assert.ok(percentil(v, 95) >= percentil(v, 90));
+  }
+});
+
+test('cenário 11: assimetria à esquerda, média abaixo da mediana', () => {
+  const g = geradorDe('cenario_11_primeiro_contato');
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.ok(mediana(v) - media(v) > 0.06 * mediana(v));
+    assert.ok(Math.min(...v) < 0.5 * mediana(v));
+    assert.ok(Math.max(...v) <= 100);
+  }
+});
+
+test('cenário 12: fundo B com média maior e oscilação muito maior', () => {
+  const g = geradorDe('cenario_12_fundos');
+  for (let seed = 1; seed <= 200; seed++) {
+    const [a, b] = gerar(g, criarRng(seed)).series.map((s) => s.valores);
+    assert.ok(media(b) > media(a));
+    assert.ok(desvioPadrao(b) > 4 * desvioPadrao(a));
+  }
+});
+
+test('cenário 13: maioria de zeros, mediana zero e média positiva', () => {
+  const g = geradorDe('cenario_13_freemium');
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.equal(mediana(v), 0);
+    assert.equal(moda(v), 0);
+    assert.ok(media(v) > 0.1 * Math.max(...v));
+  }
+});

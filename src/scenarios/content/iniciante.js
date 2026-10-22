@@ -478,4 +478,301 @@ const cenario08 = {
   impacto,
 };
 
-export const CENARIOS = [cenario01, cenario02, cenario03, cenario04, cenario05, cenario06, cenario07, cenario08];
+const cenario09 = {
+  id: 'cenario_09_portao',
+  setor: 'logistica',
+  conceito: 'extremos',
+  versao: 1,
+  idioma: 'pt-BR',
+  nivel: 'iniciante',
+  dificuldade: 1,
+  titulo: 'Portão do novo centro de distribuição',
+  contexto:
+    'O novo centro de distribuição terá um único portão de carga, e toda a frota precisa passar por ele. O gráfico mostra a altura dos {{n}} caminhões. Qual medida deve definir a altura mínima do vão do portão?',
+  dica: 'Pense no que acontece se um único caminhão não couber no portão.',
+  valor_base: 20000,
+  dados: {
+    gerador: { tipo: 'limite_fisico', parametros: { n: 40, media: 360, dp: 18 } },
+    formato: 'cm',
+    rotulo_x: 'Altura do caminhão (cm)',
+    rotulo_y: 'Caminhões',
+    tipo_grafico: 'histograma',
+    descricao_acessivel: 'As alturas formam um sino em torno do centro, com poucos caminhões bem mais altos na ponta direita.',
+  },
+  opcoes: [
+    { id: 'maximo', texto: 'Maior altura da frota ({{maximo}})', correta: true },
+    { id: 'media', texto: 'Média ({{media}})', correta: false, equivoco: 'centro_como_limite' },
+    { id: 'mediana', texto: 'Mediana ({{mediana}})', correta: false, equivoco: 'centro_como_limite' },
+    { id: 'p95', texto: 'Percentil 95, o P95 ({{p95}})', correta: false, equivoco: 'percentil_como_garantia' },
+    { id: 'ponto_medio', texto: 'Ponto médio entre o menor e o maior ({{ponto_medio}})', correta: false, equivoco: 'confunde_amplitude' },
+  ],
+  justificativas: [
+    { id: 'j1', texto: 'A restrição é física: se um único caminhão não passa, o portão falha. Por isso a referência é o maior valor da frota, e não um valor típico.', tipo: 'correta' },
+    { id: 'j2', texto: 'O portão precisa ser alto, então devemos olhar para os caminhões maiores.', tipo: 'parcial' },
+    { id: 'j3', texto: 'A média representa a frota inteira, então um portão na altura média atende todos os caminhões.', tipo: 'erro_conceitual', equivoco: 'centro_como_limite' },
+    { id: 'j4', texto: 'O P95 já cobre praticamente toda a frota, então é suficiente para o portão.', tipo: 'erro_conceitual', equivoco: 'percentil_como_garantia' },
+    { id: 'j5', texto: 'Portões mais altos valorizam o imóvel.', tipo: 'irrelevante' },
+    { id: 'j6', texto: 'O maior valor de um conjunto é sempre um erro de medição e deve ser descartado.', tipo: 'afirmacao_falsa', equivoco: 'maximo_sempre_erro' },
+  ],
+  feedback: {
+    por_equivoco: {
+      centro_como_limite: 'Metade da frota é mais alta que a mediana ({{mediana}}), e a média ({{media}}) fica no mesmo lugar. Um portão nessa altura barraria muitos caminhões.',
+      percentil_como_garantia: 'O P95 ({{p95}}) deixa cerca de 1 em cada 20 caminhões acima dele. O mais alto tem {{maximo}} e não passaria.',
+      confunde_amplitude: 'O ponto médio ({{ponto_medio}}) fica entre o menor e o maior caminhão, então todos os que estão acima dele ficam de fora.',
+      maximo_sempre_erro: 'Um valor extremo pode ser erro, mas aqui é um caminhão real da frota. Quando todos precisam caber, o máximo é justamente o que importa.',
+    },
+    explicacao_correta:
+      'Quando a exigência é que todos caibam, o valor típico não serve: o portão precisa comportar o caminhão mais alto ({{maximo}}). Média ({{media}}) e P95 ({{p95}}) deixariam parte da frota de fora.',
+    revelacao: {
+      marcadores: [
+        { chave: 'maximo', rotulo: 'Máximo', correto: true },
+        { chave: 'p95', rotulo: 'P95' },
+        { chave: 'media', rotulo: 'Média' },
+      ],
+    },
+  },
+  impacto,
+};
+
+const cenario10 = {
+  id: 'cenario_10_latencia',
+  setor: 'dados',
+  conceito: 'percentil',
+  versao: 1,
+  idioma: 'pt-BR',
+  nivel: 'iniciante',
+  dificuldade: 2,
+  titulo: 'Tempo de resposta da API',
+  contexto:
+    'Um grande cliente exige que o contrato informe o tempo de resposta da sua API respeitado por 95% das requisições. O gráfico mostra {{n}} requisições medidas hoje. Que número deve ir para o contrato?',
+  dica: 'Leia com atenção a porcentagem que o contrato pede e procure a métrica definida por ela.',
+  valor_base: 20000,
+  dados: {
+    gerador: {
+      tipo: 'cauda_longa',
+      parametros: { n: 40, base: 180, ruido: 40, proporcaoCauda: 0.15, caudaMin: 1500, caudaMax: 4000 },
+    },
+    formato: 'ms',
+    rotulo_x: 'Tempo de resposta (ms)',
+    rotulo_y: 'Requisições',
+    tipo_grafico: 'histograma',
+    descricao_acessivel: 'Quase todas as requisições respondem rápido, à esquerda, mas um pequeno grupo demora muito mais e aparece isolado à direita.',
+  },
+  opcoes: [
+    { id: 'p95', texto: 'Percentil 95, o P95 ({{p95}})', correta: true },
+    { id: 'p90', texto: 'Percentil 90, o P90 ({{p90}})', correta: false, equivoco: 'percentil_errado' },
+    { id: 'media', texto: 'Média ({{media}})', correta: false, equivoco: 'media_oculta_falhas' },
+    { id: 'mediana', texto: 'Mediana ({{mediana}})', correta: false, equivoco: 'mediana_cobre_metade' },
+    { id: 'maximo', texto: 'Maior tempo medido ({{maximo}})', correta: false, equivoco: 'extremo_como_tipico' },
+  ],
+  justificativas: [
+    { id: 'j1', texto: 'O P95 é o tempo abaixo do qual ficam 95% das requisições, exatamente o que o contrato pede, e ele já leva em conta as requisições lentas.', tipo: 'correta' },
+    { id: 'j2', texto: 'O contrato fala de quase todas as requisições, então o número precisa considerar as mais lentas.', tipo: 'parcial' },
+    { id: 'j3', texto: 'O P90 e o P95 são praticamente iguais, então tanto faz qual dos dois usar.', tipo: 'erro_conceitual', equivoco: 'percentil_errado' },
+    { id: 'j4', texto: 'A média já inclui as requisições lentas, então cobre 95% delas.', tipo: 'erro_conceitual', equivoco: 'media_oculta_falhas' },
+    { id: 'j5', texto: 'APIs mais rápidas consomem menos energia no servidor.', tipo: 'irrelevante' },
+    { id: 'j6', texto: 'O P95 é o tempo da requisição de número 95 da lista.', tipo: 'afirmacao_falsa', equivoco: 'percentil_como_posicao' },
+  ],
+  feedback: {
+    por_equivoco: {
+      percentil_errado: 'O P90 ({{p90}}) cobre 90% das requisições, não 95%: 1 em cada 10 requisições pode demorar mais. O contrato pede o P95 ({{p95}}).',
+      media_oculta_falhas: 'A média ({{media}}) mistura as respostas rápidas com as lentas e fica muito abaixo do tempo que 95% das requisições respeitam ({{p95}}).',
+      mediana_cobre_metade: 'A mediana ({{mediana}}) só garante metade das requisições: a outra metade demora mais.',
+      extremo_como_tipico: 'O maior tempo ({{maximo}}) cobre 100% das requisições de hoje. Prometer isso é mais do que o contrato pede e piora a proposta sem necessidade.',
+      percentil_como_posicao: 'O percentil é uma porcentagem dos dados, não uma posição fixa: hoje há só {{n}} requisições, e o P95 é o valor abaixo do qual ficam 95% delas.',
+    },
+    explicacao_correta:
+      'O contrato pede o tempo respeitado por 95% das requisições, que é a definição do P95 ({{p95}}). A média ({{media}}) e até o P90 ({{p90}}) prometeriam um tempo que parte das requisições não cumpre.',
+    revelacao: {
+      marcadores: [
+        { chave: 'p95', rotulo: 'P95', correto: true },
+        { chave: 'p90', rotulo: 'P90' },
+        { chave: 'media', rotulo: 'Média' },
+      ],
+    },
+  },
+  impacto,
+};
+
+const cenario11 = {
+  id: 'cenario_11_primeiro_contato',
+  setor: 'atendimento',
+  conceito: 'mediana',
+  versao: 1,
+  idioma: 'pt-BR',
+  nivel: 'iniciante',
+  dificuldade: 2,
+  titulo: 'Resolução no primeiro contato',
+  contexto:
+    'Você vai definir a meta de resolução no primeiro contato dos novos atendentes com base no desempenho de um atendente típico da equipe atual. O gráfico mostra a taxa de {{n}} atendentes, incluindo alguns ainda em treinamento. Qual número representa o atendente típico?',
+  dica: 'Valores extremos também podem estar à esquerda. Qual métrica não é arrastada por eles?',
+  valor_base: 20000,
+  dados: {
+    gerador: {
+      tipo: 'assimetria_esquerda',
+      parametros: { n: 25, base: 88, ruido: 7, outliers: [{ valor: 30, qtd: 4 }] },
+    },
+    formato: 'porcento',
+    rotulo_x: 'Chamados resolvidos no primeiro contato (%)',
+    rotulo_y: 'Atendentes',
+    tipo_grafico: 'histograma',
+    descricao_acessivel: 'A maioria dos atendentes resolve perto de 90% dos chamados no primeiro contato, e um pequeno grupo aparece isolado à esquerda, com taxas bem mais baixas.',
+  },
+  opcoes: [
+    { id: 'mediana', texto: 'Mediana ({{mediana}})', correta: true },
+    { id: 'media', texto: 'Média ({{media}})', correta: false, equivoco: 'ignora_outliers_baixos' },
+    { id: 'p90', texto: 'Percentil 90, o P90 ({{p90}})', correta: false, equivoco: 'topo_como_tipico' },
+    { id: 'minimo', texto: 'Menor taxa da equipe ({{minimo}})', correta: false, equivoco: 'extremo_como_tipico' },
+    { id: 'ponto_medio', texto: 'Ponto médio entre a menor e a maior taxa ({{ponto_medio}})', correta: false, equivoco: 'confunde_amplitude' },
+  ],
+  justificativas: [
+    { id: 'j1', texto: 'As poucas taxas muito baixas puxam a média para baixo, enquanto a mediana fica no atendente do meio e não é afetada por elas.', tipo: 'correta' },
+    { id: 'j2', texto: 'A maioria dos atendentes tem taxas parecidas, então o valor típico deve vir desse grupo.', tipo: 'parcial' },
+    { id: 'j3', texto: 'Outliers só distorcem a média quando estão acima dos demais valores.', tipo: 'erro_conceitual', equivoco: 'outlier_so_acima' },
+    { id: 'j4', texto: 'A média usa a taxa de todos os atendentes, então é a mais justa para definir a meta.', tipo: 'erro_conceitual', equivoco: 'ignora_outliers_baixos' },
+    { id: 'j5', texto: 'Atendentes mais experientes costumam atender mais rápido.', tipo: 'irrelevante' },
+    { id: 'j6', texto: 'Quando há valores muito baixos, a mediana fica sempre abaixo da média.', tipo: 'afirmacao_falsa', equivoco: 'mediana_abaixo_media' },
+  ],
+  feedback: {
+    por_equivoco: {
+      ignora_outliers_baixos: 'A média ({{media}}) foi puxada para baixo pelas taxas de quem está em treinamento, que chegam a {{minimo}}. A maioria da equipe resolve bem mais que isso.',
+      topo_como_tipico: 'O P90 ({{p90}}) é a taxa que só 1 em cada 10 atendentes supera. Ele descreve o topo da equipe, não o atendente típico.',
+      extremo_como_tipico: 'A menor taxa ({{minimo}}) é de quem ainda está aprendendo, o valor menos típico da equipe.',
+      confunde_amplitude: 'O ponto médio ({{ponto_medio}}) depende só da menor e da maior taxa e ignora onde está a maioria dos atendentes.',
+      outlier_so_acima: 'Valores extremos puxam a média para o lado em que estão. Aqui eles estão abaixo, e a média caiu para {{media}}.',
+      mediana_abaixo_media: 'É o contrário: valores muito baixos puxam a média para baixo, e ela fica abaixo da mediana ({{media}} contra {{mediana}}).',
+    },
+    explicacao_correta:
+      'A assimetria aqui é à esquerda: poucas taxas muito baixas arrastam a média para {{media}}. A mediana ({{mediana}}) representa o atendente típico, porque não é afetada pelos extremos.',
+    revelacao: {
+      marcadores: [
+        { chave: 'mediana', rotulo: 'Mediana', correto: true },
+        { chave: 'media', rotulo: 'Média' },
+      ],
+    },
+  },
+  impacto,
+};
+
+const cenario12 = {
+  id: 'cenario_12_fundos',
+  setor: 'financeiro',
+  conceito: 'desvio_padrao',
+  versao: 1,
+  idioma: 'pt-BR',
+  nivel: 'iniciante',
+  dificuldade: 3,
+  titulo: 'Onde aplicar o caixa da folha',
+  contexto:
+    'A empresa vai aplicar o dinheiro reservado para a folha de pagamento, que precisa estar disponível todo mês. O gráfico mostra o rendimento mensal de dois fundos nos últimos {{n}} meses. O Fundo B rendeu mais em média ({{media_b}} contra {{media_a}}). Qual métrica deve pesar mais na escolha?',
+  dica: 'Rendimento alto em média não ajuda se o dinheiro faltar em algum mês. O que mostra o quanto cada fundo oscila?',
+  valor_base: 20000,
+  dados: {
+    gerador: {
+      tipo: 'comparacao_amostral',
+      parametros: {
+        nA: 24, mediaA: 0.9, dpA: 0.2,
+        nB: 24, mediaB: 1.3, dpB: 1.6,
+        nomes: ['Fundo A (estável)', 'Fundo B (volátil)'],
+      },
+    },
+    formato: 'porcento',
+    rotulo_x: 'Rendimento mensal (%)',
+    rotulo_y: 'Meses',
+    tipo_grafico: 'histograma',
+    descricao_acessivel: 'Os rendimentos do Fundo A ficam concentrados perto de 1% ao mês, enquanto os do Fundo B se espalham bastante para os dois lados da média.',
+  },
+  opcoes: [
+    { id: 'dp', texto: 'Desvio padrão (A: {{dp_a}} · B: {{dp_b}})', correta: true },
+    { id: 'media', texto: 'Média (A: {{media_a}} · B: {{media_b}})', correta: false, equivoco: 'ignora_risco' },
+    { id: 'mediana', texto: 'Mediana (A: {{mediana_a}} · B: {{mediana_b}})', correta: false, equivoco: 'tendencia_central' },
+    { id: 'maximo', texto: 'Melhor mês (A: {{maximo_a}} · B: {{maximo_b}})', correta: false, equivoco: 'extremo_como_tipico' },
+    { id: 'quantidade', texto: 'Quantidade de meses observados ({{n}} em cada fundo)', correta: false, equivoco: 'metrica_irrelevante' },
+  ],
+  justificativas: [
+    { id: 'j1', texto: 'O dinheiro da folha não pode encolher em nenhum mês. O desvio padrão mostra que o Fundo B oscila muito ({{dp_b}}) e chega a {{minimo_b}} em um mês, enquanto o A é estável ({{dp_a}}).', tipo: 'correta' },
+    { id: 'j2', texto: 'Para um dinheiro que será usado logo, a previsibilidade do rendimento é importante.', tipo: 'parcial' },
+    { id: 'j3', texto: 'Se o Fundo B tem a maior média, ele também é o mais seguro para o caixa.', tipo: 'erro_conceitual', equivoco: 'ignora_risco' },
+    { id: 'j4', texto: 'O desvio padrão mostra quanto cada fundo rendeu no total do período.', tipo: 'erro_conceitual', equivoco: 'confunde_dp_total' },
+    { id: 'j5', texto: 'O Fundo A tem um nome mais conhecido no mercado.', tipo: 'irrelevante' },
+    { id: 'j6', texto: 'Um desvio padrão maior significa que o fundo rende mais.', tipo: 'afirmacao_falsa', equivoco: 'dp_como_retorno' },
+  ],
+  feedback: {
+    por_equivoco: {
+      ignora_risco: 'A média do Fundo B ({{media_b}}) é maior, mas esconde meses de até {{minimo_b}}. Para um caixa que precisa estar inteiro todo mês, a oscilação ({{dp_b}} contra {{dp_a}}) pesa mais.',
+      tendencia_central: 'A mediana também descreve o centro dos rendimentos. O risco para a folha está no espalhamento, que ela não mostra.',
+      extremo_como_tipico: 'O melhor mês do Fundo B ({{maximo_b}}) é o caso mais favorável, e não diz nada sobre os meses em que ele perdeu dinheiro.',
+      metrica_irrelevante: 'Os dois fundos foram observados por {{n}} meses. A quantidade é igual e não diferencia o risco.',
+      confunde_dp_total: 'O desvio padrão não é um total: ele mede o quanto os rendimentos mensais se afastam da média.',
+      dp_como_retorno: 'Desvio padrão mede oscilação, não ganho. Um fundo pode oscilar muito e mesmo assim perder dinheiro em vários meses.',
+    },
+    explicacao_correta:
+      'Média alta não basta quando o dinheiro precisa estar disponível todo mês. O desvio padrão do Fundo B ({{dp_b}}) é muito maior que o do A ({{dp_a}}), e o B chega a {{minimo_b}} em um mês. Para a folha, a estabilidade do A vale mais.',
+    revelacao: {
+      marcadores: [{ chave: 'media', rotulo: 'Média de cada fundo', correto: true }],
+    },
+  },
+  impacto,
+};
+
+const cenario13 = {
+  id: 'cenario_13_freemium',
+  setor: 'financeiro',
+  conceito: 'media_para_total',
+  versao: 1,
+  idioma: 'pt-BR',
+  nivel: 'iniciante',
+  dificuldade: 3,
+  titulo: 'Projeção de receita do aplicativo',
+  contexto:
+    'O gráfico mostra quanto cada um de {{n}} usuários do aplicativo gastou no último mês. A maioria usa só o plano gratuito. No mês que vem devem entrar 10.000 novos usuários com o mesmo perfil. Qual métrica, multiplicada por 10.000, dá a melhor projeção da receita?',
+  dica: 'Você não quer descrever o usuário típico: quer estimar um total. Qual métrica, vezes o número de usuários, devolve o total gasto?',
+  valor_base: 20000,
+  dados: {
+    gerador: { tipo: 'inflado_em_zero', parametros: { n: 40, proporcaoZero: 0.65, valorMin: 20, valorMax: 200 } },
+    formato: 'brl',
+    rotulo_x: 'Gasto no mês (R$)',
+    rotulo_y: 'Usuários',
+    tipo_grafico: 'histograma',
+    descricao_acessivel: 'Uma barra alta em zero reúne a maioria dos usuários, e os demais se espalham por valores de gasto mais altos.',
+  },
+  opcoes: [
+    { id: 'media', texto: 'Média por usuário ({{media}})', correta: true },
+    { id: 'mediana', texto: 'Mediana ({{mediana}})', correta: false, equivoco: 'mediana_para_total' },
+    { id: 'p90', texto: 'Percentil 90, o P90 ({{p90}})', correta: false, equivoco: 'percentil_para_total' },
+    { id: 'maximo', texto: 'Maior gasto ({{maximo}})', correta: false, equivoco: 'extremo_como_tipico' },
+    { id: 'ponto_medio', texto: 'Ponto médio entre o menor e o maior gasto ({{ponto_medio}})', correta: false, equivoco: 'confunde_amplitude' },
+  ],
+  justificativas: [
+    { id: 'j1', texto: 'A média é o total gasto dividido pelo número de usuários, contando os que não pagaram. Multiplicada pelo número de novos usuários, ela devolve exatamente a receita total esperada.', tipo: 'correta' },
+    { id: 'j2', texto: 'Os pagantes são poucos, mas o dinheiro deles precisa entrar na conta.', tipo: 'parcial' },
+    { id: 'j3', texto: 'Como os dados são muito assimétricos, a mediana é sempre a métrica mais segura.', tipo: 'erro_conceitual', equivoco: 'mediana_para_total' },
+    { id: 'j4', texto: 'A média deve ser calculada só com quem pagou, porque quem não paga não gera receita.', tipo: 'erro_conceitual', equivoco: 'media_sem_zeros' },
+    { id: 'j5', texto: 'Usuários do plano gratuito podem indicar o aplicativo para amigos.', tipo: 'irrelevante' },
+    { id: 'j6', texto: 'Se a mediana do gasto é zero, a receita total também tende a ser zero.', tipo: 'afirmacao_falsa', equivoco: 'mediana_zero_receita_zero' },
+  ],
+  feedback: {
+    por_equivoco: {
+      mediana_para_total: 'A mediana ({{mediana}}) descreve o usuário do meio, que não paga. Projetar a receita com ela daria zero, embora parte dos usuários gaste até {{maximo}}.',
+      percentil_para_total: 'O P90 ({{p90}}) é o gasto que só 1 em cada 10 usuários supera. Multiplicá-lo por todos os usuários superestima muito a receita.',
+      extremo_como_tipico: 'O maior gasto ({{maximo}}) é de um único usuário. Supor que todos gastam isso multiplicaria a receita sem base nos dados.',
+      confunde_amplitude: 'O ponto médio ({{ponto_medio}}) só depende do menor e do maior gasto e ignora que a maioria não paga nada.',
+      media_sem_zeros: 'Os novos usuários também serão, em sua maioria, gratuitos. Tirar os zeros da média faria a projeção supor que todos pagam.',
+      mediana_zero_receita_zero: 'Mediana zero só diz que mais da metade não paga. A receita vem da minoria pagante, e a média ({{media}}) a distribui por todos os usuários.',
+    },
+    explicacao_correta:
+      'Para projetar um total, a métrica certa é a média, mesmo em dados assimétricos: média × número de usuários = total gasto. A mediana ({{mediana}}) é ótima para descrever o usuário típico, mas zeraria a projeção.',
+    revelacao: {
+      marcadores: [
+        { chave: 'media', rotulo: 'Média', correto: true },
+        { chave: 'mediana', rotulo: 'Mediana' },
+      ],
+    },
+  },
+  impacto,
+};
+
+export const CENARIOS = [
+  cenario01, cenario02, cenario03, cenario04, cenario05, cenario06, cenario07, cenario08,
+  cenario09, cenario10, cenario11, cenario12, cenario13,
+];

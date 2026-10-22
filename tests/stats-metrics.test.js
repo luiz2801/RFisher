@@ -45,3 +45,9 @@ test('resumo de [1, 2, 3, 4, 5] traz IQR, amplitude e ponto médio corretos', ()
   assert.equal(r.minimo, 1);
   assert.equal(r.maximo, 5);
 });
+
+test('formatos cm e ms arredondam para inteiro com separador pt-BR', async () => {
+  const { formatar } = await import('../src/stats/format.js');
+  assert.equal(formatar('cm', 362.6), '363 cm');
+  assert.equal(formatar('ms', 3736.4), '3.736 ms');
+});

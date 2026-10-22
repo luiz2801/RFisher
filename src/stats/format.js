@@ -14,6 +14,10 @@ export function formatar(tipo, v) {
       return nf(1, 1).format(v) + '%';
     case 'mm':
       return nf(2, 2).format(v) + ' mm';
+    case 'cm':
+      return nf(0, 0).format(v) + ' cm';
+    case 'ms':
+      return nf(0, 0).format(v) + ' ms';
     default:
       return nf(0, 1).format(v);
   }

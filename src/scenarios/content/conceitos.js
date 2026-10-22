@@ -9,4 +9,6 @@ export const CONCEITOS = {
   iqr: 'Amplitude interquartil (IQR)',
   media: 'Média em dados simétricos',
   variabilidade_amostral: 'Variabilidade e tamanho da amostra',
+  extremos: 'Máximo como restrição',
+  media_para_total: 'Média para projetar totais',
 };

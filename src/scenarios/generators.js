@@ -154,6 +154,52 @@ const GERADORES = {
       return desvioPadrao(b) > 4 * desvioPadrao(a) && media(b) > media(a);
     },
   },
+
+  // Restrição física: todos precisam caber, então só o máximo serve. O maior valor
+  // fica bem acima do P95 para que "quase todos" deixe alguém de fora.
+  limite_fisico: {
+    gerar(p, rng) {
+      return { series: [{ nome: 'Medições', valores: padronizado(p.n, p.media, p.dp, rng, 0) }] };
+    },
+    invariante([v]) {
+      const dp = desvioPadrao(v);
+      const max = Math.max(...v);
+      return max - percentil(v, 95) >= 0.25 * dp && max > media(v) + 1.5 * dp;
+    },
+  },
+
+  // Espelho de assimetria_direita: poucos valores muito baixos puxam a média para baixo.
+  assimetria_esquerda: {
+    gerar(p, rng) {
+      const qtdOutliers = p.outliers.reduce((s, o) => s + o.qtd, 0);
+      const valores = [];
+      for (let i = 0; i < p.n - qtdOutliers; i++) {
+        valores.push(casas(p.base + rng.entre(-p.ruido, p.ruido), 1));
+      }
+      for (const o of p.outliers) {
+        for (let q = 0; q < o.qtd; q++) valores.push(casas(o.valor * rng.entre(0.8, 1.2), 1));
+      }
+      return { series: [{ nome: 'Taxa por pessoa', valores: rng.embaralhar(valores) }] };
+    },
+    invariante([v]) {
+      const med = mediana(v);
+      return med - media(v) > 0.06 * med && Math.min(...v) < 0.5 * med;
+    },
+  },
+
+  // Maioria de zeros (não pagantes): mediana e moda são 0, mas a média não.
+  inflado_em_zero: {
+    gerar(p, rng) {
+      const nZeros = Math.round(p.n * p.proporcaoZero);
+      const valores = Array(nZeros).fill(0);
+      for (let i = nZeros; i < p.n; i++) valores.push(Math.round(rng.entre(p.valorMin, p.valorMax)));
+      return { series: [{ nome: 'Gasto por usuário', valores: rng.embaralhar(valores) }] };
+    },
+    invariante([v]) {
+      const zeros = v.filter((x) => x === 0).length;
+      return mediana(v) === 0 && zeros / v.length >= 0.55 && media(v) > 0.1 * Math.max(...v);
+    },
+  },
 };
 
 export function tiposDeGerador() {

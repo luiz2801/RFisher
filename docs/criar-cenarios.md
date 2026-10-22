@@ -31,7 +31,7 @@ Consequência prática: **nunca escreva um número de dado à mão no texto**. U
 3. Escreva o objeto do cenário em `iniciante.js` seguindo o [modelo](#modelo-de-cenário).
 4. Inclua o cenário no array exportado `CENARIOS`, no final do arquivo.
 5. Rode `npm test`. O validador e os testes de invariante rodam sobre todos os cenários automaticamente.
-6. Adicione um teste específico do invariante em `tests/generators.test.js` (como os dos cenários 1, 4, 5, 6, 7 e 8).
+6. Adicione um teste específico do invariante em `tests/generators.test.js` (como os dos cenários 1 e 4 a 13).
 7. Atualize a documentação (ver [Checklist](#checklist-antes-de-concluir)).
 
 ### Modelo de cenário
@@ -86,9 +86,9 @@ O jogo sorteia cenários com dificuldade crescente ao longo da partida (`fisher.
 
 | Valor | Critério | Cenários atuais |
 | --- | --- | --- |
-| 1 | A métrica correta é a mais direta (centro de um conjunto com ou sem um único valor atípico, ou a categoria mais frequente). | 01, 03, 07 |
-| 2 | Exige reconhecer o formato dos dados (cauda longa, bimodal) ou pensar em dispersão. | 02, 04, 05 |
-| 3 | Exige comparar dispersão robusta com sensível a outliers, ou comparar amostras. | 06, 08 |
+| 1 | A métrica correta é a mais direta (centro de um conjunto com ou sem um único valor atípico, a categoria mais frequente, ou o máximo quando todos precisam caber). | 01, 03, 07, 09 |
+| 2 | Exige reconhecer o formato dos dados (cauda longa, bimodal, assimetria à esquerda), ler a definição de um percentil ou pensar em dispersão. | 02, 04, 05, 10, 11 |
+| 3 | Exige comparar dispersão robusta com sensível a outliers, comparar amostras, pesar risco contra média, ou perceber que o objetivo (um total) muda a métrica. | 06, 08, 12, 13 |
 
 Mantenha ao menos um cenário em cada nível, senão o início ou o fim da partida perde o efeito (há teste para isso). O peso de sorteio e o passo médio do dado estão em `src/engine/config.js`; a lógica, em `src/engine/dificuldade.js`.
 
@@ -163,7 +163,7 @@ Em cenários com mais de uma série, use o sufixo da série: `{{media_a}}`, `{{d
 
 ### Formatos
 
-`dados.formato` aceita: `brl` (R$ 1.234), `dias`, `minutos`, `gramas`, `porcento`, `mm` (duas casas) e qualquer outro valor, que usa o formato numérico simples (`numero`). Todos usam separadores de `pt-BR`. Para um formato novo, acrescente um `case` em [src/stats/format.js](../src/stats/format.js) e um teste.
+`dados.formato` aceita: `brl` (R$ 1.234), `dias`, `minutos`, `gramas`, `porcento`, `mm` (duas casas), `cm` e `ms` (inteiros) e qualquer outro valor, que usa o formato numérico simples (`numero`). Todos usam separadores de `pt-BR`. Para um formato novo, acrescente um `case` em [src/stats/format.js](../src/stats/format.js) e um teste.
 
 ### Setores
 
@@ -188,13 +188,16 @@ Ajuste só os `parametros` e o texto do cenário.
 | Gerador | Parâmetros | Invariante | Cenário |
 | --- | --- | --- | --- |
 | `assimetria_direita` | `n`, `base`, `ruido`, `outliers[{valor, qtd}]` | média > 1,5 × mediana e máximo > 10 × mediana | 01 |
-| `cauda_longa` | `n`, `base`, `ruido`, `proporcaoCauda`, `caudaMin`, `caudaMax` | P90 > 3 × média | 02 |
+| `cauda_longa` | `n`, `base`, `ruido`, `proporcaoCauda`, `caudaMin`, `caudaMax` | P90 > 3 × média | 02, 10 |
 | `categorico_discreto` | `n`, `tamanhoMin`, `pesos[]` | moda destacada, moda ≠ mediana, média não inteira | 03 |
 | `mesma_media_variancia_distinta` | `n`, `media`, `dpA[min,max]`, `dpB[min,max]`, `nomes[2]` | médias iguais (< 0,01) e dp B > 5 × dp A | 04 |
 | `bimodal_polarizado` | `n`, `pesos[5]` | picos em 1 e 5, vale em 3, média central | 05 |
 | `dispersao_outliers` | `n`, `baseMin`, `baseMax`, `outliers[]` | dp > 3 × IQR, mediana ≤ 25, IQR > 0 | 06 |
 | `distribuicao_normal_simetrica` | `n`, `media`, `dp` | \|média − mediana\| < 0,6 e média ≈ 500 | 07 |
-| `comparacao_amostral` | `nA`, `mediaA`, `dpA`, `nB`, `mediaB`, `dpB`, `nomes[2]` | dp B > 4 × dp A e média B > média A | 08 |
+| `comparacao_amostral` | `nA`, `mediaA`, `dpA`, `nB`, `mediaB`, `dpB`, `nomes[2]` | dp B > 4 × dp A e média B > média A | 08, 12 |
+| `limite_fisico` | `n`, `media`, `dp` (valores inteiros) | máximo − P95 ≥ 0,25 × dp e máximo > média + 1,5 × dp | 09 |
+| `assimetria_esquerda` | `n`, `base`, `ruido`, `outliers[{valor, qtd}]` | mediana − média > 6 % da mediana e mínimo < metade da mediana | 11 |
+| `inflado_em_zero` | `n`, `proporcaoZero`, `valorMin`, `valorMax` | mediana = 0, ao menos 55 % de zeros e média > 10 % do máximo | 13 |
 
 Atenção: alguns invariantes têm números fixos do cenário original (por exemplo, média ≈ 500 em `distribuicao_normal_simetrica`). Mudar os parâmetros para fora desse intervalo faz o gerador falhar. Se precisar de outros valores, torne o invariante dependente dos parâmetros.
 
@@ -229,7 +232,7 @@ Em `eventos.js`, acrescente um objeto a `EVENTOS`:
 - O efeito é fixo e **não** é multiplicado pela reputação.
 - No cooperativo, o prejuízo (`dinheiro < 0`) de um evento do setor de uma diretoria é reduzido em 30 % (`REDUCAO_PREJUIZO_PASSIVA`). Ganhos não são alterados.
 - Reputação que chega a 0 dispara a crise de imagem (multa e recuperação parcial).
-- Ordens de grandeza usadas hoje: dinheiro de −10.000 a +10.000 e reputação de −5 a +5. Mantenha o equilíbrio entre cartas positivas e negativas (hoje 4 positivas e 6 negativas), senão o jogo tende a punir sem compensar.
+- Ordens de grandeza usadas hoje: dinheiro de −10.000 a +10.000 e reputação de −5 a +5. Mantenha o equilíbrio entre cartas positivas e negativas (hoje 9 positivas e 9 negativas), senão o jogo tende a punir sem compensar.
 - Eventos não têm validação além do setor. Revise à mão: id único, `licao` presente, valores numéricos.
 
 ## Estilo de escrita
