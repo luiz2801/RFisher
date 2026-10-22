@@ -312,7 +312,7 @@ Como o save é apagado em `FIM_DE_JOGO`, o relatório não sobrevive a recarrega
 
 **Implementado** (`tipo: 'calculo'` no cenário; `src/engine/calculo.js`; conteúdo em `src/scenarios/content/calculo.js`, cenários 14 a 18). São cenários de decisão em que a pessoa precisa **fazer a conta**, não só reconhecer a métrica.
 
-**Dados.** Poucas observações (8 a 40), para dar para calcular à mão, em **tabela** e, em alguns cenários, também em gráfico (`dados.exibir`). A tabela mostra os registros na ordem em que chegaram (a pessoa precisa ordená-los) ou, em dados discretos, valor e frequência (`dados.tabela`). Os dados continuam gerados por seed, com invariantes (geradores `amostra_pequena` e `contagens_assimetricas`, e os já existentes com `n` pequeno).
+**Dados.** Poucas observações (8 a 40), para dar para calcular à mão, em **tabela** (com botão que a copia para colar no Excel: colunas por tabulação, uma linha por registro) e, em alguns cenários, também em gráfico (`dados.exibir`). A tabela mostra os registros na ordem em que chegaram (a pessoa precisa ordená-los) ou, em dados discretos, valor e frequência (`dados.tabela`). Os dados continuam gerados por seed, com invariantes (geradores `amostra_pequena` e `contagens_assimetricas`, e os já existentes com `n` pequeno).
 
 **Fluxo.** Métrica → **valor calculado** → justificativa → confiança. Nas opções de métrica não aparece valor algum (nos cenários comuns aparece, para comparação). Cada opção aponta (`chave`) para a métrica calculável, então a pessoa pode calcular o valor de qualquer opção que escolher.
 

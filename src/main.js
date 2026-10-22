@@ -1,7 +1,8 @@
 import { novoJogo, jogadorAtual, ehBot } from './engine/state.js';
 import { reduzir } from './engine/machine.js';
 import { salvar, carregar, limpar } from './storage/persist.js';
-import { viewMenu, viewJogo } from './ui/views.js';
+import { viewMenu, viewJogo, tabelaTsv } from './ui/views.js';
+import { obterCenario } from './scenarios/loader.js';
 import { MAX_JOGADORES, PERFIS_BOT } from './engine/config.js';
 import { NUM_CASAS, coordenadas } from './engine/board.js';
 import { dadoHtml } from './ui/components/dado.js';
@@ -143,6 +144,26 @@ async function rolarComAnimacao(botao, acao) {
   aplicarEstado(novo);
 }
 
+// Copia a tabela do cenário em texto separado por tabulação, que o Excel cola em colunas.
+async function copiarTabela(botao) {
+  const c = estado?.cenarioAtual;
+  if (!c) return;
+  const texto = tabelaTsv(obterCenario(c.id), c);
+  try {
+    await navigator.clipboard.writeText(texto);
+  } catch {
+    const area = document.createElement('textarea'); // sem permissão da API: método antigo
+    area.value = texto;
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand('copy');
+    area.remove();
+  }
+  const aviso = botao.parentElement.querySelector('[data-copiado]');
+  aviso.hidden = false;
+  setTimeout(() => { aviso.hidden = true; }, 2500);
+}
+
 app.addEventListener('click', (ev) => {
   const botao = ev.target.closest('[data-acao]');
   if (!botao) return;
@@ -161,6 +182,8 @@ app.addEventListener('click', (ev) => {
     botao.setAttribute('aria-expanded', 'true');
     form.scrollIntoView({ behavior: 'smooth', block: 'start' });
     form.querySelector('input')?.focus({ preventScroll: true });
+  } else if (acao === 'COPIAR_TABELA') {
+    copiarTabela(botao);
   } else if (acao === 'IMPRIMIR') {
     window.print();
   } else if (acao === 'CONTINUAR_SALVA') {

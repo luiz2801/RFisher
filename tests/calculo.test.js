@@ -8,7 +8,7 @@ import { ehCalculo, avaliarCalculo, valorEsperado, notaDeMetodo } from '../src/e
 import { MARGEM_CALCULO_PISO } from '../src/engine/config.js';
 import { instanciar, obterCenario, todosCenarios, validarCenario } from '../src/scenarios/loader.js';
 import { lerNumero, formatar } from '../src/stats/format.js';
-import { viewJogo } from '../src/ui/views.js';
+import { viewJogo, tabelaTsv } from '../src/ui/views.js';
 
 const calculos = () => todosCenarios().filter(ehCalculo);
 
@@ -335,4 +335,21 @@ test('uma partida salva antes dos cenários de cálculo passa a sorteá-los sem 
     assert.ok(restantes.some((id) => ehCalculo(obterCenario(id))), 'os cenários novos entraram no baralho');
     assert.ok(!restantes.includes('cenario_03_estoque'), 'o já visto não volta');
   }
+});
+
+test('o botão copia a tabela em texto com tabulações, pronto para colar no Excel', () => {
+  const e = estadoCalculo('cenario_14_alugueis', 5);
+  assert.match(viewJogo(e), /data-acao="COPIAR_TABELA"/);
+  const linhas = tabelaTsv(obterCenario(e.cenarioAtual.id), e.cenarioAtual).split('\n');
+  assert.equal(linhas[0], 'Nº\tAluguel (R$)');
+  assert.equal(linhas.length, 12, 'cabeçalho + 11 registros');
+  assert.deepEqual(linhas[1].split('\t'), ['1', String(e.cenarioAtual.series[0].valores[0])]);
+
+  const f = estadoCalculo('cenario_16_chamados', 3);
+  const freq = tabelaTsv(obterCenario(f.cenarioAtual.id), f.cenarioAtual).split('\n');
+  assert.equal(freq[0], 'Chamados no mês\tClientes');
+  assert.equal(freq.slice(1).reduce((s, l) => s + Number(l.split('\t')[1]), 0), 40);
+
+  const dec = estadoCalculo('cenario_15_espera', 2);
+  assert.ok(tabelaTsv(obterCenario(dec.cenarioAtual.id), dec.cenarioAtual).includes(','), 'decimais com vírgula');
 });

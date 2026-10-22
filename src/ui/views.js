@@ -314,6 +314,20 @@ function viewRolar(e) {
       <button class="primario" data-acao="ROLAR">Rolar os dados</button>`;
 }
 
+// Texto para colar no Excel (colunas separadas por tabulação, números com vírgula decimal, sem unidade):
+// os registros, um por linha, ou valor e frequência.
+export function tabelaTsv(def, c) {
+  const num = (v) => String(v).replace('.', ',');
+  const valores = c.series[0].valores;
+  if (def.dados.tabela === 'frequencias') {
+    const linhas = [...contagens(valores)].sort((x, y) => x[0] - y[0]).map(([v, q]) => `${num(v)}\t${q}`);
+    return [`${def.dados.rotulo_x}\t${def.dados.rotulo_y}`, ...linhas].join('\n');
+  }
+  return [`Nº\t${def.dados.rotulo_x}`, ...valores.map((v, i) => `${i + 1}\t${num(v)}`)].join('\n');
+}
+
+const botaoCopiar = `<p class="copiar-tabela"><button type="button" class="discreto" data-acao="COPIAR_TABELA">📋 Copiar tabela para o Excel</button> <span role="status" class="ajuda" data-copiado hidden>Copiado! Cole numa planilha.</span></p>`;
+
 // Dados de um cenário de cálculo em tabela: os registros na ordem em que chegaram, ou valor e frequência.
 function tabelaDados(def, c) {
   const { formato, rotulo_x: rotuloX, rotulo_y: rotuloY } = def.dados;
@@ -326,7 +340,7 @@ function tabelaDados(def, c) {
     return `<table class="tabela-dados"><caption>Dados da tabela (${valores.length} registros)</caption>
       <thead><tr><th scope="col">${esc(rotuloX)}</th><th scope="col">${esc(rotuloY)}</th></tr></thead>
       <tbody>${linhas}</tbody>
-      <tfoot><tr><th scope="row">Total</th><td>${valores.length}</td></tr></tfoot></table>`;
+      <tfoot><tr><th scope="row">Total</th><td>${valores.length}</td></tr></tfoot></table>${botaoCopiar}`;
   }
   // Vários blocos lado a lado quando a lista é longa; cada bloco lê de cima para baixo.
   const blocos = valores.length > 12 ? 3 : valores.length > 6 ? 2 : 1;
@@ -339,7 +353,7 @@ function tabelaDados(def, c) {
     }).join(''),
   ).map((l) => `<tr>${l}</tr>`).join('');
   return `<table class="tabela-dados"><caption>Dados da tabela (${valores.length} registros)</caption>
-    <thead><tr>${cabecalho}</tr></thead><tbody>${linhas}</tbody></table>`;
+    <thead><tr>${cabecalho}</tr></thead><tbody>${linhas}</tbody></table>${botaoCopiar}`;
 }
 
       function blocoCenario(e, marcadoresRevelacao) {
