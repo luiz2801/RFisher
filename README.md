@@ -16,6 +16,10 @@ node scripts/simular-bot.mjs [--calibrar]   # balanceamento do rival do modo sol
 
 Requer Node.js 20 ou mais recente. O CI (`.github/workflows/test.yml`, GitHub Actions) roda `lint` e `test:cobertura` em Node 20 e 22 a cada pull request e push na `main`, e publica o `lcov.info` como artefato.
 
+## Deploy
+
+O workflow `.github/workflows/deploy.yml` publica o jogo no GitHub Pages a cada push na `main` (depois de `npm test` passar) ou manualmente (Actions → Deploy GitHub Pages → Run workflow). O site é estático e sem build: só `index.html`, `style.css` e `src/` vão para o ar. Configuração única: em Settings → Pages → Source, escolha **GitHub Actions**. Endereço: https://luiz2801.github.io/RFisher/
+
 ## Estado atual
 
 - Modos competitivo, cooperativo e solo. O solo é o competitivo contra um rival controlado pelo computador, em três perfis (Estagiário(a), Analista, Sênior). O rival acerta com a frequência do perfil, menos nos cenários difíceis, aposta por uma certeza interna ruidosa e foi calibrado por simulação para que um jogador de acerto 0,6 vença 70%, 50% e 30% das partidas (`fisher.md` 3.11, `scripts/simular-bot.mjs`).
