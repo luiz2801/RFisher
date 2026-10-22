@@ -13,8 +13,10 @@ import { obterCenario, todosCenarios, preencher, valorDoMarcador } from '../scen
 import { EVENTOS } from '../scenarios/content/eventos.js';
 import { brl, brlSinal, formatar, unidade } from '../stats/format.js';
 import { contagens } from '../stats/metrics.js';
-import { ehCalculo, margemPct, notaDeMetodo } from '../engine/calculo.js';
+import { ehCalculo, margemPct, notaDeMetodo, OPERACOES_CALCULADORA } from '../engine/calculo.js';
 
+// Sementes fixas oferecidas no menu (1 a QTD_SEMENTES); vazio = sorteada.
+export const QTD_SEMENTES = 20;
 const NOME_NIVEL = { iniciante: 'Iniciante', avancado: 'Avançado' };
 const ROTULO_BOT = { facil: 'fácil', medio: 'médio', dificil: 'difícil' };
 export const DIVISOES = [
@@ -165,18 +167,19 @@ export function viewMenu({ salvo } = {}) {
         <select name="turnos">${[2, 6, 8, 10, 12].map((n) => `<option value="${n}" ${n === TURNOS_PADRAO ? 'selected' : ''}>${n}</option>`).join('')}</select>
       </label>
       <label>Semente de mercado (opcional, para repetir uma partida)
-        <input name="seed" inputmode="numeric" pattern="[0-9]*" maxlength="256" placeholder="aleatória">
+        <select name="seed"><option value="" selected>Aleatória</option>${Array.from({ length: QTD_SEMENTES }, (_, i) => `<option value="${i + 1}">Mercado ${i + 1}</option>`).join('')}</select>
       </label>
       <fieldset class="apoio">
         <legend>Material de apoio</legend>
         <p>Alguns cenários trazem uma tabela de dados e pedem que você faça a conta (mediana, percentil, desvio padrão, quartis). Para esses, o ideal é ter à mão:</p>
         <ul>
+          <li>a <strong>calculadora de estatísticas</strong> do próprio jogo (média, mediana, quartis, percentil, desvio padrão), disponível na etapa do valor; ou</li>
           <li>uma <strong>planilha</strong> (Excel, Google Planilhas ou LibreOffice): o botão "Copiar tabela" cola os dados direto nela, e as funções <code>MED</code>, <code>PERCENTIL.INC</code>, <code>DESVPAD.A</code> e <code>QUARTIL.INC</code> conferem o resultado; ou</li>
           <li><strong>lápis e papel</strong> (com calculadora), para ordenar os registros e contar posições.</li>
         </ul>
         <label>Como você quer jogar?
           <select name="apoio">
-            <option value="completo">Tenho planilha, ou lápis e papel: incluir os cenários de cálculo</option>
+            <option value="completo">Incluir os cenários de cálculo</option>
             <option value="conceitual">Não tenho: só questões conceituais (sem contas)</option>
           </select>
         </label>
@@ -364,6 +367,20 @@ export function tabelaTsv(def, c) {
 
 const botaoCopiar = `<p class="copiar-tabela"><button type="button" class="discreto" data-acao="COPIAR_TABELA">📋 Copiar tabela para o Excel</button> <span role="status" class="ajuda" data-copiado hidden>Copiado! Cole numa planilha.</span></p>`;
 
+// Calculadora embutida da etapa do valor: o main.js calcula ao enviar o formulário (data-form="calculadora").
+function calculadoraHtml() {
+  const opcoes = OPERACOES_CALCULADORA.map((o) => `<option value="${o.id}"${o.pedeP ? ' data-pede-p' : ''}>${esc(o.rotulo)}</option>`).join('');
+  return `<details class="calculadora"><summary>🧮 Calculadora de estatísticas (usa os dados da tabela)</summary>
+    <form data-form="calculadora" novalidate>
+      <label>Operação <select name="operacao">${opcoes}</select></label>
+      <label data-campo="p" hidden>P (0 a 100) <input name="p" type="text" inputmode="decimal" autocomplete="off" placeholder="ex.: 90"></label>
+      <button type="submit" class="discreto">Calcular</button>
+      <output role="status" aria-live="polite" data-resultado></output>
+    </form>
+    <p class="ajuda">Ela só faz a operação sobre os dados: escolher a métrica certa e arredondar o valor continuam com você. O resultado não é preenchido sozinho no campo abaixo.</p>
+  </details>`;
+}
+
 // Dados de um cenário de cálculo em tabela: os registros na ordem em que chegaram, ou valor e frequência.
 function tabelaDados(def, c) {
   const { formato, rotulo_x: rotuloX, rotulo_y: rotuloY } = def.dados;
@@ -445,6 +462,7 @@ function tabelaDados(def, c) {
     const un = unidade(def.dados.formato);
     const nota = notaDeMetodo(escolhida.chave);
     passo = `<h3>2. Qual valor você calculou?</h3>
+      ${calculadoraHtml()}
       <p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong></p>
       <p class="ajuda">Calcule com os dados da tabela. Aceitamos uma <strong>margem de erro de ±${String(margemPct(def, escolhida)).replace('.', ',')}%</strong> sobre o valor correto, então arredondamentos pequenos não são problema.${nota ? ` ${esc(nota)}` : ''}</p>
       <form class="form-valor" data-form="valor" novalidate>

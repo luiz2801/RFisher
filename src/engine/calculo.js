@@ -1,4 +1,5 @@
 import { MARGEM_CALCULO_PISO } from './config.js';
+import { soma, media, mediana, moda, percentil, desvioPadrao } from '../stats/metrics.js';
 
 // Cenários de cálculo (fisher.md 4.7): além de escolher a métrica, a pessoa calcula o valor a partir
 // dos dados e o informa. O valor vale se cair dentro de uma margem do valor exato da métrica escolhida.
@@ -39,3 +40,38 @@ const NOTAS_METODO = {
   dp: 'Desvio padrão amostral: divisor n − 1.',
 };
 export const notaDeMetodo = (chave) => NOTAS_METODO[chave] ?? null;
+
+// Calculadora embutida (fisher.md 4.7): faz uma operação estatística sobre os dados do cenário, como a
+// planilha faria. Não pontua nem entra no estado da partida; usa as mesmas convenções da conferência
+// (percentil linear, desvio e variância amostrais).
+export const OPERACOES_CALCULADORA = [
+  { id: 'n', rotulo: 'Quantidade de registros (n)', calcular: (v) => v.length },
+  { id: 'soma', rotulo: 'Soma', calcular: soma },
+  { id: 'media', rotulo: 'Média', calcular: media },
+  { id: 'mediana', rotulo: 'Mediana', calcular: mediana },
+  { id: 'moda', rotulo: 'Moda', calcular: moda },
+  { id: 'minimo', rotulo: 'Mínimo', calcular: (v) => Math.min(...v) },
+  { id: 'maximo', rotulo: 'Máximo', calcular: (v) => Math.max(...v) },
+  { id: 'amplitude', rotulo: 'Amplitude (máximo − mínimo)', calcular: (v) => Math.max(...v) - Math.min(...v) },
+  { id: 'q1', rotulo: '1º quartil (Q1)', calcular: (v) => percentil(v, 25) },
+  { id: 'q3', rotulo: '3º quartil (Q3)', calcular: (v) => percentil(v, 75) },
+  { id: 'percentil', rotulo: 'Percentil (informe o P)', pedeP: true, calcular: (v, p) => percentil(v, p) },
+  { id: 'variancia', rotulo: 'Variância amostral (n − 1)', calcular: (v) => desvioPadrao(v) ** 2 },
+  { id: 'dp', rotulo: 'Desvio padrão amostral (n − 1)', calcular: desvioPadrao },
+];
+
+// Devolve o número, ou null se a operação não existir, não houver dados ou o P estiver fora de 0 a 100
+// (o desvio e a variância precisam de pelo menos 2 registros).
+export function calcularOperacao(valores, id, p) {
+  const op = OPERACOES_CALCULADORA.find((o) => o.id === id);
+  if (!op || valores.length === 0) return null;
+  if (op.pedeP && !(p >= 0 && p <= 100)) return null;
+  if ((id === 'dp' || id === 'variancia') && valores.length < 2) return null;
+  const r = op.calcular(valores, p);
+  return Number.isFinite(r) ? r : null;
+}
+
+// Número em pt-BR com até 4 casas, sem arredondar para a unidade do cenário (quem calcula decide
+// quanto arredondar ao informar o valor).
+export const formatarResultadoCalculadora = (r) =>
+  new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 4 }).format(r);

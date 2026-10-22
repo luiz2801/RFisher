@@ -4,7 +4,7 @@ import { criarRng } from '../src/engine/rng.js';
 import { novoJogo } from '../src/engine/state.js';
 import { reduzir } from '../src/engine/machine.js';
 import { decidirBot } from '../src/engine/bot.js';
-import { ehCalculo, avaliarCalculo, valorEsperado, notaDeMetodo } from '../src/engine/calculo.js';
+import { ehCalculo, avaliarCalculo, valorEsperado, notaDeMetodo, calcularOperacao, formatarResultadoCalculadora } from '../src/engine/calculo.js';
 import { MARGEM_CALCULO_PISO } from '../src/engine/config.js';
 import { instanciar, obterCenario, todosCenarios, validarCenario } from '../src/scenarios/loader.js';
 import { lerNumero, formatar } from '../src/stats/format.js';
@@ -352,4 +352,33 @@ test('o botão copia a tabela em texto com tabulações, pronto para colar no Ex
 
   const dec = estadoCalculo('cenario_15_espera', 2);
   assert.ok(tabelaTsv(obterCenario(dec.cenarioAtual.id), dec.cenarioAtual).includes(','), 'decimais com vírgula');
+});
+
+test('a calculadora embutida aparece só na etapa do valor e calcula como a conferência', () => {
+  const e = estadoCalculo('cenario_14_alugueis', 5);
+  assert.doesNotMatch(viewJogo(e), /data-form="calculadora"/, 'não aparece na escolha da métrica');
+  e.fase = 'INFORMAR_VALOR';
+  e.cenarioAtual.metricaId = obterCenario(e.cenarioAtual.id).opcoes[0].id;
+  assert.match(viewJogo(e), /data-form="calculadora"/);
+
+  const v = e.cenarioAtual.series[0].valores;
+  const num = e.cenarioAtual.num;
+  assert.equal(calcularOperacao(v, 'n'), v.length);
+  assert.ok(Math.abs(calcularOperacao(v, 'media') - num.media) < 1e-9);
+  assert.ok(Math.abs(calcularOperacao(v, 'mediana') - num.mediana) < 1e-9);
+  assert.ok(Math.abs(calcularOperacao(v, 'q3') - num.p75) < 1e-9);
+  assert.ok(Math.abs(calcularOperacao(v, 'dp') - num.dp) < 1e-9);
+  assert.ok(Math.abs(calcularOperacao(v, 'percentil', 90) - num.p90) < 1e-9);
+});
+
+test('a calculadora recusa entradas inválidas', () => {
+  assert.equal(calcularOperacao([1, 2, 3, 4], 'soma'), 10);
+  assert.equal(calcularOperacao([1, 2, 3, 4], 'amplitude'), 3);
+  assert.equal(calcularOperacao([1, 2, 3, 4], 'variancia'), 5 / 3);
+  assert.equal(calcularOperacao([1, 2, 3, 4], 'percentil', 101), null);
+  assert.equal(calcularOperacao([1, 2, 3, 4], 'percentil', NaN), null);
+  assert.equal(calcularOperacao([5], 'dp'), null, 'desvio amostral precisa de 2 registros');
+  assert.equal(calcularOperacao([], 'media'), null);
+  assert.equal(calcularOperacao([1, 2], 'inexistente'), null);
+  assert.equal(formatarResultadoCalculadora(1234.56789), '1.234,5679');
 });

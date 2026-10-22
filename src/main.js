@@ -1,13 +1,14 @@
 import { novoJogo, jogadorAtual, ehBot } from './engine/state.js';
 import { reduzir } from './engine/machine.js';
 import { salvar, carregar, limpar } from './storage/persist.js';
-import { viewMenu, viewJogo, tabelaTsv } from './ui/views.js';
+import { viewMenu, QTD_SEMENTES, viewJogo, tabelaTsv } from './ui/views.js';
 import { obterCenario, todosCenarios } from './scenarios/loader.js';
 import { MAX_JOGADORES, PERFIS_BOT } from './engine/config.js';
 import { NUM_CASAS, coordenadas } from './engine/board.js';
 import { ehCalculo } from './engine/calculo.js';
 import { dadoHtml } from './ui/components/dado.js';
 import { lerNumero } from './stats/format.js';
+import { calcularOperacao, formatarResultadoCalculadora } from './engine/calculo.js';
 
 const app = document.getElementById('app');
 let estado = null;
@@ -60,12 +61,12 @@ function iniciar(form) {
     const perfil = Object.hasOwn(PERFIS_BOT, dados.get('bot')) ? dados.get('bot') : 'medio';
     jogadores.push({ nome: `Rival ${PERFIS_BOT[perfil].nome}`, nivel: jogadores[0].nivel, bot: perfil });
   }
-  const seedTexto = String(dados.get('seed')).trim().slice(0, 256);
+  const seedEscolhida = Number(dados.get('seed'));
   estado = novoJogo({
     jogadores,
     turnos: Number(dados.get('turnos')),
     modo: dados.get('modo') === 'cooperativo' ? 'cooperativo' : 'competitivo',
-    seed: seedTexto ? Number(seedTexto) : Math.floor(Math.random() * 2 ** 32),
+    seed: Number.isInteger(seedEscolhida) && seedEscolhida >= 1 && seedEscolhida <= QTD_SEMENTES ? seedEscolhida : Math.floor(Math.random() * 2 ** 32),
     soConceitual: dados.get('apoio') === 'conceitual',
     teste: lerTeste(dados),
   });
@@ -214,11 +215,25 @@ app.addEventListener('submit', (ev) => {
   if (ev.target.id === 'form-menu') {
     ev.preventDefault();
     iniciar(ev.target);
+  } else if (ev.target.dataset.form === 'calculadora') {
+    ev.preventDefault();
+    calcularNaCalculadora(ev.target);
   } else if (ev.target.dataset.form === 'valor') {
     ev.preventDefault();
     informarValor(ev.target);
   }
 });
+
+// Calculadora embutida: opera sobre os dados do cenário e mostra o resultado; não mexe no estado da partida.
+function calcularNaCalculadora(form) {
+  const c = estado?.cenarioAtual;
+  const saida = form.querySelector('[data-resultado]');
+  if (!c) return;
+  const p = lerNumero(form.elements.p.value);
+  const r = calcularOperacao(c.series[0].valores, form.elements.operacao.value, p);
+  const rotulo = form.elements.operacao.selectedOptions[0].textContent;
+  saida.textContent = r === null ? 'Não foi possível calcular: confira o P (0 a 100).' : `${rotulo}: ${formatarResultadoCalculadora(r)}`;
+}
 
 // Valor calculado de um cenário de cálculo: texto livre em pt-BR; se não for número, avisa e não avança.
 function informarValor(form) {
@@ -236,6 +251,12 @@ function informarValor(form) {
 
 // No solo só a pessoa preenche o cadastro; o número de CEOs dá lugar à escolha do rival.
 app.addEventListener('change', (ev) => {
+  if (ev.target.name === 'operacao') {
+    const form = ev.target.form;
+    form.querySelector('[data-campo="p"]').hidden = !ev.target.selectedOptions[0].hasAttribute('data-pede-p');
+    form.querySelector('[data-resultado]').textContent = '';
+    return;
+  }
   if (ev.target.name !== 'n' && ev.target.name !== 'modo') return;
   const form = ev.target.form;
   const solo = form.elements.modo.value === 'solo';
