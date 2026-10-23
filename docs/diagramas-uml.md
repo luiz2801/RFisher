@@ -24,6 +24,7 @@ classDiagram
         +Fase fase
         +int dado
         +int[] dados
+        +boolean jogadaExtra
         +Balanco balanco
         +List~Jogador~ jogadores
         +List~string~ baralhoCenarios
@@ -226,6 +227,7 @@ stateDiagram-v2
         MOSTRAR_BALANCO --> ValidaFimTurno : CONTINUAR
         
         state ValidaFimTurno <<choice>>
+        ValidaFimTurno --> ROLAR_DADO : dados iguais e jogador no jogo\n(mesmo jogador, jogadaExtra, sem gastar trimestre)
         ValidaFimTurno --> ROLAR_DADO : turnoAtual <= turnosPorJogador\n(próximo jogador que não faliu ou nova rodada)
     }
 
