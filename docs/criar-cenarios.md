@@ -89,7 +89,7 @@ Para um cenário em que a pessoa **calcula** o valor, siga o passo a passo acima
 
 ### Dificuldade
 
-O jogo sorteia cenários com dificuldade crescente ao longo da partida (`fisher.md` 4.5): quanto mais o jogador avançou na trilha, mais o sorteio favorece cenários de dificuldade alta. Escolha o valor pelo que o jogador precisa fazer, não pela conta:
+O jogo sorteia cenários com dificuldade crescente ao longo da partida (`fisher.md` 4.5): quanto mais o jogador avançou na trilha, mais o sorteio favorece cenários de dificuldade alta (o ritmo da subida é a progressão escolhida no menu: Gradual, Tradicional ou Acelerada). Escolha o valor pelo que o jogador precisa fazer, não pela conta:
 
 | Valor | Critério | Cenários atuais |
 | --- | --- | --- |
@@ -97,7 +97,7 @@ O jogo sorteia cenários com dificuldade crescente ao longo da partida (`fisher.
 | 2 | Exige reconhecer o formato dos dados (cauda longa, bimodal, assimetria à esquerda), ler a definição de um percentil ou pensar em dispersão, ou perceber quem ficou de fora da amostra. | 02, 04, 05, 10, 11, 15, 17, 20, 23 |
 | 3 | Exige comparar dispersão robusta com sensível a outliers, comparar amostras, pesar risco contra média, perceber que o objetivo (um total) muda a métrica, que um total é uma média ponderada ou que um alarme sobre evento raro gera mais falsos positivos que acertos. | 06, 08, 12, 13, 16, 18, 19, 21, 22, 24 |
 
-Mantenha ao menos um cenário em cada nível, senão o início ou o fim da partida perde o efeito (há teste para isso). O peso de sorteio e o passo médio do dado estão em `src/engine/config.js`; a lógica, em `src/engine/dificuldade.js`.
+Mantenha ao menos um cenário em cada nível, senão o início ou o fim da partida perde o efeito (há teste para isso). O peso de sorteio, as progressões (`PROGRESSOES`) e o passo médio do dado estão em `src/engine/config.js`; a lógica, em `src/engine/dificuldade.js`.
 
 ### Opções de métrica
 

@@ -6,13 +6,14 @@ import { dificuldadeAlvo, pesoDificuldade, escolherPorDificuldade } from '../src
 import { reduzir } from '../src/engine/machine.js';
 import { valorEsperado } from '../src/engine/calculo.js';
 import { todosCenarios, obterCenario, validarCenario } from '../src/scenarios/loader.js';
-import { DIFICULDADE_MAX } from '../src/engine/config.js';
+import { DIFICULDADE_MAX, PROGRESSOES, PROGRESSAO_PADRAO } from '../src/engine/config.js';
 
 test('a dificuldade-alvo vai de 1 a DIFICULDADE_MAX com o progresso', () => {
   assert.equal(dificuldadeAlvo(0), 1);
   assert.equal(dificuldadeAlvo(1), DIFICULDADE_MAX);
   assert.equal(dificuldadeAlvo(5), DIFICULDADE_MAX);
   assert.equal(dificuldadeAlvo(-1), 1);
+  assert.ok(dificuldadeAlvo(0.5) < 2, 'a subida é lenta no começo');
 });
 
 test('o peso é máximo na dificuldade-alvo e nunca zera', () => {
@@ -106,4 +107,42 @@ test('o baralho de cenários não repete carta dentro de um ciclo', () => {
     const ciclo = cenariosSorteados(seed, 40).slice(0, total);
     assert.equal(new Set(ciclo).size, ciclo.length);
   }
+});
+
+test('a progressão escolhida muda o ritmo da dificuldade-alvo, sem mudar os extremos', () => {
+  assert.ok(dificuldadeAlvo(0.5, 'facil') < dificuldadeAlvo(0.5, 'tradicional'));
+  assert.ok(dificuldadeAlvo(0.5, 'tradicional') < dificuldadeAlvo(0.5, 'dificil'));
+  assert.equal(dificuldadeAlvo(0.5, 'dificil'), 2);
+  for (const id of Object.keys(PROGRESSOES)) {
+    assert.equal(dificuldadeAlvo(0, id), 1);
+    assert.equal(dificuldadeAlvo(1, id), DIFICULDADE_MAX);
+  }
+  // Progressão ausente ou desconhecida (save antigo) vale a tradicional.
+  assert.equal(dificuldadeAlvo(0.5), dificuldadeAlvo(0.5, PROGRESSAO_PADRAO));
+  assert.equal(dificuldadeAlvo(0.5, 'inexistente'), dificuldadeAlvo(0.5, PROGRESSAO_PADRAO));
+});
+
+test('novoJogo guarda a progressão e cai na tradicional se ela for inválida', () => {
+  const base = { jogadores: [{ nome: 'A', nivel: 'iniciante' }], seed: 1 };
+  assert.equal(novoJogo(base).progressao, PROGRESSAO_PADRAO);
+  assert.equal(novoJogo({ ...base, progressao: 'dificil' }).progressao, 'dificil');
+  assert.equal(novoJogo({ ...base, progressao: 'xyz' }).progressao, PROGRESSAO_PADRAO);
+  assert.equal(novoJogo({ ...base, progressao: null }).progressao, PROGRESSAO_PADRAO);
+});
+
+test('na progressão acelerada os cenários sorteados são mais difíceis que na gradual', () => {
+  const media = (progressao) => {
+    let soma = 0;
+    let n = 0;
+    for (let seed = 1; seed <= 100; seed++) {
+      let e = novoJogo({ jogadores: [{ nome: 'A', nivel: 'iniciante' }], turnos: 10, seed, progressao });
+      while (e.fase !== 'FIM_DE_JOGO') {
+        const antes = e.fase;
+        e = passo(e);
+        if (antes === 'ROLAR_DADO' && e.fase === 'ESCOLHER_METRICA') { soma += obterCenario(e.cenarioAtual.id).dificuldade; n++; }
+      }
+    }
+    return soma / n;
+  };
+  assert.ok(media('dificil') > media('facil') + 0.15);
 });

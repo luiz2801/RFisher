@@ -9,7 +9,7 @@ import { metaTrimestral, dinheiroDoEvento } from '../engine/machine.js';
 import { relatorioDesempenho } from '../engine/desempenho.js';
 import { CONFIANCA, ROTULO_CONFIANCA, NIVEL, confiancaEfetiva, multiplicadorSequencia } from '../engine/scoring.js';
 import { totalInvestido, ganhoComConsultoria, honorarioDaConsultoria } from '../engine/investimentos.js';
-import { MAX_JOGADORES, APORTES, CONSULTORIA_PENALIDADE, CONSULTORIA_HONORARIO_FRACASSO, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL_PASSO, REPUTACAO_INICIAL, REPUTACAO_INICIAL_MIN, REPUTACAO_INICIAL_MAX, REPUTACAO_INICIAL_PASSO, PERFIS_BOT, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
+import { MAX_JOGADORES, APORTES, CONSULTORIA_PENALIDADE, CONSULTORIA_HONORARIO_FRACASSO, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL_PASSO, REPUTACAO_INICIAL, REPUTACAO_INICIAL_MIN, REPUTACAO_INICIAL_MAX, REPUTACAO_INICIAL_PASSO, PERFIS_BOT, PROGRESSOES, PROGRESSAO_PADRAO, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
 import { obterCenario, todosCenarios, preencher, valorDoMarcador } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
 import { PORTES, FALACIAS, obterEmpresa } from '../scenarios/content/investimentos.js';
@@ -21,6 +21,11 @@ import { ehCalculo, notaDeMetodo, OPERACOES_CALCULADORA } from '../engine/calcul
 export const QTD_SEMENTES = 20;
 const NOME_NIVEL = { iniciante: 'Iniciante', avancado: 'Avançado' };
 const FIGURA_CASA = { decisao: '📊', evento: '🎲', balanco: '🏦', mercado: '💼' };
+const DESCRICAO_PROGRESSAO = {
+  facil: 'Os cenários fáceis duram mais; os difíceis só pesam no fim',
+  tradicional: 'Sobe devagar no começo e acelera na segunda metade',
+  dificil: 'A dificuldade sobe em ritmo constante, desde o início',
+};
 const ROTULO_BOT = { facil: 'fácil', medio: 'médio', dificil: 'difícil' };
 const TITULO_RESULTADO = {
   sucesso: '✔ Sucesso absoluto',
@@ -162,6 +167,11 @@ export function viewMenu({ salvo } = {}) {
         <label class="campo-outro">Outro valor (de ${TURNOS_MIN} a ${TURNOS_MAX})
           <input type="number" name="turnos" min="${TURNOS_MIN}" max="${TURNOS_MAX}" step="1" value="${TURNOS_PADRAO}" required inputmode="numeric">
         </label>
+      </fieldset>
+      <fieldset class="etapa-menu secao-config" data-etapa>
+        <legend>Dificuldade</legend>
+        <p class="ajuda">Com que rapidez os cenários ficam mais difíceis ao longo da partida?</p>
+        ${opcoes('progressao', Object.entries(PROGRESSOES).map(([id, p]) => [id, p.nome, DESCRICAO_PROGRESSAO[id], { facil: '🌱', tradicional: '⚖️', dificil: '🔥' }[id]]), PROGRESSAO_PADRAO, 'coluna')}
       </fieldset>
       <fieldset class="etapa-menu secao-config" data-etapa>
         <legend>Capital inicial</legend>

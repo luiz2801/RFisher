@@ -35,7 +35,7 @@ function sacarCenario(e, progresso, rng) {
     for (const id of todos) if (!vistos.has(id) && !e.baralhoCenarios.includes(id)) e.baralhoCenarios.push(id);
   }
   const candidatos = e.baralhoCenarios.map((id) => ({ id, dificuldade: obterCenario(id).dificuldade }));
-  const id = escolherPorDificuldade(candidatos, progresso, rng);
+  const id = escolherPorDificuldade(candidatos, progresso, rng, e.progressao);
   e.baralhoCenarios.splice(e.baralhoCenarios.indexOf(id), 1);
   return id;
 }

@@ -57,6 +57,7 @@ Versão do formato: **`versao: 1`**.
 | `mercadoAtual` | objeto \| `null` | Oferta do Mercado em exibição (ver abaixo). Ausente em saves antigos (vale `null`). |
 | `apuracaoFinal` | lista \| `null` | Só em `FIM_DE_JOGO` pelo fim dos trimestres: `{ jogador, nome, investimentos }` de cada jogador cujos aportes foram apurados no encerramento (`fisher.md` 3.14); `investimentos` tem o formato dos itens de `balanco.investimentos`. `null` se não sobrou aporte. Ausente em saves antigos (vale `null`). |
 | `resultado` | objeto \| `null` | Resultado da última decisão, na tela de resultado. |
+| `progressao` | `'facil'` \| `'tradicional'` \| `'dificil'` | Ritmo com que a dificuldade-alvo dos cenários sobe com o progresso (`fisher.md` 4.5, decisão nº 20), escolhido no menu. Ausente em saves antigos (vale `'tradicional'`). |
 | `soConceitual` | booleano | Partida sem cenários de cálculo (`fisher.md` 4.7). O menu não oferece mais a opção, então novas partidas gravam `false`. Ausente em saves antigos (vale `false`). |
 | `teste` | objeto \| `null` | Atalhos de teste do menu (`fisher.md` 5.8.1): `{ casa, cenarios }`, com `casa` em `'decisao'`, `'evento'`, `'mercado'`, `'balanco'` ou `null` (normal) e `cenarios` uma lista de ids que restringe o baralho, ou `null` (todos). `null` em partida normal. Ausente em saves antigos (vale `null`). |
 
@@ -165,6 +166,7 @@ Como o save referencia ids do conteúdo, alterar o conteúdo também pode quebra
 | 1 (sem incremento) | Acrescentado `jogadores[].bot`, para o rival do modo solo. O modo solo grava `modo: 'competitivo'`. | Compatível: jogador sem `bot` é uma pessoa |
 | 1 (sem incremento) | Nova fase `INFORMAR_VALOR`; `cenarioAtual.valorInformado`; `resultado.valorCorreto` e `resultado.calculo`; `historico[].valor` e `historico[].valorCorreto`, para os cenários de cálculo (`fisher.md` 4.7). | Compatível: saves antigos não têm esses campos e nunca estiveram na nova fase; o código trata a ausência como cenário comum |
 | 1 (sem incremento) | Acrescentado `teste`, com os atalhos de teste do menu (casa forçada e baralho restrito). | Compatível: save sem `teste` é uma partida normal |
+| 1 (sem incremento) | Acrescentado `progressao`, o ritmo da dificuldade escolhido no menu. | Compatível: save sem `progressao` usa a tradicional |
 | 1 (sem incremento) | Acrescentado `soConceitual`, para jogar sem os cenários de cálculo. | Compatível: save sem `soConceitual` inclui todos os cenários |
 | 1 (sem incremento) | Acrescentado `jogadores[].sequencia`, e `resultado.multiplicadorSequencia` e `resultado.sequencia`, para as sequências de erros e acertos (`fisher.md` 3.13). | Compatível: save sem `sequencia` começa a contar do zero |
 | 1 (sem incremento) | Acrescentado `dinheiroInicial`, o caixa inicial escolhido no menu. | Compatível: save sem `dinheiroInicial` usa R$ 100.000 |

@@ -1,7 +1,7 @@
 import { criarRng } from './rng.js';
 import {
   DINHEIRO_INICIAL, REPUTACAO_INICIAL, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX,
-  REPUTACAO_INICIAL_MIN, REPUTACAO_INICIAL_MAX, PASSO_MEDIO_DADO, PERFIS_BOT,
+  REPUTACAO_INICIAL_MIN, REPUTACAO_INICIAL_MAX, PASSO_MEDIO_DADO, PERFIS_BOT, PROGRESSOES, PROGRESSAO_PADRAO,
 } from './config.js';
 import { atribuirPapeis, DIRETORIAS } from './papeis.js';
 
@@ -11,7 +11,7 @@ const limitar = (valor, min, max, padrao) => (Number.isFinite(valor) ? Math.min(
 // `turnos` (1 a 64), `dinheiroInicial` (o caixa de cada jogador, ou da empresa no cooperativo) e `reputacaoInicial`
 // (de 10 a 100, o mesmo para todos, ou para a empresa) vêm do menu e são limitados aqui.
 // `teste` (opcional) só serve para depurar: `{ casa, cenarios }` força a casa em que o peão cai e restringe o baralho.
-export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, dinheiroInicial = DINHEIRO_INICIAL, reputacaoInicial = REPUTACAO_INICIAL, seed = Date.now(), modo = 'competitivo', teste = null, soConceitual = false }) {
+export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, dinheiroInicial = DINHEIRO_INICIAL, reputacaoInicial = REPUTACAO_INICIAL, seed = Date.now(), modo = 'competitivo', teste = null, soConceitual = false, progressao = PROGRESSAO_PADRAO }) {
   const semente = seed >>> 0;
   const cooperativo = modo === 'cooperativo';
   const caixaInicial = limitar(dinheiroInicial, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL);
@@ -59,6 +59,8 @@ export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, dinheiroInicial = 
     })),
     // Sem papel, lápis ou planilha: o baralho exclui os cenários de cálculo. Ausente em saves antigos (vale `false`).
     soConceitual: Boolean(soConceitual),
+    // Ritmo com que a dificuldade dos cenários sobe (config.js, PROGRESSOES). Ausente em saves antigos (vale a tradicional).
+    progressao: Object.hasOwn(PROGRESSOES, progressao) ? progressao : PROGRESSAO_PADRAO,
     baralhoCenarios: [],
     baralhoEventos: [],
     // Empresas ainda não ofertadas no ciclo de cada porte; ausente em saves antigos (vale `{}`).
