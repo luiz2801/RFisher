@@ -51,13 +51,20 @@ export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, dinheiroInicial = 
       papeis: cooperativo ? papeis[id] : [],
       merito: 0,
       habilidadeUsos: 0,
+      // Aportes do Mercado aguardando o próximo Balanço (fisher.md 3.14). Ausente em saves antigos (vale `[]`).
+      investimentos: [],
     })),
     // Sem papel, lápis ou planilha: o baralho exclui os cenários de cálculo. Ausente em saves antigos (vale `false`).
     soConceitual: Boolean(soConceitual),
     baralhoCenarios: [],
     baralhoEventos: [],
+    // Empresas ainda não ofertadas no ciclo de cada porte; ausente em saves antigos (vale `{}`).
+    baralhoInvestimentos: {},
     cenarioAtual: null,
     eventoAtual: null,
+    // Oferta do Mercado em exibição e apuração dos aportes que sobraram no fim da partida (fisher.md 3.14).
+    mercadoAtual: null,
+    apuracaoFinal: null,
     resultado: null,
     // Atalhos de teste do menu; ausente em saves antigos e em partidas normais (vale `null`).
     teste: teste && (teste.casa || teste.cenarios?.length) ? { casa: teste.casa ?? null, cenarios: teste.cenarios?.length ? teste.cenarios : null } : null,
