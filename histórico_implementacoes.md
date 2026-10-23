@@ -67,6 +67,7 @@ Linha do tempo do que foi desenvolvido, reconstruída a partir do histórico do 
 | #8 | Jogada extra com dados iguais |
 | #9 | Legendas dos gráficos |
 | #10, #11, #12 | Mercado, consultoria, reputação inicial e eventos com escolha de carta |
+| #16 | Cenários 26 a 30 |
 
 ## Estado atual (resumo)
 
