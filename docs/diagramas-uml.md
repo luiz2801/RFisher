@@ -140,6 +140,7 @@ classDiagram
         +Analise analise
         +int aporte
         +string decisao
+        +int honorarioPago
     }
 
     class EmpresaDef {
@@ -287,7 +288,7 @@ stateDiagram-v2
         
         state FluxoMercado {
             MOSTRAR_MERCADO --> MOSTRAR_MERCADO : ABRIR_CONSULTORIA / DIAGNOSTICAR(falácia) (oferta aberta, uma vez cada)
-            MOSTRAR_MERCADO --> MOSTRAR_MERCADO : INVESTIR(aporte) / RECUSAR (fecha a oferta e paga o diagnóstico)
+            MOSTRAR_MERCADO --> MOSTRAR_MERCADO : INVESTIR(aporte) / RECUSAR (fecha a oferta, paga o diagnóstico e, se contratou a consultoria sem investir, debita o honorário)
         }
 
         MOSTRAR_RESULTADO --> ValidaFimTurno : CONTINUAR

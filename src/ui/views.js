@@ -698,7 +698,7 @@ function viewMercado(e) {
     : '';
 
   const consultoria = !m.consultoria && aberta
-    ? `<button class="discreto" data-acao="ABRIR_CONSULTORIA">Contratar consultoria (relatório com a chance exata e os retornos possíveis; se você investir, ela cobra ${pctMercado(CONSULTORIA_PENALIDADE)} do retorno quando der certo e ${brl(CONSULTORIA_HONORARIO_FRACASSO)} quando der errado)</button>`
+    ? `<button class="discreto" data-acao="ABRIR_CONSULTORIA">Contratar consultoria (relatório com a chance exata e os retornos possíveis; se você investir, ela cobra ${pctMercado(CONSULTORIA_PENALIDADE)} do retorno quando der certo e ${brl(CONSULTORIA_HONORARIO_FRACASSO)} quando der errado; se não investir, cobra ${brl(CONSULTORIA_HONORARIO_FRACASSO)} na hora)</button>`
     : '';
 
   let diagnostico = '';
@@ -718,12 +718,12 @@ function viewMercado(e) {
         <strong>Investir ${brl(a)}</strong>
         ${m.consultoria ? `<span>Se der certo: ${brlSinal(a * ganho)} · Se der errado: ${brlSinal(-a * m.perda - honorario)}</span>` : ''}
       </button>`).join('')}</div>
-      <button class="discreto" data-acao="RECUSAR">Não investir</button>`;
+      <button class="discreto" data-acao="RECUSAR">Não investir${m.consultoria ? ` (a consultoria cobra ${brl(honorario)} na hora)` : ''}</button>`;
   } else {
     const a = m.analise;
     const feito = m.decisao === 'investiu'
       ? `<h3>Você investiu ${brl(m.aporte)} na ${esc(def.nome)}</h3><p>O resultado sai quando você passar pelo Balanço. Até lá o dinheiro fica em custódia.</p>`
-      : '<h3>Você não investiu</h3>';
+      : `<h3>Você não investiu</h3>${m.honorarioPago ? `<p>A consultoria cobrou ${brl(m.honorarioPago)} de honorários, debitados agora do caixa.</p>` : ''}`;
     const falha = def.falha ? esc(FALACIAS[def.falha].nome) : 'nenhuma, o argumento se sustenta';
     const veredito = a
       ? `<p><strong>Seu diagnóstico:</strong> ${esc(FALACIAS[m.diagnostico].nome)}. ${a.correta ? '✔ Acertou' : '✖ Errou'} (reputação ${a.deltaReputacao > 0 ? '+' : '−'}${Math.abs(a.deltaReputacao)}).</p>${a.crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}`

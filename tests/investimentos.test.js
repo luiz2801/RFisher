@@ -221,9 +221,10 @@ test('com a consultoria o retorno do sucesso guardado cai pela penalidade, e a p
   assert.equal(agir(o, 'INVESTIR', 10000).jogadores[0].investimentos[0].ganho, o.mercadoAtual.ganho, 'sem consultoria, retorno cheio');
 });
 
-test('olhar a consultoria e recusar não custa nada', () => {
+test('contratar a consultoria e não investir cobra o honorário na hora', () => {
   const e = agir(agir(naOferta(), 'ABRIR_CONSULTORIA'), 'RECUSAR');
-  assert.equal(e.jogadores[0].dinheiro, 100000);
+  assert.equal(e.jogadores[0].dinheiro, 100000 - CONSULTORIA_HONORARIO_FRACASSO);
+  assert.equal(e.mercadoAtual.honorarioPago, CONSULTORIA_HONORARIO_FRACASSO);
   assert.equal(e.jogadores[0].reputacao, 50);
   assert.deepEqual(e.jogadores[0].investimentos, []);
 });
@@ -270,6 +271,17 @@ test('o diagnóstico errado em reputação 1 dispara a crise de imagem (multa), 
   const e = agir(agir(o, 'DIAGNOSTICAR', diagnosticoErrado(o)), 'RECUSAR');
   assert.equal(e.mercadoAtual.analise.crise, true);
   assert.equal(e.jogadores[0].dinheiro, 90000);
+});
+
+test('CONTINUAR sem decidir, depois de contratar a consultoria, também paga o honorário', () => {
+  const e = agir(agir(naOferta(), 'ABRIR_CONSULTORIA'), 'CONTINUAR');
+  assert.equal(e.jogadores[0].dinheiro, 100000 - CONSULTORIA_HONORARIO_FRACASSO);
+});
+
+test('quem investe depois da consultoria não paga o honorário na hora', () => {
+  const e = agir(agir(naOferta(), 'ABRIR_CONSULTORIA'), 'INVESTIR', 10000);
+  assert.equal(e.jogadores[0].dinheiro, 90000);
+  assert.equal(e.mercadoAtual.honorarioPago, undefined);
 });
 
 test('CONTINUAR sem decidir equivale a recusar e passa a vez', () => {

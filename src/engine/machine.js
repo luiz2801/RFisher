@@ -206,7 +206,8 @@ const TRANSICOES = {
 };
 
 // Fecha a oferta do Mercado: debita e registra o aporte, se houve, e paga o diagnóstico do argumento do fundador
-// (bônus de reputação se acertou, perda se errou). A explicação do argumento aparece na tela em qualquer caso.
+// (bônus de reputação se acertou, perda se errou). Quem contratou a consultoria e não investiu paga o honorário na hora
+// (quem investe só o paga se der errado, no Balanço). A explicação do argumento aparece na tela em qualquer caso.
 function decidirMercado(e, decisao, aporte = null) {
   const m = e.mercadoAtual;
   const w = carteira(e);
@@ -231,6 +232,9 @@ function decidirMercado(e, decisao, aporte = null) {
         turnoAporte: e.turnoAtual,
       },
     ];
+  } else if (m.consultoria) {
+    m.honorarioPago = honorarioDaConsultoria(true);
+    w.dinheiro -= m.honorarioPago;
   }
   if (m.diagnostico) {
     const falha = obterEmpresa(m.empresaId).falha ?? 'nenhuma';
