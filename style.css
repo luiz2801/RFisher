@@ -480,6 +480,11 @@ select {
   padding: .5rem .75rem;
 }
 
+.placar li.falido {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
 .placar li.ativo {
   border: 2px solid var(--primaria);
 }

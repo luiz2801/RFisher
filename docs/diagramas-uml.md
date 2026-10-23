@@ -18,6 +18,8 @@ classDiagram
         +int rng
         +int turnoAtual
         +int turnosPorJogador
+        +int dinheiroInicial
+        +boolean falencia
         +int jogadorAtual
         +Fase fase
         +int dado
@@ -36,6 +38,8 @@ classDiagram
     class Jogador {
         +int id
         +string nome
+        +boolean falido
+        +boolean negativado
         +Nivel nivel
         +number dinheiro
         +number reputacao
@@ -212,10 +216,10 @@ stateDiagram-v2
         MOSTRAR_BALANCO --> ValidaFimTurno : CONTINUAR
         
         state ValidaFimTurno <<choice>>
-        ValidaFimTurno --> ROLAR_DADO : turnoAtual <= turnosPorJogador\n(próximo jogador ou nova rodada)
+        ValidaFimTurno --> ROLAR_DADO : turnoAtual <= turnosPorJogador\n(próximo jogador que não faliu ou nova rodada)
     }
 
-    ValidaFimTurno --> FIM_DE_JOGO : turnoAtual > turnosPorJogador
+    ValidaFimTurno --> FIM_DE_JOGO : turnoAtual > turnosPorJogador\nou empresa falida (coop.)\nou só um jogador sem falir
     FIM_DE_JOGO --> MENU : NOVA partida (limpa storage)
 ```
 
@@ -383,7 +387,7 @@ graph TD
 | Módulo | Responsabilidade Principal |
 | :--- | :--- |
 | **`src/engine/machine.js`** | Máquina de estados finitos que orquestra as transições a partir de ações do jogador. |
-| **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`, que aceita `soConceitual`, para excluir os cenários de cálculo, e os atalhos de teste do menu: casa forçada e baralho restrito, ver `fisher.md` 5.8.1) e `diretoria` e `papeis` por jogador (a partir da escolha de setor no menu; `atribuirPapeis(n, escolhas)` em `papeis.js`) e funções seletoras puras (`jogadorAtual`, `ehBot`, `classificacao`, `progressoDoJogador`). |
+| **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`, que aceita `turnos` (1 a 64) e `dinheiroInicial` (R$ 10.000 a R$ 1.000.000), ambos limitados, e `soConceitual`, para excluir os cenários de cálculo, e os atalhos de teste do menu: casa forçada e baralho restrito, ver `fisher.md` 5.8.1) e `diretoria` e `papeis` por jogador (a partir da escolha de setor no menu; `atribuirPapeis(n, escolhas)` em `papeis.js`) e funções seletoras puras (`jogadorAtual`, `dinheiroInicialDe`, `ehBot`, `ehFalido`, `empresaFalida`, `jogadoresAtivos`, `classificacao`, `vencedores`, `progressoDoJogador`). Falência (`fisher.md` 3.12): `continuar` em `machine.js` marca `falido` (ou `falencia` no cooperativo) quando o caixa fecha negativo uma jogada que passou pelo Balanço; `julgarBalanco` (em `state.js`) decide quem perde entre os negativados, adiando o veredito se um rival com saldo pior ainda não passou pelo Balanço; `classificacao` e `vencedores` põem o falido por último. |
 | **`src/engine/bot.js`** | Rival do modo solo: acerta métrica e justificativa com a probabilidade do perfil (menor nos cenários difíceis), escolhe distratores ao errar e deriva a confiança de uma certeza interna ruidosa. Perfis em `config.js`, calibração em `scripts/simular-bot.mjs` (`fisher.md` 3.11). |
 | **`src/engine/dificuldade.js`** | Dificuldade-alvo a partir do progresso do jogador e sorteio ponderado de cenários do baralho. |
 | **`src/engine/rng.js`** | Gerador pseudo-aleatório determinístico baseado no algoritmo `mulberry32` com estado serializável em 32-bits. |

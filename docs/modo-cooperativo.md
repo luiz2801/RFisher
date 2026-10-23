@@ -68,7 +68,7 @@ Assim ninguém vira "quarterback": cada um responde pelo seu papel. A regra mant
 
 Sem pressão, o cooperativo fica morno.
 
-- **Meta trimestral no Balanço:** a empresa precisa de um caixa mínimo que cresce a cada trimestre. Se cumprir, ganha um bônus de investidor. Se falhar, sofre um corte de orçamento (perde reputação e dinheiro). Ninguém é eliminado (princípio 4).
+- **Meta trimestral no Balanço:** a empresa precisa de um caixa mínimo que cresce a cada trimestre. Se cumprir, ganha um bônus de investidor. Se falhar, sofre um corte de orçamento (perde reputação e dinheiro). Nenhum jogador é eliminado individualmente (princípio 4), mas a empresa **vai à falência** se o caixa ficar negativo ao fim de uma jogada que passou pelo Balanço: a partida termina na hora, com a faixa Falência (`fisher.md` 3.12).
 - **Casa de Crise (fase 2):** sorteia um setor, e o diretor decide com valor dobrado enquanto o grupo debate.
 - **Recuperação de quem está atrás:** com caixa comum, não existe mais "alguém atrás" no sentido financeiro. Resolve a questão nº 6. Quem tiver mérito baixo recebe feedback, não penalidade de dinheiro.
 - **Fim de jogo:** classificação da empresa por faixas de caixa e reputação: Falência, Sobrevivência, Crescimento ou Líder de mercado.
@@ -118,5 +118,5 @@ Sem pressão, o cooperativo fica morno.
 
 - Quantos pareceres por turno e por partida?
 - O mérito pesa mais que o dinheiro no destaque do ano?
-- A meta trimestral escala com o número de turnos configurado (10 por padrão)?
+- A meta trimestral escala com o número de turnos configurado (10 por padrão)? Hoje parte do caixa inicial escolhido no menu e cresce R$ 2.000 por jogador a cada trimestre, sem depender do número de turnos; as faixas finais são múltiplos do caixa inicial (50%, 125%, 175%). Com caixa inicial muito diferente do padrão (R$ 100.000), o crescimento fixo deixa as faixas fáceis ou inalcançáveis (`fisher.md`, decisão nº 12).
 - Qual o tamanho do bônus de investidor e do corte de orçamento?

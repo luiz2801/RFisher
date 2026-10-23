@@ -6,6 +6,12 @@ export const CUSTOS_BALANCO = 8000;
 export const MULTA_CRISE = 10000;
 export const REPUTACAO_POS_CRISE = 20;
 export const TURNOS_PADRAO = 10;
+// Limites das escolhas do menu de nova partida (o motor também os aplica).
+export const TURNOS_MIN = 1;
+export const TURNOS_MAX = 64;
+export const DINHEIRO_INICIAL_MIN = 10000;
+export const DINHEIRO_INICIAL_MAX = 1000000;
+export const DINHEIRO_INICIAL_PASSO = 10000;
 export const MAX_JOGADORES = 3;
 
 // Modo cooperativo (docs/modo-cooperativo.md). Valores a calibrar por simulação.

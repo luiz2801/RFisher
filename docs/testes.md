@@ -8,15 +8,15 @@ O projeto é JavaScript puro (ES modules), sem dependências e sem build. Os tes
 
 | # | Tipo | Alvo principal | Situação |
 | --- | --- | --- | --- |
-| 1 | Unitário de regras | `src/engine/scoring.js`, `config.js`, `board.js`, `papeis.js`, `state.js` | Parcial |
-| 2 | Unitário de estatística e formatação | `src/stats/` | Parcial (`metrics.js` coberto) |
-| 3 | Unitário do RNG | `src/engine/rng.js` | Ausente |
+| 1 | Unitário de regras | `src/engine/scoring.js`, `config.js`, `board.js`, `papeis.js`, `state.js` | Parcial (`board.js` e `classificarEmpresa` cobertos) |
+| 2 | Unitário de estatística e formatação | `src/stats/` | Coberto (`metrics.js`, `format.js`) |
+| 3 | Unitário do RNG | `src/engine/rng.js` | Coberto |
 | 4 | Máquina de estados (transições) | `src/engine/machine.js` | Parcial |
 | 5 | Invariantes e propriedades | `src/scenarios/generators.js` | Coberto |
-| 6 | Validação de conteúdo | `src/scenarios/content/`, `loader.js` | Parcial |
+| 6 | Validação de conteúdo | `src/scenarios/content/`, `loader.js` | Parcial (testes negativos cobertos) |
 | 7 | Simulação e balanceamento | motor completo | Parcial |
-| 8 | Persistência e compatibilidade de save | `src/storage/persist.js`, `state.js` | Parcial (`persist.js` coberto) |
-| 9 | Renderização de telas (HTML) | `src/ui/views.js`, `components/grafico.js` | Parcial |
+| 8 | Persistência e compatibilidade de save | `src/storage/persist.js`, `state.js` | Coberto (falta só a validação rígida, ver decisões em aberto) |
+| 9 | Renderização de telas (HTML) | `src/ui/views.js`, `components/grafico.js` | Parcial (`grafico.js` coberto) |
 | 10 | Segurança (XSS) | `src/ui/html.js`, `views.js` | Parcial |
 | 11 | Acessibilidade | `src/ui/` | Ausente |
 | 12 | Integração do navegador (`main.js`) | `src/main.js` | Ausente |
@@ -34,11 +34,11 @@ Funções puras do motor, testadas com valores calculados à mão a partir de `f
 - **`receitaBalanco`**: receita nos três pontos de reputação.
 - **Tabuleiro** (`board.js`): `avancar` com e sem volta completa (`passouInicio`), em especial a posição 27 + dado e o limite exato `total === NUM_CASAS`; `coordenadas` devolve 28 células distintas no perímetro da grade 9x7 (e da 7x9); contagem de casas (1 balanço, 18 decisão, 9 evento) bate com o README.
 - **Papéis** (`papeis.js`): `atribuirPapeis` para 1, 2 e 3 jogadores cobre as três diretorias sem repetição; todo setor de `SETORES` pertence a exatamente uma diretoria; `diretoriaDoSetor` para setor inexistente.
-- **Estado inicial** (`state.js`): `novoJogo` nos dois modos (empresa só no cooperativo, papéis só no cooperativo); `classificacao` e `vencedores` com empate de dinheiro e de reputação; `classificarEmpresa` em cada limite de faixa (exatamente 175 %, 125 %, 50 % do caixa inicial e reputação 75, 60).
+- **Estado inicial** (`state.js`): `novoJogo` nos dois modos (empresa só no cooperativo, papéis só no cooperativo); `classificacao` e `vencedores` com empate de dinheiro e de reputação; `classificarEmpresa` em cada limite de faixa (exatamente 175 %, 125 %, 50 % do caixa inicial e reputação 75, 60); `turnos` e `dinheiroInicial` limitados a 1–64 e R$ 10.000–1.000.000 (valor inválido cai no padrão), e meta e faixas do cooperativo acompanhando o caixa inicial (`tests/machine.test.js`).
 
 - **Perfil de desempenho** (`desempenho.js`): escala de certeza, evidência de domínio, os quatro diagnósticos, calibração, ordenação de pontos fortes e deficiências, equívocos pesados pela certeza, histórico antigo sem `conceito`, o histórico gravado pela máquina numa partida inteira, e o relatório de fim de jogo (contagem de acertos, parciais e erros, ordem das sugestões, conceitos não vistos, partida sem decisões e materiais para todo conceito).
 
-**Situação:** `tests/scoring.test.js` cobre pontuação, multiplicador e anti-chute. `tests/desempenho.test.js` cobre o perfil de desempenho. Faltam `board.js`, `papeis.js`, `state.js` (empates, `classificarEmpresa` nos limites) e `receitaBalanco`.
+**Situação:** `tests/scoring.test.js` cobre pontuação, multiplicador e anti-chute. `tests/desempenho.test.js` cobre o perfil de desempenho. `tests/board.test.js` cobre `avancar` (com e sem volta, casa 27 e limite exato) e a contagem de casas (1 balanço, 18 decisões, 9 eventos), e `tests/machine.test.js` cobre `classificarEmpresa` em cada limite de faixa. Faltam `papeis.js`, `state.js` (empates de `classificacao` e `vencedores`) e `receitaBalanco` isolado.
 
 ## 2. Unitário de estatística e formatação
 
@@ -48,7 +48,7 @@ Os números mostrados aos jogadores vêm de `src/stats/`; um erro aqui ensina es
 - Valores de referência conferidos contra uma fonte externa (NumPy ou planilha), registrados no teste.
 - `formatar` para cada tipo (`brl`, `dias`, `minutos`, `gramas`, `porcento`, `mm`, `cm`, `ms`, padrão), separadores `pt-BR`, arredondamento; `brl` e `brlSinal` com negativos e zero.
 
-**Situação:** `tests/stats-metrics.test.js` cobre `metrics.js`: mediana de lista par e unitária, moda com empate, percentil p0/p100, lista unitária e interpolação, desvio padrão amostral e `resumo`. Os valores de referência foram calculados à mão e estão comentados no teste; falta a conferência registrada contra NumPy ou planilha. Falta todo o `format.js`.
+**Situação:** `tests/stats-metrics.test.js` cobre `metrics.js`: mediana de lista par e unitária, moda com empate, percentil p0/p100, lista unitária e interpolação, desvio padrão amostral e `resumo`. Os valores de referência foram calculados à mão e estão comentados no teste; falta a conferência registrada contra NumPy ou planilha. `tests/stats-format.test.js` cobre `format.js`: `formatar` em todos os tipos e no padrão, `brl` e `brlSinal` com sinal de menos tipográfico, `unidade` e `lerNumero`. Observação: `unidade('toString')` devolve a função herdada de `Object.prototype` (`UNIDADES` é um objeto simples); sem impacto hoje, pois o tipo vem do conteúdo dos cenários, e por isso não há teste fixando esse caso.
 
 ## 3. Unitário do RNG
 
@@ -60,7 +60,7 @@ A reprodutibilidade por seed é pilar do projeto (partida salva, invariantes, si
 - `normal`: média e desvio aproximados em amostra grande (tolerância explícita), sem `NaN` nem `Infinity`.
 - O estado exposto (`rng.estado`) retoma a sequência exatamente de onde parou (usado no save).
 
-**Situação:** ausente (só coberto indiretamente).
+**Situação:** coberto em `tests/rng.test.js`: determinismo por seed, `prox` em [0, 1), `entre`, extremos de `inteiro`, `embaralhar` (permutação, não altera a original, determinístico), `normal` (média e desvio com tolerância explícita) e retomada pelo `estado`.
 
 ## 4. Máquina de estados
 
@@ -70,15 +70,16 @@ A reprodutibilidade por seed é pilar do projeto (partida salva, invariantes, si
 - **Ordem da decisão:** métrica → justificativa → confiança (ver `docs/diagramas-uml.md`); em cenário de cálculo, métrica → valor → justificativa → confiança. Coberto em `tests/calculo.test.js`: `INFORMAR_VALOR` só aceita número (ou texto pt-BR) e só nessa fase, e o cenário comum não passa por ela.
 - **Entradas inválidas:** métrica ou justificativa que não pertence ao cenário, confiança fora da escala (`chute`, `duvida`, `provavel`, `confiante`, `certeza`), `valor` ausente.
 - **Pureza:** o estado anterior não é alterado (`structuredClone`).
-- **Fim de turno e de jogo:** rotação de jogadores, incremento de `turnoAtual`, `FIM_DE_JOGO` após `turnosPorJogador`, ninguém eliminado.
+- **Fim de turno e de jogo:** rotação de jogadores, incremento de `turnoAtual`, `FIM_DE_JOGO` após `turnosPorJogador`.
+- **Falência** (`fisher.md` 3.12): caixa negativo ao continuar, numa jogada com Balanço, marca o jogador como `falido` e ele é pulado nos turnos seguintes; caixa negativo fora do Balanço não elimina (competitivo e cooperativo); caixa zero não quebra; com dois jogadores o sobrevivente vence na hora; falido perde mesmo com mais dinheiro; jogador único sem vencedor; no cooperativo a empresa quebra e a partida acaba na faixa Falência; veredito adiado enquanto um rival negativado, com saldo pior, não passa pelo Balanço (perde o de menor saldo depois, seja quem esperava, seja o rival; ou quem esperava, se o rival se recupera; rival com saldo melhor não faz esperar); aviso de falência (e de veredito adiado) na tela e placar com o falido marcado.
 - **Baralhos:** `sacar` esgota o baralho e reembaralha sem repetir carta dentro de um ciclo; com mais decisões que cenários, todos aparecem.
 - **Dificuldade por progresso:** `dificuldadeAlvo`, `pesoDificuldade` e `escolherPorDificuldade`; o progresso (`progressoDoJogador`) conta voltas e aceita save sem `distancia`; a dificuldade média sorteada na 2ª metade da partida é maior que na 1ª; o baralho não repete dentro de um ciclo. Coberto em `tests/dificuldade.test.js`.
-- **Crise de imagem:** reputação em 0 aplica `MULTA_CRISE` e vai a `REPUTACAO_POS_CRISE`, em decisão, evento e balanço; o dinheiro pode ficar negativo.
+- **Crise de imagem:** reputação em 0 aplica `MULTA_CRISE` e vai a `REPUTACAO_POS_CRISE`, em decisão, evento e balanço; o dinheiro pode ficar negativo (e, se a jogada passou pelo Balanço, isso é falência).
 - **Balanço:** disparado ao passar pela casa 0 (inclusive cair nela), no competitivo e no cooperativo; cálculo de `receita − CUSTOS_BALANCO`.
 - **Cooperativo:** `metaTrimestral` por trimestre e por nº de jogadores; meta cumprida (bônus) e falha (corte); bônus do RH; amortecimento do prejuízo de eventos do setor da diretoria (`REDUCAO_PREJUIZO_PASSIVA`) e nenhum amortecimento em ganhos ou setores sem diretor; caixa da empresa separado da carteira dos jogadores.
 - **Competitivo:** carteira individual, sem `empresa`.
 
-**Situação:** `tests/machine.test.js` cobre determinismo, os atalhos de teste (casa forçada e baralho restrito), fim de partida, ação inválida por fase, pureza, ordem da decisão, JSON e todo o cooperativo. Faltam entradas inválidas de `valor`, o esgotamento e reembaralhamento dos baralhos, a crise de imagem nos três pontos de origem e a tabela completa fase × ação.
+**Situação:** `tests/machine.test.js` cobre determinismo, os atalhos de teste (casa forçada e baralho restrito), fim de partida, ação inválida por fase, pureza, ordem da decisão, JSON e todo o cooperativo. Também cobre, desde o relatório de testes: bônus do RH, valores exatos e limite (`>=`) da meta do Balanço, estrutura de `balanco.meta`, amortecimento passivo de eventos (todas as cartas, nos dois modos) e a crise de imagem nos três pontos de origem (decisão, evento e Balanço cooperativo), inclusive a crise que empurra o caixa para negativo e leva à falência. Faltam entradas inválidas de `valor`, o esgotamento e reembaralhamento dos baralhos e a tabela completa fase × ação.
 
 ## 5. Invariantes e propriedades dos geradores
 
@@ -91,7 +92,7 @@ Cada gerador de `generators.js` declara um `invariante` que garante o ponto peda
 - `verificarInvariante` rejeita séries que violam a regra.
 - Toda série tem o tamanho e o formato esperados (sem `NaN`, valores dentro do domínio, discretos inteiros).
 
-**Situação:** coberto, exceto a falha após 200 tentativas e o teste específico dos cenários 2 (P90) e 3 (moda).
+**Situação:** coberto, inclusive `tiposDeGerador`, gerador desconhecido e a falha após exatamente 200 tentativas (com gerador forçado a falhar). Falta o teste específico dos cenários 2 (P90) e 3 (moda).
 
 ## 6. Validação de conteúdo
 
@@ -99,14 +100,14 @@ Cenários e eventos são dados; o conteúdo é validado como código.
 
 - `validarCenario` em todo cenário, com várias seeds (já existe), incluindo `dificuldade` de 1 a 3 e ao menos um cenário por nível.
 - Regras: exatamente 5 opções e 1 correta, 6 a 8 justificativas e exatamente 1 `correta`, todo `equivoco` com feedback, opção errada com equivoco, tipos de justificativa válidos, setor válido, placeholders existentes, marcadores de revelação com valor.
-- **Testes negativos** do validador: uma regra violada por vez, cada uma gerando exatamente um erro (hoje só três regras e o setor têm teste).
+- **Testes negativos** do validador: uma regra violada por vez, cada uma gerando exatamente um erro (em `tests/scenarios.test.js`; a regra de `equivoco` obrigatório em justificativa `erro_conceitual`/`afirmacao_falsa` não existe no validador, ver decisões em aberto).
 - Ids de cenário e de evento únicos; todo evento tem setor válido, dinheiro e reputação numéricos.
 - **Coerência pedagógica:** `cenario.opcoes[correta]` corresponde ao gabarito calculado a partir dos dados (por exemplo, a opção correta do cenário 1 é a mediana, e o valor mostrado vem de `resumo`).
 - Distribuição por setor: todo setor de `SETORES` tem pelo menos um cenário e um evento (necessário para o cooperativo).
 - Contagem de cenários e eventos igual à do README (25 cenários, 18 eventos).
 - **Cenários de cálculo** (`tests/calculo.test.js`): o validador recusa opção que revela o valor, opção sem `chave`, falta de `como_calcular` e `exibir` sem tabela; margem de 5% abaixo de 100 e 2% a partir de 100, relativa ao valor exato, com piso para valor zero; valor conferido contra a métrica escolhida (e não a correta); valor fora da margem invalida a métrica; o rival informa o valor exato; `lerNumero` entende pt-BR; a tela do valor mostra tabela, margem e campo sem revelar a resposta; o resultado mostra valor informado, exato, faixa e como calcular; partida inteira reproduzível com save a cada ação; a calculadora embutida aparece só na etapa do valor, bate com as métricas do cenário e recusa P fora de 0 a 100, lista vazia e desvio com um registro.
 
-**Situação:** `tests/scenarios.test.js` cobre a validação geral, ids únicos, placeholders e setores. Faltam os testes negativos restantes, coerência do gabarito, cobertura por setor e contagem.
+**Situação:** `tests/scenarios.test.js` cobre a validação geral, ids únicos, placeholders e setores. Os testes negativos atômicos do validador estão cobertos (opções, justificativas, tipo, equívocos, marcador, dificuldade, setor, conceito, placeholder). Faltam coerência do gabarito, cobertura por setor e contagem.
 
 ## 7. Simulação e balanceamento
 
@@ -134,7 +135,7 @@ Observação: testes estatísticos devem usar seeds fixas e margens amplas para 
 - **Compatibilidade retroativa:** um save sem o campo `modo` (versões antigas) é tratado como competitivo (`ehCooperativo`). Manter fixtures de saves antigos em `tests/fixtures/`; ao alterar o formato (`src/storage/`), incrementar a versão e adicionar o teste de migração ou descarte.
 - Partida salva no meio de cada fase retoma e termina.
 
-**Situação:** `tests/persist.test.js` cobre `persist.js` com um `localStorage` falso (restaurado ao fim de cada teste): ida e volta, chave ausente, JSON inválido, `versao` diferente de 1, sem `jogadores`, sem `fase`, `limpar`, e falhas de cota sem lançar erro. Faltam as fixtures de saves antigos (save sem `modo`) e a retomada em cada fase.
+**Situação:** `tests/persist.test.js` cobre `persist.js` com um `localStorage` falso (restaurado ao fim de cada teste): ida e volta, chave ausente, JSON inválido, `versao` diferente de 1, sem `jogadores`, sem `fase`, `limpar`, e falhas de cota sem lançar erro. Em `tests/fixtures/` há cinco saves estáticos (`save-v1-competitivo`, `save-v1-cooperativo`, `save-legado-sem-modo`, `save-legado-sem-distancia`, `save-legado-sem-dinheiro-inicial`); cada um é carregado, renderizado e jogado até o fim, e os legados conferem os defaults seguros. A retomada (salvar, carregar, `deepEqual` e terminar igual) é testada em cada fase, nos dois modos. Para regenerar as fixtures, conduza uma partida com `novoJogo` e `reduzir` até `ESCOLHER_CONFIANCA` e remova os campos do legado.
 
 ## 9. Renderização de telas
 
@@ -147,7 +148,7 @@ As views são funções puras `estado → string HTML`, testáveis sem navegador
 - **`grafico.js`**: `calcularBarras` (discreto: uma barra por inteiro; contínuo: 12 faixas, valor máximo cai na última faixa, soma das barras = nº de valores), `calcularDominio` (folga, série constante, discreto).
 - **Snapshots** opcionais de telas-chave, para detectar mudança involuntária de marcação (usar `assert.snapshot` do `node:test` somente se a versão do Node o suportar).
 
-**Situação:** `tests/views.test.js` cobre o menu e a travessia completa. Faltam os testes de `grafico.js` e o conteúdo condicional.
+**Situação:** `tests/views.test.js` cobre o menu e a travessia completa. `tests/grafico.test.js` cobre `calcularBarras`, `calcularDominio` e a marcação acessível de `grafico`. Falta o conteúdo condicional das views.
 
 ## 10. Segurança (XSS)
 
@@ -236,6 +237,8 @@ Os checks `Node 20` e `Node 22` são obrigatórios na proteção da `main`: o me
 
 ## Decisões em aberto
 
+- **Validação rígida em `carregar()`:** hoje só confere `versao`, `jogadores` e `fase`. Um save com `posicao: 99`, `jogadorAtual` fora do intervalo ou cenário fora do catálogo é aceito. Decidir se `persist.js` passa a devolver `null` nesses casos; só então escrever os testes.
+- **`equivoco` em justificativas:** `docs/criar-cenarios.md` exige `equivoco` em toda justificativa `erro_conceitual` ou `afirmacao_falsa`, mas `validarCenario` só cobra nas opções. Decidir se o validador passa a cobrar ou se a documentação é flexibilizada (os 25 cenários atuais já cumprem a regra).
 - Como testar `main.js` e a UI no navegador sem dependências (extrair lógica pura ou aceitar Playwright).
 - Se o `JSON Schema`/Zod citado em `fisher.md` 5.8 será adotado; hoje `validarCenario` o substitui.
 - Meta de cobertura de código: `npm run test:cobertura` mede e o CI reporta, mas não há limite definido.

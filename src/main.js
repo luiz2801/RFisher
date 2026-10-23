@@ -57,6 +57,9 @@ function setoresRepetidos(form) {
   return new Set(escolhas).size < n;
 }
 
+// Campo numérico do menu: vazio ou inválido vira NaN, e o motor cai no padrão.
+const lerInteiro = (valor) => (String(valor ?? '').trim() === '' ? NaN : Number(valor));
+
 function iniciar(form) {
   const erro = form.querySelector('[data-erro-setor]');
   erro.hidden = !setoresRepetidos(form);
@@ -77,7 +80,8 @@ function iniciar(form) {
   const seedEscolhida = Number(dados.get('seed'));
   estado = novoJogo({
     jogadores,
-    turnos: Number(dados.get('turnos')),
+    turnos: lerInteiro(dados.get('turnos')),
+    dinheiroInicial: lerInteiro(dados.get('dinheiro')),
     modo: dados.get('modo') === 'cooperativo' ? 'cooperativo' : 'competitivo',
     seed: Number.isInteger(seedEscolhida) && seedEscolhida >= 1 && seedEscolhida <= QTD_SEMENTES ? seedEscolhida : Math.floor(Math.random() * 2 ** 32),
     soConceitual: dados.get('apoio') === 'conceitual',

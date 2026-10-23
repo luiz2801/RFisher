@@ -3,12 +3,12 @@ import { esc } from './html.js';
 import { grafico, calcularDominio } from './components/grafico.js';
 import { parDadosHtml } from './components/dado.js';
 import { CASAS, NUM_CASAS, ROTULO_CASA, coordenadas } from '../engine/board.js';
-import { jogadorAtual, classificacao, vencedores, ehCooperativo, ehBot, classificarEmpresa } from '../engine/state.js';
+import { jogadorAtual, classificacao, vencedores, ehCooperativo, ehBot, ehFalido, empresaFalida, julgarBalanco, classificarEmpresa, dinheiroInicialDe } from '../engine/state.js';
 import { DIRETORIAS } from '../engine/papeis.js';
 import { metaTrimestral } from '../engine/machine.js';
 import { relatorioDesempenho } from '../engine/desempenho.js';
 import { CONFIANCA, ROTULO_CONFIANCA, NIVEL, confiancaEfetiva } from '../engine/scoring.js';
-import { MAX_JOGADORES, TURNOS_PADRAO, PERFIS_BOT, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
+import { MAX_JOGADORES, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL_PASSO, PERFIS_BOT, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
 import { obterCenario, todosCenarios, preencher, valorDoMarcador } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
 import { brl, brlSinal, formatar, unidade } from '../stats/format.js';
@@ -95,9 +95,9 @@ export function viewMenu({ salvo } = {}) {
 
     <section class="secao-scroll">
       <h2>A disputa pelo controle acionário</h2>
-      <p>Cada jogador comanda uma divisão estratégica, com aporte inicial de <strong>R$ 50.000 em caixa</strong> e <strong>50 pontos de reputação</strong> perante o mercado.</p>
+      <p>Cada jogador comanda uma divisão estratégica, com aporte inicial em caixa à sua escolha (<strong>R$ 100.000</strong> por padrão) e <strong>50 pontos de reputação</strong> perante o mercado.</p>
       <div class="indicadores">
-        <div><strong>R$ 50 mil</strong><span>caixa inicial</span></div>
+        <div><strong>R$ 100 mil</strong><span>caixa inicial (padrão)</span></div>
         <div><strong>50</strong><span>reputação</span></div>
         <div><strong>1–3</strong><span>CEOs</span></div>
       </div>
@@ -143,8 +143,11 @@ export function viewMenu({ salvo } = {}) {
           .join('')}</select>
       </label>
       ${linhas}
-      <label>Trimestres fiscais (turnos por jogador)
-        <select name="turnos">${[2, 6, 8, 10, 12].map((n) => `<option value="${n}" ${n === TURNOS_PADRAO ? 'selected' : ''}>${n}</option>`).join('')}</select>
+      <label>Trimestres fiscais (rounds por jogador, de ${TURNOS_MIN} a ${TURNOS_MAX})
+        <input type="number" name="turnos" min="${TURNOS_MIN}" max="${TURNOS_MAX}" step="1" value="${TURNOS_PADRAO}" required inputmode="numeric">
+      </label>
+      <label>Caixa inicial (R$, de ${DINHEIRO_INICIAL_MIN.toLocaleString('pt-BR')} a ${DINHEIRO_INICIAL_MAX.toLocaleString('pt-BR')}; no cooperativo, o caixa da empresa)
+        <input type="number" name="dinheiro" min="${DINHEIRO_INICIAL_MIN}" max="${DINHEIRO_INICIAL_MAX}" step="${DINHEIRO_INICIAL_PASSO}" value="${DINHEIRO_INICIAL}" required inputmode="numeric">
       </label>
       <label>Semente de mercado (opcional, para repetir uma partida)
         <select name="seed"><option value="" selected>Aleatória</option>${Array.from({ length: QTD_SEMENTES }, (_, i) => `<option value="${i + 1}">Mercado ${i + 1}</option>`).join('')}</select>
@@ -251,7 +254,7 @@ function contextoRapido(e) {
   return `<details class="contexto-rapido">
     <summary>🏛️ Contexto da Fisher S.A.</summary>
     <div class="cartao-contexto-interno">
-      <p><strong>A Missão:</strong> A antiga diretoria quase faliu a Fisher S.A. tomando decisões por mero "achismo". Vocês assumiram divisões estratégicas com R$ 50.000 em caixa e 50 de reputação para provar quem lidera com dados reais.</p>
+      <p><strong>A Missão:</strong> A antiga diretoria quase faliu a Fisher S.A. tomando decisões por mero "achismo". Vocês assumiram divisões estratégicas com ${brl(dinheiroInicialDe(e))} em caixa e 50 de reputação para provar quem lidera com dados reais.</p>
       ${
         ehCooperativo(e)
           ? '<p><strong>Objetivo:</strong> A diretoria responde por uma só empresa, com caixa e reputação compartilhados. Cumpram a meta de caixa em cada Balanço e levem a Fisher S.A. à melhor faixa ao fim dos trimestres.</p>'
@@ -275,9 +278,9 @@ function placar(e) {
   const coop = ehCooperativo(e);
   return `${coop ? painelEmpresa(e) : ''}<ul class="placar">${e.jogadores
     .map(
-      (j) => `<li class="${j.id === e.jogadorAtual && e.fase !== 'FIM_DE_JOGO' ? 'ativo' : ''}">
+      (j) => `<li class="${j.id === e.jogadorAtual && e.fase !== 'FIM_DE_JOGO' ? 'ativo' : ''}${ehFalido(j) ? ' falido' : ''}">
         <span class="peao p${j.id}">${esc(j.nome.trim().charAt(0).toUpperCase() || '?')}</span>
-        <span class="nome">${esc(j.nome)} <small>${esc(cargoDe(e, j))} · ${NOME_NIVEL[j.nivel]}</small></span>
+        <span class="nome">${esc(j.nome)} <small>${esc(cargoDe(e, j))} · ${NOME_NIVEL[j.nivel]}${ehFalido(j) ? ' · Falido' : ''}</small></span>
         ${
           coop
             ? ''
@@ -297,16 +300,38 @@ function placar(e) {
       case 'ESCOLHER_JUSTIFICATIVA':
       return viewDecisao(e);
       case 'MOSTRAR_RESULTADO':
-      return viewResultado(e);
+      return avisoFalencia(e) + viewResultado(e);
       case 'MOSTRAR_EVENTO':
-      return viewEvento(e);
+      return avisoFalencia(e) + viewEvento(e);
       case 'MOSTRAR_BALANCO':
-      return viewBalanco(e);
+      return avisoFalencia(e) + viewBalanco(e);
       case 'FIM_DE_JOGO':
       return viewFim(e);
       default:
       return '';
   }
+}
+
+// Caixa negativo ao continuar, numa jogada com Balanço, significa falência (fisher.md 3.12): avisa antes, para não ser surpresa.
+function avisoFalencia(e) {
+  if (!e.balanco) return '';
+  if (ehCooperativo(e)) {
+    return e.empresa.dinheiro < 0
+      ? '<p class="alerta">Caixa negativo! Ao continuar, a Fisher S.A. vai à falência e a partida termina.</p>'
+      : '';
+  }
+  const atual = jogadorAtual(e);
+  const { perdedor, aguardando } = julgarBalanco(e);
+  if (perdedor) {
+    return perdedor === atual
+      ? `<p class="alerta">Caixa negativo! Ao continuar, ${esc(atual.nome)} vai à falência e perde a partida.</p>`
+      : `<p class="alerta">${esc(perdedor.nome)} está com o menor saldo entre os negativados: ao continuar, vai à falência e perde a partida.</p>`;
+  }
+  if (aguardando.length) {
+    const nomes = aguardando.map((j) => esc(j.nome)).join(' e ');
+    return `<p class="alerta">Caixa negativo! O veredito espera ${nomes}, com saldo ainda pior, passar pelo Balanço.</p>`;
+  }
+  return '';
 }
 
 const metaTexto = (b) =>
@@ -618,8 +643,9 @@ function blocoCalculo(def, r, escolhida, certa, c0, quem) {
 }
 
     function viewFimCooperativo(e) {
-  const faixa = classificarEmpresa(e.empresa);
+  const faixa = classificarEmpresa(e.empresa, dinheiroInicialDe(e));
   return `<h2>Fim de jogo</h2><p class="vencedor">A Fisher S.A. terminou em: ${esc(faixa.nome)}</p>
+    ${empresaFalida(e) ? '<p class="alerta">O caixa ficou negativo e a empresa faliu antes do fim dos trimestres.</p>' : ''}
     <p>Caixa final ${brl(e.empresa.dinheiro)} · Reputação ${e.empresa.reputacao}</p>
     <ol class="ranking">${e.jogadores
       .map((j) => {
@@ -635,14 +661,16 @@ function viewFim(e) {
   if (ehCooperativo(e)) return viewFimCooperativo(e);
   const ganhadores = vencedores(e);
     const titulo =
-    ganhadores.length === 1
+    ganhadores.length === 0
+    ? 'Todos faliram: ninguém venceu'
+    : ganhadores.length === 1
     ? `${esc(ganhadores[0].nome)} é o grande CEO!`
     : `Empate entre ${ganhadores.map((g) => esc(g.nome)).join(' e ')}`;
     return `<h2>Fim de jogo</h2><p class="vencedor">${titulo}</p>
     <ol class="ranking">${classificacao(e)
       .map((j) => {
         const acertos = j.historico.filter((h) => h.resultado === 'sucesso').length;
-        return `<li><strong>${esc(j.nome)}</strong>: ${brl(j.dinheiro)} · Rep. ${j.reputacao} · ${acertos} de ${j.historico.length} decisões com sucesso absoluto</li>`;
+        return `<li><strong>${esc(j.nome)}</strong>: ${ehFalido(j) ? 'FALIDO · ' : ''}${brl(j.dinheiro)} · Rep. ${j.reputacao} · ${acertos} de ${j.historico.length} decisões com sucesso absoluto</li>`;
       })
       .join('')}</ol>
     ${relatorios(e)}
