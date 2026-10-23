@@ -114,12 +114,12 @@ test('o menu lista os atalhos de teste e a partida de teste exibe o selo', () =>
   assert.doesNotMatch(viewJogo({ ...e, teste: null }), /Partida de teste/);
 });
 
-test('o menu sugere material de apoio e deixa escolher só questões conceituais', () => {
+test('o menu informa a calculadora e não deixa excluir os cenários de cálculo', () => {
   const menu = viewMenu();
   assert.match(menu, /Material de apoio/);
   assert.match(menu, /calculadora de estatísticas/);
   assert.doesNotMatch(menu, /planilha|Excel|lápis|papel/i, 'a calculadora dispensa material externo');
-  assert.match(menu, /value="conceitual"/);
+  assert.doesNotMatch(menu, /name="apoio"|value="conceitual"/);
 });
 
 test('cenários de tabela de séries escondem as colunas que explicam a resposta até o resultado', () => {

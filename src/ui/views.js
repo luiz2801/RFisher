@@ -160,12 +160,6 @@ export function viewMenu({ salvo } = {}) {
       <fieldset class="apoio">
         <legend>Material de apoio</legend>
         <p>Alguns cenários trazem uma tabela de dados e pedem que você faça a conta (mediana, percentil, desvio padrão, quartis). Para esses, o jogo oferece uma <strong>calculadora de estatísticas</strong> embutida (média, mediana, moda, quartis, IQR, percentil, desvio padrão), disponível na etapa do valor.</p>
-        <label>Como você quer jogar?
-          <select name="apoio">
-            <option value="completo">Incluir os cenários de cálculo</option>
-            <option value="conceitual">Só questões conceituais (sem contas)</option>
-          </select>
-        </label>
       </fieldset>
       <details class="atalhos-teste">
         <summary>Atalhos de teste</summary>

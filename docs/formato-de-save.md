@@ -57,7 +57,7 @@ Versão do formato: **`versao: 1`**.
 | `mercadoAtual` | objeto \| `null` | Oferta do Mercado em exibição (ver abaixo). Ausente em saves antigos (vale `null`). |
 | `apuracaoFinal` | lista \| `null` | Só em `FIM_DE_JOGO` pelo fim dos trimestres: `{ jogador, nome, investimentos }` de cada jogador cujos aportes foram apurados no encerramento (`fisher.md` 3.14); `investimentos` tem o formato dos itens de `balanco.investimentos`. `null` se não sobrou aporte. Ausente em saves antigos (vale `null`). |
 | `resultado` | objeto \| `null` | Resultado da última decisão, na tela de resultado. |
-| `soConceitual` | booleano | Partida sem cenários de cálculo (jogador sem planilha ou papel; `fisher.md` 4.7). Ausente em saves antigos (vale `false`). |
+| `soConceitual` | booleano | Partida sem cenários de cálculo (`fisher.md` 4.7). O menu não oferece mais a opção, então novas partidas gravam `false`. Ausente em saves antigos (vale `false`). |
 | `teste` | objeto \| `null` | Atalhos de teste do menu (`fisher.md` 5.8.1): `{ casa, cenarios }`, com `casa` em `'decisao'`, `'evento'`, `'mercado'`, `'balanco'` ou `null` (normal) e `cenarios` uma lista de ids que restringe o baralho, ou `null` (todos). `null` em partida normal. Ausente em saves antigos (vale `null`). |
 
 Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `INFORMAR_VALOR`, `ESCOLHER_JUSTIFICATIVA`, `ESCOLHER_CONFIANCA`, `MOSTRAR_RESULTADO`, `MOSTRAR_EVENTO`, `MOSTRAR_MERCADO`, `MOSTRAR_BALANCO`, `FIM_DE_JOGO`.
