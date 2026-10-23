@@ -168,26 +168,31 @@ select {
   margin-right: auto;
 }
 
-.jogo {
-  display: grid;
-  grid-template-columns: minmax(360px, 480px) 1fr;
-  gap: 1.25rem;
-  padding: 1.25rem 16px;
-  max-width: 1240px;
-  margin: 0 auto;
+/* Partida em tela cheia: o topo fica fixo e o tabuleiro quadrado ocupa todo o resto. */
+#app:has(.jogo) {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
 }
 
-@media (max-width: 860px) {
-  .jogo {
-    grid-template-columns: 1fr;
-  }
+.jogo {
+  flex: 1;
+  min-height: 0;
+  container-type: size;
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  box-sizing: border-box;
 }
 
 .tabuleiro {
+  container-type: size;
+  width: min(100cqw, 100cqh);
+  aspect-ratio: 1;
   display: grid;
   grid-template: repeat(8, 1fr) / repeat(8, 1fr);
   gap: 3px;
-  aspect-ratio: 1;
 }
 
 .casa {
@@ -197,19 +202,18 @@ select {
   padding: 2px 2px;
   display: flex;
   flex-direction: column;
-  font-size: .62rem;
+  font-size: clamp(.6rem, 1.7cqw, 1.1rem);
   line-height: 1.15;
   min-width: 0;
 }
 
 .casa .num {
   color: var(--suave);
-  font-size: .58rem;
+  font-size: .92em;
 }
 
 .casa .tipo {
   font-weight: 600;
-  font-size: .60rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -237,10 +241,10 @@ select {
 .peao {
   display: inline-grid;
   place-items: center;
-  width: 18px;
-  height: 18px;
+  width: clamp(18px, 3.4cqw, 40px);
+  height: clamp(18px, 3.4cqw, 40px);
   border-radius: 50%;
-  font-size: .68rem;
+  font-size: clamp(.68rem, 1.9cqw, 1.2rem);
   font-weight: 700;
   color: #fff;
 }
@@ -286,10 +290,58 @@ select {
 
 .centro {
   grid-area: 2 / 2 / 8 / 8;
-  display: grid;
-  place-content: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  gap: .5rem;
+  gap: .6rem;
+  padding: .5rem;
+  overflow: auto;
+  min-height: 0;
+}
+
+.centro .vez {
+  font-size: clamp(1rem, 3cqw, 1.8rem);
+}
+
+.centro .ajuda,
+.centro .briefing-inaugural {
+  margin: 0;
+  max-width: 40rem;
+  font-size: clamp(.75rem, 1.6cqw, 1rem);
+}
+
+.cta-jogar {
+  font-size: clamp(1.1rem, 3.2cqw, 2rem);
+  padding: .7em 2em;
+  border-radius: 999px;
+}
+
+.centro .placar {
+  margin: 0;
+  width: 100%;
+  max-width: 44rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  text-align: left;
+}
+
+.centro .contexto-rapido {
+  margin: 0;
+  max-width: 40rem;
+  text-align: left;
+}
+
+/* A pergunta (e as demais etapas depois da rolagem) aparece sobre o tabuleiro. */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  overflow: auto;
+  background: rgba(0, 0, 0, .55);
 }
 
 .dados-par {
@@ -418,7 +470,11 @@ select {
   border-radius: 12px;
   padding: 1rem 1.25rem 1.5rem;
   min-width: 0;
-  align-self: start;
+  width: min(860px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  box-sizing: border-box;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .35);
 }
 
 .painel:focus {
@@ -1085,13 +1141,30 @@ html {
 
 @media print {
   .topo,
-  .lateral,
+  .jogo,
   .painel button {
     display: none;
   }
 
-  .jogo {
+  #app:has(.jogo) {
     display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  .modal {
+    position: static;
+    display: block;
+    padding: 0;
+    background: none;
+    overflow: visible;
+  }
+
+  .painel {
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    box-shadow: none;
   }
 
   .relatorio {

@@ -238,7 +238,7 @@ sequenceDiagram
     participant Scoring as Scoring (scoring.js)
     participant Storage as Persist (persist.js)
 
-    Jogador->>UI: Clica em "Rolar os dados" (data-acao="ROLAR")
+    Jogador->>UI: Clica em "Jogar" no centro do tabuleiro (data-acao="ROLAR")
     UI->>Machine: reduzir(estado, { tipo: 'ROLAR' })
     activate Machine
     Machine->>RNG: inteiro(1, 6)
@@ -396,4 +396,4 @@ graph TD
 | **`src/stats/metrics.js`** | Cálculos estatísticos fundamentais (média, mediana, moda, desvio padrão, percentil 90). |
 | **`src/stats/format.js`** | Formatação dos números por formato de cenário (R$, dias, minutos, s, ...) e leitura (`lerNumero`) do valor digitado em pt-BR. |
 | **`src/storage/persist.js`** | Camada de persistência em `window.localStorage` para salvamento automático a cada transição. |
-| **`src/ui/`** | Renderização reativa baseada em strings HTML puras e SVG (`grafico.js`), delegando ações de volta ao `main.js`. |
+| **`src/ui/`** | Renderização reativa baseada em strings HTML puras e SVG (`grafico.js`), delegando ações de volta ao `main.js`. Em partida, o tabuleiro ocupa a tela toda (`viewJogo`): o centro traz a vez, os dados, o botão **Jogar** (fase `ROLAR_DADO`), o placar e o contexto; todas as demais fases (decisão, resultado, evento, balanço, fim de jogo) aparecem num painel modal (`.modal > .painel`) sobreposto ao tabuleiro. |

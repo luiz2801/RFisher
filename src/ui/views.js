@@ -226,30 +226,17 @@ const autor = (e) =>
 
 export function viewJogo(e) {
   const turno = Math.min(e.turnoAtual, e.turnosPorJogador);
+  // O tabuleiro ocupa a tela; a pergunta (e qualquer outra etapa depois da rolagem) aparece sobre ele.
+  const sobreposto = e.fase !== 'ROLAR_DADO'
+    ? `<div class="modal"><section class="painel" id="painel" role="dialog" aria-modal="true" aria-label="Decisão da rodada" tabindex="-1" aria-live="polite">${painel(e)}</section></div>`
+    : '';
   return `<header class="topo">
       <strong>Tabuleiro do CEO · Fisher S.A.</strong>
       <span>Trimestre ${turno} de ${e.turnosPorJogador}</span>
       ${e.teste ? '<span class="selo-teste" title="Casa ou cenários forçados pelos atalhos de teste">Partida de teste</span>' : ''}
       <button data-acao="NOVA" class="discreto">Nova partida</button>
     </header>
-    <div class="jogo">
-      <div class="lateral">
-        ${tabuleiro(e)}
-        ${placar(e)}
-        <details class="contexto-rapido">
-          <summary>🏛️ Contexto da Fisher S.A.</summary>
-          <div class="cartao-contexto-interno">
-            <p><strong>A Missão:</strong> A antiga diretoria quase faliu a Fisher S.A. tomando decisões por mero "achismo". Vocês assumiram divisões estratégicas com R$ 50.000 em caixa e 50 de reputação para provar quem lidera com dados reais.</p>
-            ${
-              ehCooperativo(e)
-                ? '<p><strong>Objetivo:</strong> A diretoria responde por uma só empresa, com caixa e reputação compartilhados. Cumpram a meta de caixa em cada Balanço e levem a Fisher S.A. à melhor faixa ao fim dos trimestres.</p>'
-                : '<p><strong>Critério de Vitória:</strong> Quem acumular mais capital (e maior reputação em caso de empate) ao fim dos trimestres fiscais será eleito Presidente do Conselho!</p>'
-            }
-          </div>
-        </details>
-      </div>
-      <section class="painel" id="painel" tabindex="-1" aria-live="polite">${painel(e)}</section>
-    </div>`;
+    <div class="jogo">${tabuleiro(e)}</div>${sobreposto}`;
 }
 
 function tabuleiro(e) {
@@ -266,8 +253,22 @@ function tabuleiro(e) {
   const vez = e.fase === 'FIM_DE_JOGO' ? 'Fim de jogo' : `Vez de ${esc(jogadorAtual(e).nome)}`;
   const dados = e.dados ? parDadosHtml(e.dados[0], e.dados[1], e.dado) : '';
   return `<div class="tabuleiro" role="group" aria-label="Tabuleiro com ${NUM_CASAS} casas">
-    ${casas}<div class="centro"><strong>${vez}</strong>${dados}</div>
+    ${casas}<div class="centro"><strong class="vez">${vez}</strong>${dados}${e.fase === 'ROLAR_DADO' ? viewRolar(e) : ''}${placar(e)}${contextoRapido(e)}</div>
   </div>`;
+}
+
+function contextoRapido(e) {
+  return `<details class="contexto-rapido">
+    <summary>🏛️ Contexto da Fisher S.A.</summary>
+    <div class="cartao-contexto-interno">
+      <p><strong>A Missão:</strong> A antiga diretoria quase faliu a Fisher S.A. tomando decisões por mero "achismo". Vocês assumiram divisões estratégicas com R$ 50.000 em caixa e 50 de reputação para provar quem lidera com dados reais.</p>
+      ${
+        ehCooperativo(e)
+          ? '<p><strong>Objetivo:</strong> A diretoria responde por uma só empresa, com caixa e reputação compartilhados. Cumpram a meta de caixa em cada Balanço e levem a Fisher S.A. à melhor faixa ao fim dos trimestres.</p>'
+          : '<p><strong>Critério de Vitória:</strong> Quem acumular mais capital (e maior reputação em caso de empate) ao fim dos trimestres fiscais será eleito Presidente do Conselho!</p>'
+      }
+    </div>
+  </details>`;
 }
 
 function painelEmpresa(e) {
@@ -300,8 +301,6 @@ function placar(e) {
 
       function painel(e) {
   switch (e.fase) {
-    case 'ROLAR_DADO':
-      return viewRolar(e);
       case 'ESCOLHER_CONFIANCA':
       case 'ESCOLHER_METRICA':
       case 'INFORMAR_VALOR':
@@ -332,25 +331,17 @@ const bannerBalanco = (e) =>
 
       const botaoContinuar = '<button class="primario" data-acao="CONTINUAR">Próximo jogador</button>';
 
+// Controle no centro do tabuleiro: o botão de jogar (ou de ver a jogada do rival).
 function viewRolar(e) {
   const j = jogadorAtual(e);
-  const cargo = cargoDe(e, j);
   const inaugural =
     e.turnoAtual === 1 && j.posicao === 0 && e.jogadores.every((x) => x.historico.length === 0)
-      ? `<div class="cartao briefing-inaugural">
-        <span class="tag-contexto">🏛️ Assembleia Inaugural do Conselho</span>
-        <p>Bem-vindos à sede corporativa da <strong>Fisher S.A.</strong>! Cada CEO acaba de assumir sua divisão com <strong>R$ 50.000 em caixa</strong> e <strong>50 pontos de reputação</strong>. Os mercados estão abertos: role os dados para liderar suas operações no primeiro trimestre!</p>
-      </div>`
+      ? `<p class="briefing-inaugural"><strong>🏛️ Assembleia Inaugural do Conselho.</strong> Cada CEO assume sua divisão com <strong>R$ 50.000</strong> em caixa e <strong>50 pontos</strong> de reputação. Jogue os dados para liderar o primeiro trimestre!</p>`
       : '';
-
-  if (ehBot(j)) {
-    return `${inaugural}<h2>Vez de ${esc(j.nome)} <small>(${esc(cargo)})</small></h2>
-      <p>O rival está na casa ${j.posicao + 1}. Ele rola os dados e decide sozinho; você acompanha o resultado.</p>
-      <button class="primario" data-acao="ROLAR">Ver a jogada do rival</button>`;
-  }
-  return `${inaugural}<h2>Vez de ${esc(j.nome)} <small>(${esc(cargo)})</small></h2>
-      <p>Você está na casa ${j.posicao + 1}. Role os dados para avançar na trilha e encarar os desafios do mercado.</p>
-      <button class="primario" data-acao="ROLAR">Rolar os dados</button>`;
+  const botao = ehBot(j)
+    ? '<button class="primario cta-jogar" data-acao="ROLAR">Ver a jogada do rival</button>'
+    : '<button class="primario cta-jogar" data-acao="ROLAR">🎲 Jogar</button>';
+  return `${inaugural}<p class="ajuda">${esc(cargoDe(e, j))} · casa ${j.posicao + 1}${ehBot(j) ? ' · o rival decide sozinho e você acompanha' : ''}</p>${botao}`;
 }
 
 // Texto para colar no Excel (colunas separadas por tabulação, números com vírgula decimal, sem unidade):

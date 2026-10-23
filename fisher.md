@@ -559,6 +559,10 @@ Para testar uma parte do jogo sem esperar o sorteio, o menu de nova partida tem 
 
 Para testar os cenários de cálculo sempre: casa "Sempre Decisão" e cenários "Só os de cálculo". A partida de teste mostra o selo "Partida de teste" no topo. As regras, a pontuação e o fim de jogo não mudam; é só uma restrição do que cai a cada rolagem, gravada em `teste` no estado.
 
+### 5.8.2 Tela da partida
+
+O tabuleiro ocupa toda a tela (quadrado, sob um topo fixo). No **centro** ficam a vez, os dados da última rolagem, o botão **Jogar** (no solo, durante a vez do rival, "Ver a jogada do rival"), o placar e o contexto da Fisher S.A. Ao rolar, os dados giram e o peão anda; ao chegar na casa, a etapa correspondente (pergunta da casa de Decisão com tabela, gráfico e alternativas; resultado; evento; balanço; fim de jogo) **aparece sobreposta ao tabuleiro**, num painel modal. Ao continuar, o painel some e o botão Jogar volta para o próximo jogador. Só a apresentação mudou: a máquina de estados e as regras são as mesmas.
+
 ### 5.9 Acessibilidade e persistência
 
 - Todo gráfico tem descrição textual e tabela de dados alternativa.

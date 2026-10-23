@@ -16,7 +16,7 @@ const semMovimento = () => window.matchMedia('(prefers-reduced-motion: reduce)')
 
 function render({ focar = false } = {}) {
   app.innerHTML = estado ? viewJogo(estado) : viewMenu({ salvo: carregar() });
-  if (focar) document.getElementById('painel')?.focus({ preventScroll: true });
+  if (focar) (document.getElementById('painel') ?? app.querySelector('.cta-jogar'))?.focus({ preventScroll: true });
 }
 
 function aplicarEstado(novo) {

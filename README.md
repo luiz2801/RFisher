@@ -54,6 +54,7 @@ O workflow `.github/workflows/deploy.yml` publica o jogo no GitHub Pages a cada 
 - Relatório de desempenho no fim de jogo, um por pessoa (o rival do computador fica de fora): acertos totais, parciais e erros, assuntos que mais e menos domina e sugestões de estudo com links gratuitos em português para cada um dos 13 conceitos (`src/scenarios/content/materiais.js`, `fisher.md` 4.6). Pode ser impresso ou salvo em PDF, já que o save é apagado no fim da partida.
 - Material de apoio no menu de nova partida (`fisher.md` 4.7): informa a calculadora embutida, sugere planilha (ou lápis e papel) como alternativa, para os cenários de cálculo e permite jogar só com questões conceituais (16 dos 21 cenários), sem contas.
 - Atalhos de teste no menu de nova partida (`fisher.md` 5.8.1): forçar a casa (Decisão, Evento ou Balanço) e restringir os cenários (só os de cálculo, só os sem cálculo ou um específico), para cair sempre no que se quer testar. A partida mostra o selo "Partida de teste".
+- Tela da partida (`fisher.md` 5.8.2): tabuleiro em tela cheia com o botão **Jogar** no centro; ao chegar na casa, a pergunta (ou resultado, evento, balanço) aparece sobreposta ao tabuleiro.
 - Partida salva em `localStorage` a cada transição.
 
 Decisões tomadas onde a especificação deixava em aberto:
