@@ -106,7 +106,7 @@ Cenários e eventos são dados; o conteúdo é validado como código.
 - Ids de cenário e de evento únicos (`tests/scenarios.test.js` confere o conteúdo das 41 cartas e que o valor esperado de participar fica perto de zero); todo evento tem setor válido, `tipo` válido (`boa`, `ruim` ou `troll`), dinheiro e reputação numéricos, e lição nas cartas boas e ruins.
 - **Coerência pedagógica:** `cenario.opcoes[correta]` corresponde ao gabarito calculado a partir dos dados (por exemplo, a opção correta do cenário 1 é a mediana, e o valor mostrado vem de `resumo`).
 - Distribuição por setor: todo setor de `SETORES` tem pelo menos um cenário e um evento (necessário para o cooperativo).
-- Contagem de cenários e eventos igual à do README (25 cenários, 41 eventos: 16 boas, 16 ruins e 9 trolls).
+- Contagem de cenários e eventos igual à do README (30 cenários, 41 eventos: 16 boas, 16 ruins e 9 trolls).
 - **Empresas do Mercado** (`tests/investimentos.test.js`): ids únicos e campos válidos, narrativas, valor esperado por tipo (furada negativa, sólida positiva, mesmo no pior sorteio da chance), portes com empresas dos dois tipos, todas as falácias usadas e o investimento às cegas perto de zero.
 - **Cenários de cálculo** (`tests/calculo.test.js`): o validador recusa opção que revela o valor, opção sem `chave`, falta de `como_calcular` e `exibir` sem tabela; margem de 5% abaixo de 100 e 2% a partir de 100, relativa ao valor exato, com piso para valor zero; valor conferido contra a métrica escolhida (e não a correta); valor fora da margem invalida a métrica; o rival informa o valor exato; `lerNumero` entende pt-BR; a tela do valor mostra tabela, margem e campo sem revelar a resposta; o resultado mostra valor informado, exato, faixa e como calcular; partida inteira reproduzível com save a cada ação; a calculadora embutida aparece só na etapa do valor, bate com as métricas do cenário e recusa P fora de 0 a 100, lista vazia e desvio com um registro.
 
@@ -243,7 +243,7 @@ Os checks `Node 20` e `Node 22` são obrigatórios na proteção da `main`: o me
 ## Decisões em aberto
 
 - **Validação rígida em `carregar()`:** hoje só confere `versao`, `jogadores` e `fase`. Um save com `posicao: 99`, `jogadorAtual` fora do intervalo ou cenário fora do catálogo é aceito. Decidir se `persist.js` passa a devolver `null` nesses casos; só então escrever os testes.
-- **`equivoco` em justificativas:** `docs/criar-cenarios.md` exige `equivoco` em toda justificativa `erro_conceitual` ou `afirmacao_falsa`, mas `validarCenario` só cobra nas opções. Decidir se o validador passa a cobrar ou se a documentação é flexibilizada (os 25 cenários atuais já cumprem a regra).
+- **`equivoco` em justificativas:** `docs/criar-cenarios.md` exige `equivoco` em toda justificativa `erro_conceitual` ou `afirmacao_falsa`, mas `validarCenario` só cobra nas opções. Decidir se o validador passa a cobrar ou se a documentação é flexibilizada (os 30 cenários atuais já cumprem a regra).
 - Como testar `main.js` e a UI no navegador sem dependências (extrair lógica pura ou aceitar Playwright).
 - Se o `JSON Schema`/Zod citado em `fisher.md` 5.8 será adotado; hoje `validarCenario` o substitui.
 - Meta de cobertura de código: `npm run test:cobertura` mede e o CI reporta, mas não há limite definido.

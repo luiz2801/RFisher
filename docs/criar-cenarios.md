@@ -34,7 +34,7 @@ Consequência prática: **nunca escreva um número de dado à mão no texto**. U
 3. Escreva o objeto do cenário seguindo o [modelo](#modelo-de-cenário).
 4. Acrescente-o ao array de `cenarios.json`. O arquivo é JSON puro: aspas duplas em chaves e textos, sem comentários nem vírgula final. O loader o importa com `import ... with { type: 'json' }` (Node 20.10+ e navegadores recentes).
 5. Rode `npm test`. O validador e os testes de invariante rodam sobre todos os cenários automaticamente.
-6. Adicione um teste específico do invariante em `tests/generators.test.js` (como os dos cenários 1 e 4 a 25).
+6. Adicione um teste específico do invariante em `tests/generators.test.js` (como os dos cenários 1 e 4 a 30).
 
 Para um cenário em que a pessoa **calcula** o valor, siga o passo a passo acima e depois a seção [Cenários de cálculo](#cenários-de-cálculo).
 7. Atualize a documentação (ver [Checklist](#checklist-antes-de-concluir)).
@@ -83,7 +83,7 @@ Para um cenário em que a pessoa **calcula** o valor, siga o passo a passo acima
 | `valor_base` | V da matriz de pontuação (`fisher.md` 3.5). Hoje todos usam 20.000; o nível avançado multiplica por 1,5. |
 | `dados.formato` | Define a formatação de todos os placeholders numéricos. |
 | `tipo` | Opcional. `'calculo'` para um cenário em que a pessoa calcula e informa o valor (ver [Cenários de cálculo](#cenários-de-cálculo)). Ausente é um cenário comum. |
-| `dados.tipo_grafico` | `barras_discretas` para dados inteiros e poucos valores (numerações, notas); `segmentos` para a tabela de taxas por segmento do cenário 21; `tabela_series` para a tabela dos cenários 22, 24 e 25 (ver [Tabela de séries](#tabela-de-séries)); qualquer outro valor vira histograma. |
+| `dados.tipo_grafico` | `barras_discretas` para dados inteiros e poucos valores (numerações, notas); `segmentos` para a tabela de taxas por segmento do cenário 21; `tabela_series` para a tabela dos cenários 22, 24, 25, 28, 29 e 30 (ver [Tabela de séries](#tabela-de-séries)); qualquer outro valor vira histograma. |
 | `dados.descricao_acessivel` | Obrigatória por convenção: é a descrição textual do gráfico (`fisher.md` 5.9). |
 | `impacto` | Variação de reputação por acerto e por erro. Todos os cenários usam `{ reputacao_acerto: 5, reputacao_erro: -10 }`, salvo motivo para variar. |
 
@@ -94,8 +94,8 @@ O jogo sorteia cenários com dificuldade crescente ao longo da partida (`fisher.
 | Valor | Critério | Cenários atuais |
 | --- | --- | --- |
 | 1 | A métrica correta é a mais direta (centro de um conjunto com ou sem um único valor atípico, a categoria mais frequente, ou o máximo quando todos precisam caber) ou o erro é o clássico "correlação não é causa". | 01, 03, 07, 09, 14, 25 |
-| 2 | Exige reconhecer o formato dos dados (cauda longa, bimodal, assimetria à esquerda), ler a definição de um percentil ou pensar em dispersão, ou perceber quem ficou de fora da amostra. | 02, 04, 05, 10, 11, 15, 17, 20, 23 |
-| 3 | Exige comparar dispersão robusta com sensível a outliers, comparar amostras, pesar risco contra média, perceber que o objetivo (um total) muda a métrica, que um total é uma média ponderada ou que um alarme sobre evento raro gera mais falsos positivos que acertos. | 06, 08, 12, 13, 16, 18, 19, 21, 22, 24 |
+| 2 | Exige reconhecer o formato dos dados (cauda longa, bimodal, assimetria à esquerda), ler a definição de um percentil ou pensar em dispersão, ou perceber quem ficou de fora da amostra. | 02, 04, 05, 10, 11, 15, 17, 20, 23, 26, 27, 28, 30 |
+| 3 | Exige comparar dispersão robusta com sensível a outliers, comparar amostras, pesar risco contra média, perceber que o objetivo (um total) muda a métrica, que um total é uma média ponderada ou que um alarme sobre evento raro gera mais falsos positivos que acertos. | 06, 08, 12, 13, 16, 18, 19, 21, 22, 24, 29 |
 
 Mantenha ao menos um cenário em cada nível, senão o início ou o fim da partida perde o efeito (há teste para isso). O peso de sorteio, as progressões (`PROGRESSOES`) e o passo médio do dado estão em `src/engine/config.js`; a lógica, em `src/engine/dificuldade.js`.
 
@@ -196,13 +196,13 @@ Ajuste só os `parametros` e o texto do cenário.
 
 | Gerador | Parâmetros | Invariante | Cenário |
 | --- | --- | --- | --- |
-| `assimetria_direita` | `n`, `base`, `ruido`, `outliers[{valor, qtd}]` | média > 1,5 × mediana e máximo > 10 × mediana | 01 |
+| `assimetria_direita` | `n`, `base`, `ruido`, `outliers[{valor, qtd}]` | média > 1,5 × mediana e máximo > 10 × mediana | 01, 26 |
 | `cauda_longa` | `n`, `base`, `ruido`, `proporcaoCauda`, `caudaMin`, `caudaMax` | P90 > 3 × média | 02, 10 |
 | `categorico_discreto` | `n`, `tamanhoMin`, `pesos[]` | moda destacada, moda ≠ mediana, média não inteira | 03 |
 | `mesma_media_variancia_distinta` | `n`, `media`, `dpA[min,max]`, `dpB[min,max]`, `nomes[2]` | médias iguais (< 0,01) e dp B > 5 × dp A | 04 |
 | `bimodal_polarizado` | `n`, `pesos[5]` | picos em 1 e 5, vale em 3, média central | 05 |
 | `dispersao_outliers` | `n`, `baseMin`, `baseMax`, `outliers[]` | dp > 3 × IQR, mediana ≤ 25, IQR > 0 | 06 |
-| `distribuicao_normal_simetrica` | `n`, `media`, `dp`, `outliers[{valor, qtd}]` (opcional) | sem `outliers`: \|média − mediana\| < 0,15 × dp e \|média − `media`\| < 0,2 × dp; com `outliers`: só eles ficam fora do intervalo dos valores extremos e \|média aparada − `media`\| < 0,2 × dp | 07, 20 |
+| `distribuicao_normal_simetrica` | `n`, `media`, `dp`, `outliers[{valor, qtd}]` (opcional) | sem `outliers`: \|média − mediana\| < 0,15 × dp e \|média − `media`\| < 0,2 × dp; com `outliers`: só eles ficam fora do intervalo dos valores extremos e \|média aparada − `media`\| < 0,2 × dp | 07, 20, 27 |
 | `comparacao_amostral` | `nA`, `mediaA`, `dpA`, `nB`, `mediaB`, `dpB`, `nomes[2]` | dp B > 4 × dp A e média B > média A | 08, 12 |
 | `limite_fisico` | `n`, `media`, `dp` (valores inteiros) | máximo − P95 ≥ 0,25 × dp e máximo > média + 1,5 × dp | 09 |
 | `assimetria_esquerda` | `n`, `base`, `ruido`, `outliers[{valor, qtd}]` | mediana − média > 6 % da mediana e mínimo < metade da mediana | 11 |
@@ -214,8 +214,11 @@ Ajuste só os `parametros` e o texto do cenário.
 | `taxa_base_bayes` | `total_transacoes`, `taxa_fraude`, `precisao_ia` (determinístico) | alarmes falsos > 50 × alarmes verdadeiros e chance real de fraude < 5% | 24 |
 | `correlacao_terceira_variavel` | `meses`, `r_pearson` (correlação alvo entre gasto e vendas) | r(gasto, vendas) ≥ `r_pearson` − 0,03 e r de cada um com a chuva ≥ 0,9 | 25 |
 | `contagens_assimetricas` | `n`, `pesos[]` (contagens 0, 1, 2, ...) | média ≥ 0,2 acima da mediana, a ≥ 0,5 da moda e P90 > 1,5 × média | 16 |
+| `regressao_a_media` | `n`, `k`, `media`, `dpReal`, `dpSorte` | as `k` piores do 1º trimestre sobem ≥ 4%, as `k` melhores caem ≥ 4%, a média geral varia < 2% e as piores seguem abaixo e as melhores acima dela | 28 |
+| `testes_multiplos` | `n`, `alfa` | exatamente um valor-p abaixo de `alfa` e nenhum abaixo de `alfa / n` | 29 |
+| `risco_relativo_absoluto` | `pessoas`, `casos_sem`, `casos_com` (determinístico) | redução relativa ≥ 40% e redução absoluta < 1% das pessoas | 30 |
 
-Os cenários 14, 15 e 18 reaproveitam `assimetria_direita`, `cauda_longa` e `dispersao_outliers` com `n` pequeno.
+Os cenários 14, 15 e 18 reaproveitam `assimetria_direita`, `cauda_longa` e `dispersao_outliers` com `n` pequeno; o 26 usa `assimetria_direita` com 21 comissões e o 27, `distribuicao_normal_simetrica` com 20 notas (um 0 e um 10 nas pontas).
 
 Um invariante recebe também os `parametros` do cenário como segundo argumento (`invariante(series, parametros)`), então pode depender deles (como `amostra_pequena` faz).
 
@@ -225,7 +228,7 @@ Atenção: alguns invariantes têm números fixos do cenário original. Mudar os
 
 #### Tabela de séries
 
-`dados.tipo_grafico: 'tabela_series'` (cenários 22, 24 e 25) mostra uma tabela em que **cada série é uma coluna** e cada posição dos valores, uma linha. Campos de `dados`:
+`dados.tipo_grafico: 'tabela_series'` (cenários 22, 24, 25, 28, 29 e 30) mostra uma tabela em que **cada série é uma coluna** e cada posição dos valores, uma linha. Campos de `dados`:
 
 | Campo | Papel |
 | --- | --- |

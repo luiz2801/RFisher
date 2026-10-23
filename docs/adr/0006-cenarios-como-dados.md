@@ -4,7 +4,7 @@
 
 ## Contexto
 
-O jogo tem 25 cenários de decisão estatística, 41 cartas de evento e as empresas do Mercado. O conteúdo cresce e é ajustado com frequência, e quem escreve enunciados não deveria precisar entender o motor. Também é preciso validar o conteúdo sem executar código de cenário.
+O jogo tem 30 cenários de decisão estatística, 41 cartas de evento e as empresas do Mercado. O conteúdo cresce e é ajustado com frequência, e quem escreve enunciados não deveria precisar entender o motor. Também é preciso validar o conteúdo sem executar código de cenário.
 
 ## Decisão
 

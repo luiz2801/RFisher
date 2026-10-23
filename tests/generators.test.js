@@ -267,6 +267,58 @@ test('cenário 25: anúncios e vendas correlacionam porque ambos seguem a chuva'
   }
 });
 
+test('cenário 26: o corte do bônus (P75) fica na posição 16 de 21 e bem abaixo da média puxada pela comissão isolada', () => {
+  const g = geradorDe('cenario_26_bonus_vendas');
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.equal(v.length, 21);
+    assert.equal(percentil(v, 75), [...v].sort((a, b) => a - b)[15]);
+    assert.ok(media(v) > percentil(v, 75) * 1.3);
+  }
+});
+
+test('cenário 27: sem o 0 e o 10, a média aparada volta ao centro e a média simples fica abaixo', () => {
+  const g = geradorDe('cenario_27_notas_fornecedor');
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.equal(v.length, 20);
+    assert.equal(v.filter((x) => x === 0).length, 1);
+    assert.equal(v.filter((x) => x === 10).length, 1);
+    assert.ok(Math.abs(mediaAparada(v) - 8) < 0.2);
+    assert.ok(media(v) < mediaAparada(v));
+  }
+});
+
+test('cenário 28: as piores equipes sobem, as melhores descem e a rede toda quase não muda, sem intervenção', () => {
+  const g = geradorDe('cenario_28_treinamento_equipes');
+  for (let seed = 1; seed <= 200; seed++) {
+    const [q1, q2] = gerar(g, criarRng(seed)).series.map((s) => s.valores);
+    assert.equal(q1.length, 3);
+    assert.ok(q2[0] > q1[0] && q2[1] < q1[1]);
+    assert.ok(Math.abs(q2[2] - q1[2]) < 0.02 * q1[2]);
+    assert.ok(q2[0] < q2[2] && q2[2] < q2[1], 'as piores ainda ficam abaixo da média e as melhores acima');
+  }
+});
+
+test('cenário 29: de 20 testes a 5%, só um passa, e a correção de Bonferroni (0,0025) não deixa nenhum', () => {
+  const g = geradorDe('cenario_29_vinte_testes');
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.equal(v.length, 20);
+    assert.equal(v.filter((p) => p < 0.05).length, 1);
+    assert.ok(v.every((p) => p > 0.05 / 20 && p < 1));
+  }
+});
+
+test('cenário 30: o curso corta os acidentes pela metade (8 para 4), mas evita só 4 em 2.000 pessoas', () => {
+  const g = geradorDe('cenario_30_curso_seguranca');
+  const [casos, pessoas] = gerar(g, criarRng(1)).series.map((s) => s.valores);
+  assert.deepEqual(casos, [8, 4]);
+  assert.deepEqual(pessoas, [2000, 2000]);
+  assert.equal((casos[0] - casos[1]) / casos[0], 0.5);
+  assert.ok((casos[0] - casos[1]) / pessoas[0] < 0.01);
+});
+
 // ---------- contrato do módulo: tipos, gerador desconhecido e estouro de tentativas ----------
 
 import { tiposDeGerador } from '../src/scenarios/generators.js';

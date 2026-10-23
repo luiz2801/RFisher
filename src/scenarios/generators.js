@@ -344,6 +344,58 @@ const GERADORES = {
       return sobe && geralCai && migrou && antes[1] < antes[0] && depois[1] < depois[0];
     },
   },
+
+  // Regressão à média: o desempenho de cada equipe é talento fixo mais sorte de cada trimestre. As piores do 1º
+  // trimestre sobem no 2º e as melhores descem, sem intervenção alguma; a rede toda quase não muda.
+  // Séries (médias do índice; linhas: piores, melhores, todas as equipes): 1º trimestre e 2º trimestre.
+  regressao_a_media: {
+    gerar(p, rng) {
+      const equipes = Array.from({ length: p.n }, () => {
+        const talento = rng.normal(p.media, p.dpReal);
+        return { q1: talento + rng.normal(0, p.dpSorte), q2: talento + rng.normal(0, p.dpSorte) };
+      });
+      const ordenadas = [...equipes].sort((a, b) => a.q1 - b.q1);
+      const piores = ordenadas.slice(0, p.k);
+      const melhores = ordenadas.slice(-p.k);
+      const medias = (chave) => [piores, melhores, equipes].map((g) => casas(media(g.map((e) => e[chave])), 1));
+      return { series: [{ nome: 'Índice no 1º trimestre', valores: medias('q1') }, { nome: 'Índice no 2º trimestre', valores: medias('q2') }] };
+    },
+    invariante([q1, q2]) {
+      const [pior1, melhor1, todas1] = q1;
+      const [pior2, melhor2, todas2] = q2;
+      return pior2 > pior1 * 1.04 && melhor2 < melhor1 * 0.96 && Math.abs(todas2 - todas1) < 0.02 * todas1 && pior2 < todas2 && melhor2 > todas2;
+    },
+  },
+
+  // Comparações múltiplas: entre `n` testes a 5%, só um passa (valor-p entre 0,02 e 0,048); os demais ficam acima de 0,06.
+  // Com tantos testes, um positivo por acaso é esperado. Série: valor-p de cada teste.
+  testes_multiplos: {
+    gerar(p, rng) {
+      const valores = [casas(rng.entre(0.02, 0.048), 3)];
+      for (let i = 1; i < p.n; i++) valores.push(casas(rng.entre(0.06, 0.98), 3));
+      return { series: [{ nome: 'Valor-p', valores: rng.embaralhar(valores) }] };
+    },
+    invariante([v], p) {
+      return v.length === p.n && v.filter((x) => x < p.alfa).length === 1 && Math.min(...v) > p.alfa / p.n;
+    },
+  },
+
+  // Risco relativo × absoluto: o curso corta os acidentes pela metade (8 → 4), mas num risco inicial de 0,4% isso
+  // evita poucos casos. Determinístico. Séries (linhas: sem e com o curso): acidentes e funcionários por turma.
+  risco_relativo_absoluto: {
+    gerar(p) {
+      return {
+        series: [
+          { nome: 'Acidentes no ano', valores: [p.casos_sem, p.casos_com] },
+          { nome: 'Funcionários na turma', valores: [p.pessoas, p.pessoas] },
+        ],
+      };
+    },
+    invariante([casos, pessoas]) {
+      const [sem, com] = casos;
+      return com >= 1 && (sem - com) / sem >= 0.4 && (sem - com) / pessoas[0] < 0.01;
+    },
+  },
 };
 
 export function tiposDeGerador() {
