@@ -266,3 +266,67 @@ test('cenário 25: anúncios e vendas correlacionam porque ambos seguem a chuva'
     assert.ok(r(ads, vendas) >= 0.92 && r(ads, chuva) >= 0.9 && r(vendas, chuva) >= 0.9);
   }
 });
+
+// ---------- contrato do módulo: tipos, gerador desconhecido e estouro de tentativas ----------
+
+import { tiposDeGerador } from '../src/scenarios/generators.js';
+
+test('tiposDeGerador lista cada gerador uma vez, e todo cenário usa um tipo que existe', () => {
+  const tipos = tiposDeGerador();
+  assert.ok(tipos.length > 0);
+  assert.equal(new Set(tipos).size, tipos.length, 'tipos repetidos');
+  assert.ok(tipos.every((t) => typeof t === 'string' && t.length > 0));
+  assert.ok(tipos.includes('assimetria_direita'));
+  for (const c of todosCenarios()) assert.ok(tipos.includes(c.dados.gerador.tipo), `${c.id}: tipo sem gerador`);
+});
+
+test('todo gerador listado é usado por ao menos um cenário (sem gerador órfão)', () => {
+  const usados = new Set(todosCenarios().map((c) => c.dados.gerador.tipo));
+  for (const t of tiposDeGerador()) assert.ok(usados.has(t), `gerador sem cenário: ${t}`);
+});
+
+test('gerar com tipo desconhecido lança "Gerador desconhecido"', () => {
+  assert.throws(() => gerar({ tipo: 'inexistente', parametros: {} }, criarRng(1)), /Gerador desconhecido: inexistente/);
+});
+
+test('gerar lança erro após 200 tentativas que violam o invariante', () => {
+  // Média negativa: o invariante de `amostra_pequena` (valores > 0) nunca é satisfeito.
+  const impossivel = { tipo: 'amostra_pequena', parametros: { n: 10, media: -100, dp: 1, casas: 0 } };
+  assert.throws(() => gerar(impossivel, criarRng(1)), {
+    message: 'Gerador amostra_pequena não satisfez o invariante em 200 tentativas',
+  });
+});
+
+test('gerar desiste depois de exatamente 200 sorteios (nem mais, nem menos)', () => {
+  const impossivel = { tipo: 'amostra_pequena', parametros: { n: 10, media: -100, dp: 1, casas: 0 } };
+  const rng = criarRng(1);
+  let normais = 0;
+  const original = rng.normal;
+  rng.normal = (...args) => {
+    normais++;
+    return original(...args);
+  };
+  assert.throws(() => gerar(impossivel, rng), /em 200 tentativas/);
+  assert.equal(normais, 200 * 10, '10 sorteios normais por tentativa × 200 tentativas');
+});
+
+test('gerar consome o RNG de forma reprodutível: mesma seed, mesmo estado final', () => {
+  const g = todosCenarios()[0].dados.gerador;
+  const a = gerar(g, criarRng(3));
+  assert.ok(verificarInvariante(g, a.series));
+  // Reproduzível: um segundo gerador com a mesma seed termina no mesmo estado do RNG.
+  const r1 = criarRng(3);
+  const r2 = criarRng(3);
+  gerar(g, r1);
+  gerar(g, r2);
+  assert.equal(r1.estado, r2.estado);
+});
+
+test('verificarInvariante rejeita séries que violam a regra do cenário 01', () => {
+  const g = todosCenarios()[0].dados.gerador;
+  const { series } = gerar(g, criarRng(1));
+  assert.equal(verificarInvariante(g, series), true);
+  // Sem outlier a média não passa de 1,5 × mediana.
+  const semOutlier = [{ ...series[0], valores: Array(30).fill(5000) }];
+  assert.equal(verificarInvariante(g, semOutlier), false);
+});
