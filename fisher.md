@@ -29,7 +29,7 @@
 | **Gênero** | Jogo de tabuleiro digital, simulação de tomada de decisão, educativo |
 | **Plataforma** | Navegador no computador (hot-seat: todos jogam no mesmo computador) |
 | **Jogadores** | 1 a 3 simultâneos, revezando turnos; ou 1 contra um rival controlado pelo computador (modo solo, 3.11) |
-| **Papel do jogador** | CEO de uma empresa |
+| **Papel do jogador** | CEO de uma empresa; cada jogador escolhe no menu o setor (diretoria: Operações, Tecnologia ou Pessoas e Finanças) que representa, o mesmo nos dois modos |
 | **Modo** | Competitivo, cooperativo ou solo (competitivo contra o computador) |
 | **Objetivo** | Ter mais dinheiro ao fim de N turnos |
 | **Métricas** | Dinheiro e reputação |
@@ -561,7 +561,7 @@ Para testar os cenários de cálculo sempre: casa "Sempre Decisão" e cenários 
 
 ### 5.8.2 Tela da partida
 
-O tabuleiro ocupa toda a tela (quadrado, sob um topo fixo). No **centro** ficam a vez, os dados da última rolagem, o botão **Jogar** (no solo, durante a vez do rival, "Ver a jogada do rival"), o placar e o contexto da Fisher S.A. Ao rolar, os dados giram e o peão anda; ao chegar na casa, a etapa correspondente (pergunta da casa de Decisão com tabela, gráfico e alternativas; resultado; evento; balanço; fim de jogo) **aparece sobreposta ao tabuleiro**, num painel modal. Ao continuar, o painel some e o botão Jogar volta para o próximo jogador. Só a apresentação mudou: a máquina de estados e as regras são as mesmas.
+O tabuleiro ocupa toda a tela, sob um topo fixo, num retângulo de proporção aproximada de 4:3 (largura:altura, grade 9x7) em tela deitada e 3:4 (grade 7x9) em tela em pé; a trilha continua com as mesmas 28 casas no perímetro. Todas as casas são quadradas e do mesmo tamanho (os peões ficam sobrepostos ao canto, sem alterar o tamanho) e cada tipo tem uma figura: 📊 Decisão, 🎲 Evento e 🏦 Balanço. No **centro** ficam a vez, os dados da última rolagem, o botão **Jogar** (no solo, durante a vez do rival, "Ver a jogada do rival"), o placar e o contexto da Fisher S.A. Ao rolar, os dados giram e o peão anda; ao chegar na casa, a etapa correspondente (pergunta da casa de Decisão com tabela, gráfico e alternativas; resultado; evento; balanço; fim de jogo) **aparece sobreposta ao tabuleiro**, num painel modal. Ao continuar, o painel some e o botão Jogar volta para o próximo jogador. Só a apresentação mudou: a máquina de estados e as regras são as mesmas.
 
 ### 5.9 Acessibilidade e persistência
 

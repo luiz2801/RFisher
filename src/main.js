@@ -1,10 +1,10 @@
 import { novoJogo, jogadorAtual, ehBot } from './engine/state.js';
 import { reduzir } from './engine/machine.js';
 import { salvar, carregar, limpar } from './storage/persist.js';
-import { viewMenu, QTD_SEMENTES, viewJogo, tabelaTsv } from './ui/views.js';
+import { viewMenu, QTD_SEMENTES, viewJogo, tabelaTsv, posicaoCss } from './ui/views.js';
 import { obterCenario, todosCenarios } from './scenarios/loader.js';
 import { MAX_JOGADORES, PERFIS_BOT } from './engine/config.js';
-import { NUM_CASAS, coordenadas } from './engine/board.js';
+import { NUM_CASAS } from './engine/board.js';
 import { ehCalculo } from './engine/calculo.js';
 import { dadoHtml } from './ui/components/dado.js';
 import { lerNumero } from './stats/format.js';
@@ -48,13 +48,26 @@ function lerTeste(dados) {
   return { casa: ['decisao', 'evento', 'balanco'].includes(casa) ? casa : null, cenarios };
 }
 
+// Setores repetidos entre os jogadores não valem: cada setor vale para um jogador só (no cooperativo, com 3 jogadores).
+function setoresRepetidos(form) {
+  const modo = form.elements.modo.value;
+  const n = Number(form.elements.n.value);
+  if (modo === 'solo' || (modo === 'cooperativo' && n !== 3)) return false;
+  const escolhas = Array.from({ length: n }, (_, i) => form.elements[`diretoria_${i}`].value);
+  return new Set(escolhas).size < n;
+}
+
 function iniciar(form) {
+  const erro = form.querySelector('[data-erro-setor]');
+  erro.hidden = !setoresRepetidos(form);
+  if (!erro.hidden) return;
   const dados = new FormData(form);
   const solo = dados.get('modo') === 'solo';
   const n = solo ? 1 : Math.min(MAX_JOGADORES, Math.max(1, Number(dados.get('n'))));
   const jogadores = Array.from({ length: n }, (_, i) => ({
     nome: String(dados.get(`nome_${i}`)).trim() || `Jogador ${i + 1}`,
     nivel: dados.get(`nivel_${i}`) === 'avancado' ? 'avancado' : 'iniciante',
+    diretoria: String(dados.get(`diretoria_${i}`)),
   }));
   // Solo é o competitivo contra um rival do computador, no mesmo nível da pessoa (mesmo valor das casas).
   if (solo) {
@@ -116,9 +129,7 @@ function andarPeao(jogador, posicaoInicial, passos) {
     let passo = 0;
     const passar = () => {
       const indice = (posicaoInicial + passo) % NUM_CASAS;
-      const { linha, coluna } = coordenadas(indice);
-      fantasma.style.gridRow = String(linha);
-      fantasma.style.gridColumn = String(coluna);
+      fantasma.style.cssText = posicaoCss(indice);
       fantasma.classList.remove('peao-fantasma');
       void fantasma.offsetWidth; // reflow para reiniciar a animação de salto
       fantasma.classList.add('peao-fantasma');
@@ -249,6 +260,20 @@ function informarValor(form) {
   despachar({ tipo: 'VALOR', valor });
 }
 
+// No cooperativo com 2 jogadores só o primeiro escolhe o setor (o segundo fica com os demais) e com 1 acumula todos.
+function ajustarCamposSetor(form) {
+  const modo = form.elements.modo.value;
+  const n = modo === 'solo' ? 1 : Number(form.elements.n.value);
+  const coop = modo === 'cooperativo';
+  form.querySelectorAll('fieldset[data-jogador]').forEach((f) => {
+    const i = Number(f.dataset.jogador);
+    f.hidden = i >= n;
+    f.querySelector('[data-campo="diretoria"]').hidden = !coop || n === 1 || (n === 2 && i === 1);
+    f.querySelector('[data-campo="diretoria-resto"]').hidden = !coop || n !== 2 || i !== 1;
+  });
+  form.querySelector('[data-erro-setor]').hidden = true;
+}
+
 // No solo só a pessoa preenche o cadastro; o número de CEOs dá lugar à escolha do rival.
 app.addEventListener('change', (ev) => {
   if (ev.target.name === 'operacao') {
@@ -257,15 +282,17 @@ app.addEventListener('change', (ev) => {
     form.querySelector('[data-resultado]').textContent = '';
     return;
   }
-  if (ev.target.name !== 'n' && ev.target.name !== 'modo') return;
+  const nome = ev.target.name;
+  if (nome?.startsWith('diretoria_')) {
+    ev.target.form.querySelector('[data-erro-setor]').hidden = true;
+    return;
+  }
+  if (nome !== 'n' && nome !== 'modo') return;
   const form = ev.target.form;
   const solo = form.elements.modo.value === 'solo';
-  const n = solo ? 1 : Number(form.elements.n.value);
   form.querySelector('[data-campo="n"]').hidden = solo;
   form.querySelector('[data-campo="bot"]').hidden = !solo;
-  app.querySelectorAll('fieldset[data-jogador]').forEach((f) => {
-    f.hidden = Number(f.dataset.jogador) >= n;
-  });
+  ajustarCamposSetor(form);
 });
 
 render();

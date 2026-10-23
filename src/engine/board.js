@@ -1,4 +1,4 @@
-// Trilha expandida de 28 casas no perímetro de uma grade 8x8.
+// Trilha expandida de 28 casas no perímetro de uma grade 9x7 (ou 7x9 em tela em pé).
 export const CASAS = [
   'balanco', 'decisao', 'decisao', 'evento', 'decisao', 'decisao', 'evento',
   'decisao', 'decisao', 'evento', 'decisao', 'decisao', 'evento', 'decisao',
@@ -14,11 +14,12 @@ export function avancar(posicao, passos) {
   return { posicao: total % NUM_CASAS, passouInicio: total >= NUM_CASAS };
 }
 
-// Trilha desenhada no perímetro de uma grade 8x8 (28 células).
-export function coordenadas(i, tamanhoGrade = 8) {
-  const N = tamanhoGrade;
-  if (i < N) return { linha: 1, coluna: i + 1 };
-  if (i < 2 * N - 2) return { linha: i - (N - 2), coluna: N };
-  if (i < 3 * N - 2) return { linha: N, coluna: 3 * N - 2 - i };
-  return { linha: 4 * N - 3 - i, coluna: 1 };
+// Trilha desenhada no perímetro de uma grade de células quadradas (28 células em 9x7 ou 7x9).
+export function coordenadas(i, colunas = 9, linhas = 7) {
+  const C = colunas;
+  const L = linhas;
+  if (i < C) return { linha: 1, coluna: i + 1 };
+  if (i < C + L - 2) return { linha: i - C + 2, coluna: C };
+  if (i < 2 * C + L - 2) return { linha: L, coluna: 2 * C + L - 2 - i };
+  return { linha: 2 * C + 2 * L - 3 - i, coluna: 1 };
 }

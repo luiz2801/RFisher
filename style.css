@@ -188,11 +188,36 @@ select {
 
 .tabuleiro {
   container-type: size;
-  width: min(100cqw, 100cqh);
-  aspect-ratio: 1;
+  width: min(100cqw, 128.57cqh);
+  aspect-ratio: 9 / 7;
   display: grid;
-  grid-template: repeat(8, 1fr) / repeat(8, 1fr);
+  grid-template: repeat(7, minmax(0, 1fr)) / repeat(9, minmax(0, 1fr));
   gap: 3px;
+}
+
+/* Casas quadradas: grade 9x7 (≈4:3) em tela deitada e 7x9 (≈3:4) em tela em pé, com a mesma trilha de 28 casas. */
+.casa,
+.peao-fantasma {
+  grid-row: var(--l);
+  grid-column: var(--c);
+}
+
+@media (orientation: portrait) {
+  .tabuleiro {
+    width: min(100cqw, 77.78cqh);
+    aspect-ratio: 7 / 9;
+    grid-template: repeat(9, minmax(0, 1fr)) / repeat(7, minmax(0, 1fr));
+  }
+
+  .casa,
+  .peao-fantasma {
+    grid-row: var(--lp);
+    grid-column: var(--cp);
+  }
+
+  .centro {
+    grid-area: 2 / 2 / 9 / 7;
+  }
 }
 
 .casa {
@@ -200,6 +225,9 @@ select {
   border: 1px solid var(--borda);
   border-radius: 6px;
   padding: 2px 2px;
+  position: relative;
+  overflow: hidden;
+  align-items: center;
   display: flex;
   flex-direction: column;
   font-size: clamp(.6rem, 1.7cqw, 1.1rem);
@@ -208,8 +236,15 @@ select {
 }
 
 .casa .num {
+  align-self: flex-start;
   color: var(--suave);
   font-size: .92em;
+}
+
+.casa .figura {
+  font-size: clamp(.9rem, 3.4cqw, 2.2rem);
+  line-height: 1;
+  margin: auto 0;
 }
 
 .casa .tipo {
@@ -232,10 +267,13 @@ select {
 }
 
 .peoes {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 2px;
-  margin-top: auto;
 }
 
 .peao {
@@ -289,7 +327,7 @@ select {
 }
 
 .centro {
-  grid-area: 2 / 2 / 8 / 8;
+  grid-area: 2 / 2 / 7 / 9;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -697,7 +735,7 @@ td {
 }
 
 .resultado,
-.evento {
+.painel .evento {
   border: 2px solid var(--borda);
   border-radius: 10px;
   padding: .5rem 1rem;
@@ -705,12 +743,12 @@ td {
 }
 
 .resultado.sucesso,
-.evento.bom {
+.painel .evento.bom {
   border-color: var(--bom);
 }
 
 .resultado.erro_total,
-.evento.ruim {
+.painel .evento.ruim {
   border-color: var(--ruim);
 }
 
@@ -737,15 +775,15 @@ td {
   padding-left: 1.25rem;
 }
 
-.balanco {
+table.balanco {
   width: 100%;
 }
 
-.balanco td:last-child {
+table.balanco td:last-child {
   text-align: right;
 }
 
-.balanco .total td {
+table.balanco .total td {
   font-weight: 700;
 }
 

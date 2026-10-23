@@ -26,8 +26,8 @@ Cada cenário e evento ganha um campo `setor`.
 | **Tecnologia** (T.I.) | T.I. e Dados, Produto | 05 Avaliações, 08 Teste A/B |
 | **Pessoas e Finanças** (RH) | RH, Atendimento, Financeiro | 01 Salários, 06 SAC; eventos de auditoria e eixo truncado |
 
-- **3 jogadores:** cada um assume uma diretoria, e todo setor tem um responsável.
-- **2 jogadores:** as 3 diretorias são divididas entre os dois.
+- **3 jogadores:** cada um escolhe a sua diretoria no menu (sem repetir), e todo setor tem um responsável.
+- **2 jogadores:** o primeiro escolhe uma diretoria no menu e o segundo fica com as outras duas.
 - **1 jogador:** acumula todas as diretorias e joga sem consultoria.
 
 **Lacunas a resolver:**

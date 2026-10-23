@@ -1,12 +1,12 @@
 import { criarRng } from './rng.js';
 import { DINHEIRO_INICIAL, REPUTACAO_INICIAL, TURNOS_PADRAO, PASSO_MEDIO_DADO, PERFIS_BOT } from './config.js';
-import { atribuirPapeis } from './papeis.js';
+import { atribuirPapeis, DIRETORIAS } from './papeis.js';
 
 // `teste` (opcional) só serve para depurar: `{ casa, cenarios }` força a casa em que o peão cai e restringe o baralho.
 export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, seed = Date.now(), modo = 'competitivo', teste = null, soConceitual = false }) {
   const semente = seed >>> 0;
   const cooperativo = modo === 'cooperativo';
-  const papeis = atribuirPapeis(jogadores.length);
+  const papeis = atribuirPapeis(jogadores.length, jogadores.map((j) => j.diretoria));
   return {
     versao: 1,
     modo: cooperativo ? 'cooperativo' : 'competitivo',
@@ -31,6 +31,8 @@ export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, seed = Date.now(),
       historico: [],
       // Perfil do rival controlado pelo computador (modo solo), ou null para uma pessoa.
       bot: Object.hasOwn(PERFIS_BOT, j.bot ?? '') ? j.bot : null,
+      // Setor (diretoria) escolhido no menu. No competitivo é só o cargo; no cooperativo vale `papeis`. Ausente em saves antigos.
+      diretoria: Object.hasOwn(DIRETORIAS, j.diretoria ?? '') ? j.diretoria : null,
       papeis: cooperativo ? papeis[id] : [],
       merito: 0,
       habilidadeUsos: 0,

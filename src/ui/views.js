@@ -18,27 +18,8 @@ import { ehCalculo, margemPct, notaDeMetodo, OPERACOES_CALCULADORA } from '../en
 // Sementes fixas oferecidas no menu (1 a QTD_SEMENTES); vazio = sorteada.
 export const QTD_SEMENTES = 20;
 const NOME_NIVEL = { iniciante: 'Iniciante', avancado: 'Avançado' };
+const FIGURA_CASA = { decisao: '📊', evento: '🎲', balanco: '🏦' };
 const ROTULO_BOT = { facil: 'fácil', medio: 'médio', dificil: 'difícil' };
-export const DIVISOES = [
-  {
-    cargo: 'CEO de Produtos & Tecnologia',
-    nome: 'Divisão de Produtos & Tecnologia',
-    foco: 'Testes A/B, engajamento digital e algoritmos',
-    icone: '💻',
-  },
-  {
-    cargo: 'CEO de Operações & Logística',
-    nome: 'Divisão de Operações & Logística',
-    foco: 'SLA de entregas, giro de estoque e linhas fabris',
-    icone: '📦',
-  },
-  {
-    cargo: 'CEO de Estratégia & Mercado',
-    nome: 'Divisão de Estratégia & Mercado',
-    foco: 'Equidade salarial, suporte ao cliente e valor de marca',
-    icone: '📈',
-  },
-];
 const TITULO_RESULTADO = {
   sucesso: '✔ Sucesso absoluto',
   sorte: '△ Acertou a métrica, mas não soube justificar',
@@ -61,16 +42,15 @@ const MSG_JUSTIFICATIVA = {
 
 export function viewMenu({ salvo } = {}) {
   const linhas = Array.from({ length: MAX_JOGADORES }, (_, i) => {
-    const div = DIVISOES[i % DIVISOES.length];
+    const opcoes = Object.entries(DIRETORIAS)
+      .map(([id, d], k) => `<option value="${id}" ${k === i % 3 ? 'selected' : ''}>${d.icone} ${esc(d.nome)}</option>`)
+      .join('');
     return `<fieldset data-jogador="${i}" ${i >= 2 ? 'hidden' : ''} class="card-jogador-config">
-      <legend class="legend-jogador">Jogador ${i + 1} · ${esc(div.cargo)}</legend>
-      <div class="divisao-info">
-        <span class="divisao-icone" aria-hidden="true">${div.icone}</span>
-        <div>
-          <div class="divisao-nome">${esc(div.nome)}</div>
-          <div class="divisao-foco">${esc(div.foco)}</div>
-        </div>
-      </div>
+      <legend class="legend-jogador">Jogador ${i + 1}</legend>
+      <label data-campo="diretoria">Setor que representa
+        <select name="diretoria_${i}">${opcoes}</select>
+      </label>
+      <p class="ajuda" data-campo="diretoria-resto" hidden>Fica com os setores que sobrarem.</p>
       <label>Nome do(a) CEO <input name="nome_${i}" value="Jogador ${i + 1}" maxlength="20" required></label>
       <label>Perfil Executivo
         <select name="nivel_${i}">
@@ -86,7 +66,7 @@ export function viewMenu({ salvo } = {}) {
     ['🧾', 'Justificativa técnica', 'Acerto sem fundamentação é sorte. Convença os acionistas com o porquê estatístico da sua decisão.'],
     ['🎯', 'Aposta de confiança', 'Certeza absoluta alavanca ganhos, mas cobra caro em erros. Avalie o risco com responsabilidade.'],
   ];
-  const cartoesDivisoes = DIVISOES.map(
+  const cartoesDivisoes = Object.values(DIRETORIAS).map(
     (d) => `<li><span class="divisao-icone" aria-hidden="true">${d.icone}</span>
       <div><div class="divisao-nome">${esc(d.nome)}</div><div class="divisao-foco">${esc(d.foco)}</div></div></li>`,
   ).join('');
@@ -205,6 +185,7 @@ export function viewMenu({ salvo } = {}) {
           </select>
         </label>
       </details>
+      <p class="erro-campo" data-erro-setor role="alert" hidden>Dois jogadores escolheram o mesmo setor. Cada um precisa de um setor diferente.</p>
       <button class="primario" type="submit">Iniciar Disputa Corporativa</button>
     </form>
   </main>`;
@@ -213,10 +194,12 @@ export function viewMenu({ salvo } = {}) {
 // ---------- jogo ----------
 
 const nomesPapeis = (j) => j.papeis.map((id) => DIRETORIAS[id].nome).join(' + ');
-// Cargo exibido: a(s) diretoria(s) no cooperativo, a divisão no competitivo, o perfil no rival do solo.
+// Cargo exibido: a(s) diretoria(s) no cooperativo, o setor escolhido no competitivo, o perfil no rival do solo.
 const cargoDe = (e, j) => {
   if (ehBot(j)) return `🤖 computador, ${ROTULO_BOT[j.bot]}`;
-  return ehCooperativo(e) ? nomesPapeis(j) : DIVISOES[j.id % DIVISOES.length].cargo;
+  if (ehCooperativo(e)) return nomesPapeis(j);
+  const ids = Object.keys(DIRETORIAS);
+  return DIRETORIAS[j.diretoria ?? ids[j.id % ids.length]].cargo;
 };
 // Textos da decisão em segunda pessoa para quem joga, em terceira para o rival do computador.
 const autor = (e) =>
@@ -239,15 +222,22 @@ export function viewJogo(e) {
     <div class="jogo">${tabuleiro(e)}</div>${sobreposto}`;
 }
 
+// Posição da casa nas duas orientações (grade 9x7 deitada, 7x9 em pé); o CSS escolhe pela tela.
+export function posicaoCss(i) {
+  const d = coordenadas(i, 9, 7);
+  const p = coordenadas(i, 7, 9);
+  return `--l:${d.linha};--c:${d.coluna};--lp:${p.linha};--cp:${p.coluna}`;
+}
+
 function tabuleiro(e) {
   const casas = CASAS.map((tipo, i) => {
-    const { linha, coluna } = coordenadas(i);
+    const pos = posicaoCss(i);
     const peoes = e.jogadores
       .filter((j) => j.posicao === i)
       .map((j) => `<span class="peao p${j.id}" title="${esc(j.nome)}">${esc(j.nome.trim().charAt(0).toUpperCase() || '?')}</span>`)
       .join('');
-    return `<div class="casa ${tipo}" style="grid-row:${linha};grid-column:${coluna}">
-      <span class="num">${i + 1}</span><span class="tipo">${ROTULO_CASA[tipo]}</span><span class="peoes">${peoes}</span>
+    return `<div class="casa ${tipo}" style="${pos}">
+      <span class="num">${i + 1}</span><span class="figura" aria-hidden="true">${FIGURA_CASA[tipo]}</span><span class="tipo">${ROTULO_CASA[tipo]}</span><span class="peoes">${peoes}</span>
     </div>`;
   }).join('');
   const vez = e.fase === 'FIM_DE_JOGO' ? 'Fim de jogo' : `Vez de ${esc(jogadorAtual(e).nome)}`;

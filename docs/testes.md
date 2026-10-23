@@ -32,7 +32,7 @@ Funções puras do motor, testadas com valores calculados à mão a partir de `f
 - **Variação de reputação** por categoria, vinda de `impacto` do cenário.
 - **`justificativaConta`**: `parcial` conta como errada enquanto `PARCIAL_CONTA_COMO_CORRETA` for `false`. Deve existir um teste para cada valor da constante (decisão em aberto no README).
 - **`receitaBalanco`**: receita nos três pontos de reputação.
-- **Tabuleiro** (`board.js`): `avancar` com e sem volta completa (`passouInicio`), em especial a posição 27 + dado e o limite exato `total === NUM_CASAS`; `coordenadas` devolve 28 células distintas no perímetro da grade 8x8; contagem de casas (1 balanço, 18 decisão, 9 evento) bate com o README.
+- **Tabuleiro** (`board.js`): `avancar` com e sem volta completa (`passouInicio`), em especial a posição 27 + dado e o limite exato `total === NUM_CASAS`; `coordenadas` devolve 28 células distintas no perímetro da grade 9x7 (e da 7x9); contagem de casas (1 balanço, 18 decisão, 9 evento) bate com o README.
 - **Papéis** (`papeis.js`): `atribuirPapeis` para 1, 2 e 3 jogadores cobre as três diretorias sem repetição; todo setor de `SETORES` pertence a exatamente uma diretoria; `diretoriaDoSetor` para setor inexistente.
 - **Estado inicial** (`state.js`): `novoJogo` nos dois modos (empresa só no cooperativo, papéis só no cooperativo); `classificacao` e `vencedores` com empate de dinheiro e de reputação; `classificarEmpresa` em cada limite de faixa (exatamente 175 %, 125 %, 50 % do caixa inicial e reputação 75, 60).
 
