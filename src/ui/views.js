@@ -159,18 +159,7 @@ export function viewMenu({ salvo } = {}) {
       </label>
       <fieldset class="apoio">
         <legend>Material de apoio</legend>
-        <p>Alguns cenários trazem uma tabela de dados e pedem que você faça a conta (mediana, percentil, desvio padrão, quartis). Para esses, o ideal é ter à mão:</p>
-        <ul>
-          <li>a <strong>calculadora de estatísticas</strong> do próprio jogo (média, mediana, quartis, IQR, percentil, desvio padrão), disponível na etapa do valor; ou</li>
-          <li>uma <strong>planilha</strong> (Excel, Google Planilhas ou LibreOffice): o botão "Copiar tabela" cola os dados direto nela, e as funções <code>MED</code>, <code>PERCENTIL.INC</code>, <code>DESVPAD.A</code> e <code>QUARTIL.INC</code> conferem o resultado; ou</li>
-          <li><strong>lápis e papel</strong> (com calculadora), para ordenar os registros e contar posições.</li>
-        </ul>
-        <label>Como você quer jogar?
-          <select name="apoio">
-            <option value="completo">Incluir os cenários de cálculo</option>
-            <option value="conceitual">Não tenho: só questões conceituais (sem contas)</option>
-          </select>
-        </label>
+        <p>Alguns cenários trazem uma tabela de dados e pedem que você faça a conta (mediana, percentil, desvio padrão, quartis). Para esses, o jogo oferece uma <strong>calculadora de estatísticas</strong> embutida (média, mediana, moda, quartis, IQR, percentil, desvio padrão), disponível na etapa do valor.</p>
       </fieldset>
       <details class="atalhos-teste">
         <summary>Atalhos de teste</summary>
@@ -407,7 +396,7 @@ const botaoCopiar = `<p class="copiar-tabela"><button type="button" class="discr
 // Calculadora embutida da etapa do valor: o main.js calcula ao enviar o formulário (data-form="calculadora").
 function calculadoraHtml() {
   const opcoes = OPERACOES_CALCULADORA.map((o) => `<option value="${o.id}"${o.pedeP ? ' data-pede-p' : ''}>${esc(o.rotulo)}</option>`).join('');
-  return `<details class="calculadora"><summary>🧮 Calculadora de estatísticas (usa os dados da tabela)</summary>
+  return `<details class="calculadora" open><summary>🧮 Calculadora de estatísticas (usa os dados da tabela)</summary>
     <form data-form="calculadora" novalidate>
       <label>Operação <select name="operacao">${opcoes}</select></label>
       <label data-campo="p" hidden>P (0 a 100) <input name="p" type="text" inputmode="decimal" autocomplete="off" placeholder="ex.: 90"></label>
@@ -417,6 +406,9 @@ function calculadoraHtml() {
     <p class="ajuda">Ela só faz a operação sobre os dados: escolher a métrica certa e arredondar o valor continuam com você. O resultado não é preenchido sozinho no campo abaixo.</p>
   </details>`;
 }
+
+// Destaque acima da tabela e dos gráficos na etapa do valor; a calculadora em si fica junto do campo do valor.
+const AVISO_CALCULADORA = '<p class="destaque-calculadora" role="note">🧮 <strong>Você pode usar a calculadora do jogo.</strong> Ela faz média, mediana, moda, quartis, percentil e desvio padrão sobre os dados abaixo. Ela fica logo abaixo dos dados, junto do campo do valor.</p>';
 
 // Dados de um cenário de cálculo em tabela: os registros na ordem em que chegaram, ou valor e frequência.
 function tabelaDados(def, c) {
@@ -512,6 +504,7 @@ function tabelaSeries(def, c, revelar) {
       const {def, html} = blocoCenario(e);
       const calculo = ehCalculo(def);
       let passo;
+      let avisoCalculadora = '';
 
       // Normalmente o main.js já despacha DECIDIR_BOT; o botão cobre uma partida retomada nesta fase.
       if (ehBot(j)) {
@@ -528,6 +521,7 @@ function tabelaSeries(def, c, revelar) {
         .map((o) => `<button class="opcao" data-acao="METRICA" data-valor="${o.id}">${esc(preencher(o.texto, c.vars))}</button>`)
         .join('')}</div>`;
   } else if (e.fase === 'INFORMAR_VALOR') {
+    avisoCalculadora = AVISO_CALCULADORA;
     const escolhida = def.opcoes.find((o) => o.id === c.metricaId);
     const un = unidade(def.dados.formato);
     const nota = notaDeMetodo(escolhida.chave);
@@ -570,7 +564,8 @@ function tabelaSeries(def, c, revelar) {
       <p class="ajuda">Aposte: quanto maior a confiança, maior o ganho e a perda.</p>
       <div class="opcoes">${Object.keys(CONFIANCA).map(linha).join('')}</div>`;
   }
-      return `${bannerBalanco(e)}${html}${passo}`;
+      const fimContexto = html.indexOf('</p>') + 4; // título + contexto
+      return `${bannerBalanco(e)}${html.slice(0, fimContexto)}${avisoCalculadora}${html.slice(fimContexto)}${passo}`;
 }
 
       function viewResultado(e) {

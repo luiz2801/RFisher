@@ -85,7 +85,6 @@ function iniciar(form) {
     reputacaoInicial: lerInteiro(dados.get('reputacao')),
     modo: dados.get('modo') === 'cooperativo' ? 'cooperativo' : 'competitivo',
     seed: Number.isInteger(seedEscolhida) && seedEscolhida >= 1 && seedEscolhida <= QTD_SEMENTES ? seedEscolhida : Math.floor(Math.random() * 2 ** 32),
-    soConceitual: dados.get('apoio') === 'conceitual',
     teste: lerTeste(dados),
   });
   salvar(estado);

@@ -361,7 +361,11 @@ test('a calculadora embutida aparece só na etapa do valor e calcula como a conf
   assert.doesNotMatch(viewJogo(e), /data-form="calculadora"/, 'não aparece na escolha da métrica');
   e.fase = 'INFORMAR_VALOR';
   e.cenarioAtual.metricaId = obterCenario(e.cenarioAtual.id).opcoes[0].id;
-  assert.match(viewJogo(e), /data-form="calculadora"/);
+  const tela = viewJogo(e);
+  assert.match(tela, /data-form="calculadora"/);
+  assert.ok(tela.indexOf('destaque-calculadora') > 0 && tela.indexOf('destaque-calculadora') < tela.indexOf('tabela-dados'), 'aviso em destaque antes da tabela e dos gráficos');
+  assert.doesNotMatch(viewJogo({ ...e, fase: 'ESCOLHER_METRICA' }), /destaque-calculadora/);
+  assert.equal([...tela.matchAll(/data-pede-p/g)].length, 1, 'só o percentil pede o P');
 
   const v = e.cenarioAtual.series[0].valores;
   const num = e.cenarioAtual.num;
