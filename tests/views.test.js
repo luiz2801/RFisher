@@ -438,5 +438,5 @@ test('menu: tela inicial é a introdução e a configuração fica num assistent
   assert.match(html, /data-acao="ABRIR_CONFIG"/);
   assert.match(html, /data-nav="anterior"/);
   assert.match(html, /data-nav="proximo"/);
-  assert.equal((html.match(/data-etapa/g) ?? []).length, 12);
+  assert.equal((html.match(/data-etapa/g) ?? []).length, 13);
 });

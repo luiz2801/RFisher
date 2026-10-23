@@ -68,6 +68,14 @@ export const BOT_LIMIARES_CONFIANCA = [0.3, 0.45, 0.6, 0.75]; // certeza interna
 // Dificuldade crescente: cenários têm dificuldade de 1 a DIFICULDADE_MAX e o sorteio favorece
 // a que corresponde ao progresso do jogador na trilha (docs/criar-cenarios.md).
 export const DIFICULDADE_MAX = 3;
+// Ritmo da progressão, escolhido no menu: expoente aplicado ao progresso (1 = linear; >1 mantém os cenários
+// fáceis por mais tempo e acelera só no fim).
+export const PROGRESSOES = {
+  facil: { nome: 'Gradual', expoente: 2.6 },
+  tradicional: { nome: 'Tradicional', expoente: 2 },
+  dificil: { nome: 'Acelerada', expoente: 1 },
+};
+export const PROGRESSAO_PADRAO = 'tradicional';
 export const PASSO_MEDIO_DADO = 7; // casas por jogada (soma de 2d6), para estimar o percurso total da partida
 export const SELETIVIDADE_DIFICULDADE = 4; // peso do cenário = 1 / (1 + k × distância²) até a dificuldade-alvo
 

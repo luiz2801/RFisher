@@ -89,6 +89,7 @@ function iniciar(form) {
     turnos: lerInteiro(dados.get('turnos')),
     dinheiroInicial: lerInteiro(dados.get('dinheiro')),
     reputacaoInicial: lerInteiro(dados.get('reputacao')),
+    progressao: String(dados.get('progressao')),
     modo: dados.get('modo') === 'cooperativo' ? 'cooperativo' : 'competitivo',
     seed: Number.isInteger(seedEscolhida) && seedEscolhida >= 1 && seedEscolhida <= QTD_SEMENTES ? seedEscolhida : Math.floor(Math.random() * 2 ** 32),
     teste: lerTeste(dados),

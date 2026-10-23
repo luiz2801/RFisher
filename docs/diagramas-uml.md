@@ -38,6 +38,7 @@ classDiagram
         +Resultado resultado
         +Teste teste
         +boolean soConceitual
+        +string progressao
     }
 
     class Jogador {
@@ -227,9 +228,9 @@ classDiagram
     }
 
     class DificuldadeService {
-        +dificuldadeAlvo(progresso) number
-        +pesoDificuldade(dificuldade, progresso) number
-        +escolherPorDificuldade(candidatos, progresso, rng) string
+        +dificuldadeAlvo(progresso, progressao) number
+        +pesoDificuldade(dificuldade, progresso, progressao) number
+        +escolherPorDificuldade(candidatos, progresso, rng, progressao) string
     }
 
     class ScoringEngine {
@@ -525,7 +526,7 @@ graph TD
 | **`src/engine/bot.js`** | Rival do modo solo: acerta métrica e justificativa com a probabilidade do perfil (menor nos cenários difíceis), escolhe distratores ao errar e deriva a confiança de uma certeza interna ruidosa. Perfis em `config.js`, calibração em `scripts/simular-bot.mjs` (`fisher.md` 3.11). |
 | **`src/engine/investimentos.js`** | Investimentos do Mercado (`fisher.md` 3.14): porte da empresa pela reputação (`porteDaReputacao`), oferta sem repetir no ciclo e com a chance de sucesso sorteada em torno da do catálogo (`sortearOferta`), retorno com a penalidade da consultoria (`ganhoComConsultoria`), valor esperado, sorteio do desfecho e crédito de cada aporte (`liquidar`, `liquidarTodos`) e o total em custódia. A máquina o chama ao cair no Mercado, no Balanço e no fim da partida; as empresas ficam em `scenarios/content/investimentos.js`. |
 | **`src/engine/machine.js` (Eventos)** | Casa de Evento (`fisher.md` 3.15): `sacarMao` tira uma carta de cada tipo (`boa`, `ruim`, `troll`) do `baralhoEventos`, que não repete carta dentro do ciclo de cada tipo, e as embaralha; `PARTICIPAR` põe as cartas na mesa, `ESCOLHER_CARTA` registra a primeira escolha e revela uma das outras, nunca a boa (`cartaParaRevelar`, que só usa o rng da partida quando a escolhida é a boa), `MANTER` ou `TROCAR` aplicam o efeito da carta final (`revelarCarta`, com o amortecimento do cooperativo e a crise de imagem) e `RECUSAR` passa a vez. O rival do solo passa sem participar. As cartas ficam em `scenarios/content/eventos.js`. |
-| **`src/engine/dificuldade.js`** | Dificuldade-alvo a partir do progresso do jogador e sorteio ponderado de cenários do baralho. |
+| **`src/engine/dificuldade.js`** | Dificuldade-alvo a partir do progresso do jogador e da progressão escolhida no menu, e sorteio ponderado de cenários do baralho. |
 | **`src/engine/rng.js`** | Gerador pseudo-aleatório determinístico baseado no algoritmo `mulberry32` com estado serializável em 32-bits. |
 | **`src/engine/desempenho.js`** | Perfil de desempenho do jogador a partir do histórico: domínio e diagnóstico por conceito, pontos fortes, deficiências, equívocos recorrentes e calibração da certeza; e o relatório de fim de jogo (`relatorioDesempenho`): acertos e erros, assuntos que mais e menos domina e sugestões de estudo com os materiais de `content/materiais.js` (`fisher.md` 4.6). |
 | **`src/engine/calculo.js`** | Cenários de cálculo (`fisher.md` 4.7): reconhece o tipo, avalia o valor informado contra o valor exato da métrica escolhida dentro de uma margem relativa (5% abaixo de 100, 2% a partir de 100) e fornece as notas de método (percentil linear, desvio padrão amostral) e as operações da calculadora embutida na etapa do valor (`calcularOperacao`, que não altera o estado). |
