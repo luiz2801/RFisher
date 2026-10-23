@@ -1,7 +1,12 @@
-// Cartas de evento: sorte ou revés com mini-lição. Efeitos fixos (não multiplicados pela reputação).
+// Cartas de evento (fisher.md 3.15). Cada casa de Evento oferece três cartas viradas, uma de cada tipo, e a pessoa
+// escolhe uma: `boa` (oportunidade), `ruim` (revés) e `troll` (vexame, com graça). Efeitos fixos (não multiplicados
+// pela reputação). `licao` é obrigatória nas boas e ruins e opcional nas trolls.
+export const TIPOS_CARTA = ['boa', 'ruim', 'troll'];
+
 export const EVENTOS = [
   {
     id: 'eixo_truncado',
+    tipo: 'ruim',
     setor: 'dados',
     titulo: 'O gráfico que enganou',
     texto: 'Um fornecedor mostrou um gráfico em que o preço "despencou". O eixo vertical começava em 95, e a queda real foi de 2%. Você fechou o contrato mesmo assim.',
@@ -11,6 +16,7 @@ export const EVENTOS = [
   },
   {
     id: 'correlacao',
+    tipo: 'ruim',
     setor: 'rh',
     titulo: 'Mais gente, mais vendas?',
     texto: 'Você notou que as lojas com mais funcionários vendem mais e contratou 20 pessoas para a loja pequena. As vendas não mudaram: as lojas grandes é que precisam de mais gente.',
@@ -20,6 +26,7 @@ export const EVENTOS = [
   },
   {
     id: 'amostra_pequena',
+    tipo: 'ruim',
     setor: 'produto',
     titulo: 'Pesquisa com 5 clientes',
     texto: 'Uma pesquisa com 5 clientes disse que 100% aprovam o novo produto. Você lançou em larga escala, e uma pesquisa com 500 clientes mostrou só 62% de aprovação.',
@@ -29,6 +36,7 @@ export const EVENTOS = [
   },
   {
     id: 'taxa_base',
+    tipo: 'ruim',
     setor: 'dados',
     titulo: 'O antifraude "que acerta 99%"',
     texto: 'Seu sistema antifraude acerta 99% das vezes, mas só 1 em cada 1.000 transações é fraude. Boa parte dos alertas era de clientes honestos, que você bloqueou.',
@@ -38,6 +46,7 @@ export const EVENTOS = [
   },
   {
     id: 'sobrevivencia',
+    tipo: 'boa',
     setor: 'financeiro',
     titulo: 'Só os vencedores aparecem',
     texto: 'Um consultor mostrou que "todas as startups que fizeram X deram certo". Você percebeu que ele só estudou as que sobreviveram e poupou o investimento.',
@@ -47,6 +56,7 @@ export const EVENTOS = [
   },
   {
     id: 'analise_premiada',
+    tipo: 'boa',
     setor: 'rh',
     titulo: 'Análise de dados reconhecida',
     texto: 'Sua decisão de usar a mediana no relatório salarial virou case em uma revista do setor.',
@@ -56,6 +66,7 @@ export const EVENTOS = [
   },
   {
     id: 'regressao_media',
+    tipo: 'ruim',
     setor: 'rh',
     titulo: 'A ilusão do mês recorde',
     texto: 'O vendedor que bateu recorde no mês passado teve vendas normais neste mês. Você achou que ele perdeu o ritmo, mas era apenas o efeito estatístico natural de retorno à média.',
@@ -65,6 +76,7 @@ export const EVENTOS = [
   },
   {
     id: 'paradoxo_simpson',
+    tipo: 'boa',
     setor: 'produto',
     titulo: 'O paradoxo dos canais de venda',
     texto: 'No consolidado geral, o canal digital parecia vender menos. Mas ao separar por região, ele venceu em todas as capitais. Você evitou cortar o canal certo.',
@@ -74,6 +86,7 @@ export const EVENTOS = [
   },
   {
     id: 'correlacao_espuria',
+    tipo: 'ruim',
     setor: 'rh',
     titulo: 'Café e faturamento',
     texto: 'Um estudo interno mostrou forte correlação entre consumo de café e lucro da empresa. Você investiu numa cafeteria cara para os funcionários, mas o faturamento não mudou: equipes maiores apenas consomem mais café.',
@@ -83,6 +96,7 @@ export const EVENTOS = [
   },
   {
     id: 'auditoria_estatistica',
+    tipo: 'boa',
     setor: 'financeiro',
     titulo: 'Auditoria de dados independente',
     texto: 'Uma auditoria externa confirmou a solidez das suas métricas de amostragem e controle de qualidade, atraindo novos investidores para a sua empresa.',
@@ -92,6 +106,7 @@ export const EVENTOS = [
   },
   {
     id: 'capacidade_pela_media',
+    tipo: 'ruim',
     setor: 'logistica',
     titulo: 'A frota da Black Friday',
     texto: 'Você dimensionou a frota pela média de pedidos por dia do ano. Na Black Friday a demanda triplicou, faltaram caminhões e milhares de entregas atrasaram.',
@@ -101,6 +116,7 @@ export const EVENTOS = [
   },
   {
     id: 'amostra_aleatoria',
+    tipo: 'boa',
     setor: 'logistica',
     titulo: 'A conferência por sorteio',
     texto: 'O gerente queria conferir as 50 entregas que ele mesmo escolheu. Você pediu uma amostra sorteada entre todas as entregas e descobriu um centro de distribuição com avarias que ninguém tinha visto.',
@@ -110,6 +126,7 @@ export const EVENTOS = [
   },
   {
     id: 'falacia_apostador',
+    tipo: 'ruim',
     setor: 'producao',
     titulo: '"Agora o próximo sai bom"',
     texto: 'Depois de três lotes com defeito seguidos, o supervisor garantiu que o próximo "tinha que sair bom" e liberou sem inspeção. O lote saiu com defeito e foi devolvido pelo cliente.',
@@ -119,6 +136,7 @@ export const EVENTOS = [
   },
   {
     id: 'grafico_controle',
+    tipo: 'boa',
     setor: 'producao',
     titulo: 'O desvio que o gráfico viu antes',
     texto: 'O gráfico de controle da linha mostrou o peso das peças subindo aos poucos, dia após dia, antes de qualquer peça sair da tolerância. A calibração preventiva evitou um recall.',
@@ -128,6 +146,7 @@ export const EVENTOS = [
   },
   {
     id: 'vies_autosselecao',
+    tipo: 'ruim',
     setor: 'atendimento',
     titulo: '95% de satisfação?',
     texto: 'A pesquisa de satisfação era opcional e só 8% dos clientes responderam, quase todos satisfeitos. Você divulgou 95% de satisfação, e as reclamações públicas desmentiram o número.',
@@ -137,6 +156,7 @@ export const EVENTOS = [
   },
   {
     id: 'pergunta_tendenciosa',
+    tipo: 'boa',
     setor: 'atendimento',
     titulo: 'A pergunta que mudou a pesquisa',
     texto: 'Você trocou a pergunta "Você ficou satisfeito com nosso excelente atendimento?" por uma neutra. As notas caíram um pouco, mas revelaram o gargalo real na troca de produtos, que foi corrigido.',
@@ -146,6 +166,7 @@ export const EVENTOS = [
   },
   {
     id: 'comparacoes_multiplas',
+    tipo: 'boa',
     setor: 'dados',
     titulo: 'A cor de botão "vencedora"',
     texto: 'Um analista testou 20 cores de botão e achou uma que "aumentou as vendas". Você pediu para repetir o teste só com ela, e o efeito sumiu. O redesenho inútil foi evitado.',
@@ -155,6 +176,7 @@ export const EVENTOS = [
   },
   {
     id: 'valor_esperado',
+    tipo: 'boa',
     setor: 'financeiro',
     titulo: 'O prêmio maior nem sempre vale mais',
     texto: 'Duas propostas de parceria chegaram. Você comparou o valor esperado de cada uma (probabilidade de cada resultado vezes o retorno) em vez do maior prêmio possível. A escolha rendeu mais ao fim do ano.',
@@ -162,4 +184,234 @@ export const EVENTOS = [
     dinheiro: 7000,
     reputacao: 2,
   },
+
+  // ---------- Oportunidades (boas): ganhos bem acima da média ----------
+  {
+    id: 'anjo_investidor',
+    tipo: 'boa',
+    setor: 'financeiro',
+    titulo: 'O investidor-anjo ligou de volta',
+    texto: 'Um investidor-anjo analisou a série completa dos seus resultados, e não só o último trimestre, e decidiu aportar na Fisher S.A. antes que os concorrentes descobrissem a empresa.',
+    licao: 'Uma série longa de dados convence mais do que um bom mês isolado: consistência é o que o investidor procura.',
+    dinheiro: 25000,
+    reputacao: 5,
+  },
+  {
+    id: 'contrato_fora_da_curva',
+    tipo: 'boa',
+    setor: 'produto',
+    titulo: 'Contrato fora da curva',
+    texto: 'Um grande varejista ofereceu um contrato com margem 40% acima da média do setor. Você comparou a oferta com a distribuição de preços do mercado, viu que ela estava no topo e fechou na hora.',
+    licao: 'Comparar uma oferta com a distribuição do mercado (média e percentis) mostra quando ela está fora da curva, para o bem ou para o mal.',
+    dinheiro: 20000,
+    reputacao: 3,
+  },
+  {
+    id: 'rodada_startup',
+    tipo: 'boa',
+    setor: 'financeiro',
+    titulo: 'A startup que triplicou de valor',
+    texto: 'Você entrou cedo numa startup e a rodada seguinte valorizou a sua parte em três vezes. Foi uma aposta só: as outras do mesmo tipo, que não deram certo, ninguém comenta.',
+    licao: 'Um resultado excepcional isolado não prova que a estratégia é boa: por trás de cada caso de sucesso há muitos que não aparecem (viés de sobrevivência).',
+    dinheiro: 30000,
+    reputacao: 2,
+  },
+  {
+    id: 'premio_produto',
+    tipo: 'boa',
+    setor: 'produto',
+    titulo: 'Produto do ano',
+    texto: 'A pesquisa de satisfação, com amostra grande e sorteada, colocou o seu produto no topo da categoria. A imprensa especializada deu o prêmio de produto do ano, e as encomendas chegaram.',
+    licao: 'Qualidade medida com amostra representativa vira reputação que dá dinheiro depois.',
+    dinheiro: 15000,
+    reputacao: 8,
+  },
+  {
+    id: 'licitacao_vencida',
+    tipo: 'boa',
+    setor: 'logistica',
+    titulo: 'A licitação do percentil 95',
+    texto: 'Você apresentou o plano de entregas pelo percentil 95 da demanda, e não pela média. O órgão público viu que a promessa era realista e escolheu a sua proposta entre as dez concorrentes.',
+    licao: 'Prometer pelo percentil alto cria prazos que se cumprem; prometer pela média quebra a promessa nos dias de pico.',
+    dinheiro: 18000,
+    reputacao: 3,
+  },
+  {
+    id: 'cliente_ancora',
+    tipo: 'boa',
+    setor: 'atendimento',
+    titulo: 'O cliente-âncora',
+    texto: 'Uma rede de lojas assinou um contrato anual de suporte. A receita recorrente deixou o seu caixa muito mais previsível do que as vendas avulsas de antes.',
+    licao: 'Com a mesma média, uma receita recorrente tem menos variação do que vendas avulsas, e menos variação é menos risco.',
+    dinheiro: 22000,
+    reputacao: 4,
+  },
+  {
+    id: 'retrabalho_cortado',
+    tipo: 'boa',
+    setor: 'rh',
+    titulo: 'A equipe que parou de refazer',
+    texto: 'O gráfico de controle mostrou onde o processo da equipe saía do normal. Você corrigiu a causa, o retrabalho caiu pela metade e o time passou a bater a meta sem hora extra.',
+    licao: 'Separar a variação normal do processo da variação anormal mostra onde agir, em vez de culpar as pessoas.',
+    dinheiro: 16000,
+    reputacao: 4,
+  },
+
+  // ---------- Reveses (ruins): perdas pesadas ----------
+  {
+    id: 'produtos_roubados',
+    tipo: 'ruim',
+    setor: 'logistica',
+    titulo: 'Carga roubada na estrada',
+    texto: 'O caminhão com o lote do trimestre foi roubado na estrada. A empresa teve produtos roubados, e o seguro cobria só uma parte do valor.',
+    licao: 'Risco é probabilidade vezes impacto: um evento raro, mas caro, justifica seguro e rota monitorada.',
+    dinheiro: -22000,
+    reputacao: -3,
+  },
+  {
+    id: 'sequestro_de_dados',
+    tipo: 'ruim',
+    setor: 'dados',
+    titulo: 'Sequestro de dados',
+    texto: 'Um ransomware travou o servidor. A empresa pagou o resgate, ficou dois dias parada e descobriu que o último backup tinha três meses.',
+    licao: 'Eventos de cauda têm baixa probabilidade e impacto enorme. Um backup que ninguém testou não é um plano.',
+    dinheiro: -28000,
+    reputacao: -6,
+  },
+  {
+    id: 'desfalque',
+    tipo: 'ruim',
+    setor: 'financeiro',
+    titulo: 'Os pequenos desvios',
+    texto: 'Uma auditoria achou desvios pequenos, repetidos toda semana por um ano. Nenhum valor chamava atenção sozinho, mas somados viraram um rombo no caixa.',
+    licao: 'Anomalias pequenas e repetidas só aparecem quando se olha a série inteira, e não cada valor isolado.',
+    dinheiro: -20000,
+    reputacao: -5,
+  },
+  {
+    id: 'processo_coletivo',
+    tipo: 'ruim',
+    setor: 'rh',
+    titulo: 'Processo salarial coletivo',
+    texto: 'Um grupo de funcionárias processou a empresa por diferença salarial. A média geral parecia justa, mas separada por cargo a defasagem aparecia em quase todos.',
+    licao: 'A média geral esconde desigualdades entre grupos: compare por subgrupo antes de concluir.',
+    dinheiro: -18000,
+    reputacao: -5,
+  },
+  {
+    id: 'recall_de_lote',
+    tipo: 'ruim',
+    setor: 'producao',
+    titulo: 'Recall de um lote inteiro',
+    texto: 'A inspeção testou só 10 peças do lote e não achou nada. O defeito era raro, chegou aos clientes e a empresa teve de recolher o lote inteiro.',
+    licao: 'Uma amostra pequena pode não pegar um defeito raro: o tamanho da amostra precisa acompanhar o que se quer detectar.',
+    dinheiro: -24000,
+    reputacao: -6,
+  },
+  {
+    id: 'reclamacao_viral',
+    tipo: 'ruim',
+    setor: 'atendimento',
+    titulo: 'A reclamação que viralizou',
+    texto: 'A nota média de satisfação era ótima, e você ignorou os poucos clientes insatisfeitos. Um deles postou um vídeo que viralizou, e as vendas caíram.',
+    licao: 'A média esconde a cauda: uma minoria muito insatisfeita pode pesar mais do que a maioria satisfeita.',
+    dinheiro: -15000,
+    reputacao: -7,
+  },
+  {
+    id: 'atualizacao_que_derrubou',
+    tipo: 'ruim',
+    setor: 'produto',
+    titulo: 'A atualização da sexta-feira',
+    texto: 'A atualização foi liberada para todos os clientes de uma vez, sem teste numa amostra. Um erro derrubou o aplicativo em plena Black Friday.',
+    licao: 'Testar numa amostra pequena antes de liberar para todos (teste A/B, lançamento gradual) limita o estrago de um erro.',
+    dinheiro: -26000,
+    reputacao: -5,
+  },
+
+  // ---------- Trolls: vexames com graça, quase sem dinheiro ----------
+  {
+    id: 'cartao_recusado',
+    tipo: 'troll',
+    setor: 'financeiro',
+    titulo: 'O cartão que não passou',
+    texto: 'Você levou os investidores para almoçar. O cartão da empresa foi recusado na frente de todos, e você terminou dividindo a conta no Pix. Passou vergonha.',
+    dinheiro: 0,
+    reputacao: -5,
+  },
+  {
+    id: 'microfone_aberto',
+    tipo: 'troll',
+    setor: 'dados',
+    titulo: 'Microfone aberto',
+    texto: 'Você achou que a chamada com os investidores tinha acabado e cantou a música de abertura de novela, de pé, com o microfone ligado.',
+    dinheiro: 0,
+    reputacao: -3,
+  },
+  {
+    id: 'falando_no_mudo',
+    tipo: 'troll',
+    setor: 'dados',
+    titulo: 'Quinze minutos no mudo',
+    texto: 'Você apresentou o plano do ano inteiro para os investidores. Com o microfone mudo. Ninguém avisou, e todos assistiram a você mexendo a boca.',
+    dinheiro: 0,
+    reputacao: -3,
+  },
+  {
+    id: 'cafe_no_notebook',
+    tipo: 'troll',
+    setor: 'produto',
+    titulo: 'Café no notebook errado',
+    texto: 'Ao gesticular na reunião, você derrubou o café no notebook do maior investidor. Você pagou o conserto e ainda recebeu um olhar que não esquece.',
+    dinheiro: -1500,
+    reputacao: -3,
+  },
+  {
+    id: 'cadeiras_a_venda',
+    tipo: 'troll',
+    setor: 'rh',
+    titulo: 'As cadeiras do escritório',
+    texto: 'O estagiário anunciou "móveis usados" num site de classificados e vendeu as cadeiras do escritório por R$ 1.500. O dinheiro entrou, mas a reunião de segunda foi em pé.',
+    dinheiro: 1500,
+    reputacao: -2,
+  },
+  {
+    id: 'responder_a_todos',
+    tipo: 'troll',
+    setor: 'atendimento',
+    titulo: 'Responder a todos',
+    texto: 'Você escreveu o que realmente pensava do cliente e apertou "responder a todos". O cliente estava na lista. A empresa inteira também.',
+    dinheiro: 0,
+    reputacao: -4,
+  },
+  {
+    id: 'slide_errado',
+    tipo: 'troll',
+    setor: 'produto',
+    titulo: 'O slide errado',
+    texto: 'No telão, em vez do gráfico de faturamento, apareceu a foto do seu churrasco de domingo, com você de avental. Durou só dez segundos, mas a sala inteira viu.',
+    dinheiro: 0,
+    reputacao: -4,
+  },
+  {
+    id: 'rifa_da_firma',
+    tipo: 'troll',
+    setor: 'financeiro',
+    titulo: 'A rifa suspeita',
+    texto: 'Você ganhou a rifa de fim de ano: uma air fryer. O time acha estranho que o dono da empresa tenha sido sorteado, e o clima no escritório ficou esquisito.',
+    dinheiro: 500,
+    reputacao: -1,
+  },
+  {
+    id: 'filtro_de_gato',
+    tipo: 'troll',
+    setor: 'dados',
+    titulo: 'Eu não sou um gato',
+    texto: 'Um filtro de vídeo travou no seu rosto durante a reunião de resultados. Você apresentou o balanço inteiro como um gato falante, e a gravação já circula na empresa.',
+    dinheiro: 0,
+    reputacao: -3,
+  },
 ];
+
+// Cartas de um tipo, na ordem em que aparecem acima.
+export const eventosDoTipo = (tipo) => EVENTOS.filter((c) => c.tipo === tipo);

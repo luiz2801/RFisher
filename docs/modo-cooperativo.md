@@ -46,6 +46,8 @@ Cada diretoria tem uma habilidade ativa, usada de 1 a 2 vezes por partida, e um 
 | Tecnologia | **Dashboard:** mostra o resumo estatístico do cenário (n, mín., máx., quartis) | Reduz o prejuízo de eventos de dados enganosos (eixo truncado, taxa-base) |
 | Pessoas e Finanças | **Treinamento:** libera a `dica` do cenário (o campo já existe no schema) | +2 de reputação a cada Balanço |
 
+**Eventos (`fisher.md` 3.15).** Na casa de Evento quem joga escolhe participar ou passar, e o grupo pode discutir antes. Ao participar, escolhe uma de três cartas viradas (uma boa, uma ruim e uma troll), o jogo revela uma das outras, e o grupo decide se mantém a carta ou troca (Monty Hall). O efeito da carta final vale para a empresa. O efeito passivo de prejuízo (−30%) vale para a carta escolhida e para o valor mostrado nas outras duas, reveladas ao final.
+
 ---
 
 ## 3. Consultoria entre setores

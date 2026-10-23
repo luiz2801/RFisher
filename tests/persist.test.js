@@ -285,6 +285,35 @@ for (const modo of ['competitivo', 'cooperativo']) {
   }
 }
 
+// Casa de Evento (fisher.md 3.15): o save no meio da escolha das cartas e depois dela volta igual e termina igual.
+for (const modo of ['competitivo', 'cooperativo']) {
+  test(`retomada ${modo}: salvar com as cartas na mesa, no meio da troca e com a carta revelada preserva o estado`, () => {
+    const oferta = ate('MOSTRAR_EVENTO', { jogadores: DOIS, modo, teste: { casa: 'evento' } });
+    const naMesa = reduzir(oferta, { tipo: 'PARTICIPAR' });
+    const trocando = reduzir(naMesa, { tipo: 'ESCOLHER_CARTA', valor: 2 });
+    const revelada = reduzir(trocando, { tipo: 'TROCAR' });
+    for (const e of [oferta, naMesa, trocando, revelada]) {
+      const falso = falsoLocalStorage();
+      const restaurar = mockLocalStorage(falso);
+      let recarregado;
+      try {
+        salvar(e);
+        recarregado = carregar();
+      } finally {
+        restaurar();
+      }
+      assert.deepEqual(recarregado, e);
+      assert.equal(viewJogo(recarregado), viewJogo(e));
+      assert.equal(recarregado.eventoAtual.decisao, e.eventoAtual.decisao);
+    }
+    // Retomado no meio do Monty Hall, a carta revelada e a decisão de trocar seguem valendo.
+    const salvo = JSON.parse(JSON.stringify(trocando));
+    assert.equal(salvo.eventoAtual.revelada, trocando.eventoAtual.revelada);
+    assert.deepEqual(reduzir(salvo, { tipo: 'TROCAR' }), revelada);
+    assert.deepEqual(jogarAteOFim(JSON.parse(JSON.stringify(revelada))), jogarAteOFim(revelada));
+  });
+}
+
 test('retomada: o save do fim de jogo também é carregável (fase FIM_DE_JOGO)', () => {
   const fim = jogarAteOFim(novoJogo({ jogadores: DOIS, turnos: 2, seed: 4 }));
   const falso = falsoLocalStorage();

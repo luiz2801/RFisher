@@ -8,6 +8,8 @@ import { viewMenu, viewJogo } from '../src/ui/views.js';
 import { esc } from '../src/ui/html.js';
 import { obterEmpresa, FALACIAS } from '../src/scenarios/content/investimentos.js';
 import { APORTES } from '../src/engine/config.js';
+import { EVENTOS } from '../src/scenarios/content/eventos.js';
+import { brlSinal } from '../src/stats/format.js';
 
 test('o menu renderiza, com e sem partida salva', () => {
   assert.match(viewMenu(), /Nova partida/);
@@ -322,4 +324,110 @@ test('uma partida inteira passando pelo Mercado renderiza todas as telas sem que
   assert.equal(e.fase, 'FIM_DE_JOGO');
   assert.ok(ofertas >= 8);
   sinalOk(viewJogo(e), 'fim');
+});
+
+// ---------- casa de Evento: oferta, cartas viradas e carta revelada (fisher.md 3.15) ----------
+
+test('evento: a oferta convida a participar ou passar e não revela nenhuma carta', () => {
+  const e = reduzir(novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante' }], seed: 5, teste: { casa: 'evento' } }), { tipo: 'ROLAR' });
+  const html = viewJogo(e);
+  assert.match(html, /data-acao="PARTICIPAR"/);
+  assert.match(html, /data-acao="RECUSAR"/);
+  assert.doesNotMatch(html, /data-acao="CONTINUAR"/);
+  for (const id of e.eventoAtual.cartas) assert.ok(!html.includes(EVENTOS.find((c) => c.id === id).titulo), 'a oferta não vaza as cartas');
+});
+
+test('evento: as três cartas viradas são botões sem nada que as distinga', () => {
+  let e = reduzir(novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante' }], seed: 5, teste: { casa: 'evento' } }), { tipo: 'ROLAR' });
+  e = reduzir(e, { tipo: 'PARTICIPAR' });
+  const html = viewJogo(e);
+  assert.equal((html.match(/data-acao="ESCOLHER_CARTA"/g) ?? []).length, 3);
+  for (const i of [0, 1, 2]) assert.match(html, new RegExp(`data-acao="ESCOLHER_CARTA" data-valor="${i}"`));
+  for (const id of e.eventoAtual.cartas) {
+    const c = EVENTOS.find((x) => x.id === id);
+    assert.ok(!html.includes(c.titulo) && !html.includes(c.texto), 'as cartas viradas não vazam o conteúdo');
+  }
+});
+
+test('evento: a carta escolhida aparece com o efeito e as outras duas são reveladas', () => {
+  for (const modo of ['competitivo', 'cooperativo']) {
+    for (const i of [0, 1, 2]) {
+      let e = reduzir(novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante' }], modo, seed: 7, teste: { casa: 'evento' } }), { tipo: 'ROLAR' });
+      e = reduzir(reduzir(reduzir(e, { tipo: 'PARTICIPAR' }), { tipo: 'ESCOLHER_CARTA', valor: i }), { tipo: 'MANTER' });
+      const html = viewJogo(e);
+      assert.ok(!html.includes('undefined') && !html.includes('NaN'), 'sem valores soltos');
+      const [escolhida, ...outras] = [e.eventoAtual.cartas[i], ...e.eventoAtual.cartas.filter((_, j) => j !== i)].map((id) => EVENTOS.find((c) => c.id === id));
+      assert.ok(html.includes(esc(escolhida.texto)), 'texto da carta escolhida');
+      assert.ok(html.includes(brlSinal(e.eventoAtual.dinheiro)) || e.eventoAtual.dinheiro === 0, 'dinheiro da carta');
+      for (const o of outras) assert.ok(html.includes(esc(o.titulo)), `carta restante revelada: ${o.id}`);
+      assert.match(html, /As outras cartas eram/);
+      assert.match(html, /data-acao="CONTINUAR"/);
+      if (escolhida.licao) assert.match(html, /Lição:/);
+      else assert.doesNotMatch(html, /Lição:/);
+    }
+  }
+});
+
+test('evento: todas as cartas do jogo renderizam reveladas, nos dois modos', () => {
+  for (const modo of ['competitivo', 'cooperativo']) {
+    for (const carta of EVENTOS) {
+      let e = reduzir(novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante' }], modo, seed: 3, teste: { casa: 'evento' } }), { tipo: 'ROLAR' });
+      const outras = ['boa', 'ruim', 'troll'].filter((t) => t !== carta.tipo).map((t) => EVENTOS.find((c) => c.tipo === t).id);
+      e.eventoAtual.cartas = [carta.id, ...outras];
+      e = reduzir(reduzir(reduzir(e, { tipo: 'PARTICIPAR' }), { tipo: 'ESCOLHER_CARTA', valor: 0 }), { tipo: 'MANTER' });
+      const html = viewJogo(e);
+      assert.ok(html.includes(esc(carta.titulo)) && !html.includes('undefined') && !html.includes('NaN'), carta.id);
+      assert.match(html, carta.tipo === 'boa' ? /class="evento bom"/ : carta.tipo === 'ruim' ? /class="evento ruim"/ : /class="evento troll"/);
+      if (modo === 'cooperativo' && carta.dinheiro < 0) assert.match(html, /amortecido pela diretoria/);
+    }
+  }
+});
+
+test('evento: uma partida em que a pessoa participa de todo evento renderiza todas as telas até o fim', () => {
+  let e = novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante' }, { nome: 'Bia', nivel: 'avancado' }], seed: 31, turnos: 8, teste: { casa: 'evento' } });
+  const fases = new Set();
+  for (let i = 0; i < 600 && e.fase !== 'FIM_DE_JOGO'; i++) {
+    const html = viewJogo(e);
+    assert.ok(!html.includes('undefined') && !html.includes('{{'), `tela quebrada: ${e.fase}`);
+    if (e.fase === 'MOSTRAR_EVENTO') fases.add(e.eventoAtual.decisao);
+    const acao = { ROLAR_DADO: { tipo: 'ROLAR' } }[e.fase]
+      ?? (e.fase === 'MOSTRAR_EVENTO' && e.eventoAtual.decisao === null ? { tipo: 'PARTICIPAR' } : null)
+      ?? (e.fase === 'MOSTRAR_EVENTO' && e.eventoAtual.decisao === 'escolhendo' ? { tipo: 'ESCOLHER_CARTA', valor: i % 3 } : null)
+      ?? (e.fase === 'MOSTRAR_EVENTO' && e.eventoAtual.decisao === 'trocando' ? { tipo: i % 2 ? 'TROCAR' : 'MANTER' } : { tipo: 'CONTINUAR' });
+    e = reduzir(e, acao);
+  }
+  assert.equal(e.fase, 'FIM_DE_JOGO');
+  assert.deepEqual([...fases].sort(), ['escolhendo', 'participou', 'trocando', null].sort());
+});
+
+test('Monty Hall: a tela mostra a carta revelada, esconde as outras duas e oferece manter ou trocar', () => {
+  let e = reduzir(novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante' }], seed: 5, teste: { casa: 'evento' } }), { tipo: 'ROLAR' });
+  e = reduzir(reduzir(e, { tipo: 'PARTICIPAR' }), { tipo: 'ESCOLHER_CARTA', valor: 1 });
+  const { cartas, primeira, revelada } = e.eventoAtual;
+  const html = viewJogo(e);
+  assert.match(html, /Manter ou trocar\?/);
+  assert.equal((html.match(/data-acao="MANTER"/g) ?? []).length, 1);
+  assert.equal((html.match(/data-acao="TROCAR"/g) ?? []).length, 1);
+  assert.doesNotMatch(html, /data-acao="CONTINUAR"/);
+  const aberta = EVENTOS.find((c) => c.id === cartas[revelada]);
+  assert.ok(html.includes(esc(aberta.titulo)), 'a revelada aparece');
+  assert.notEqual(aberta.tipo, 'boa');
+  for (const i of [0, 1, 2].filter((j) => j !== revelada)) {
+    assert.ok(!html.includes(esc(EVENTOS.find((c) => c.id === cartas[i]).titulo)), 'as demais seguem viradas');
+  }
+  assert.match(html, new RegExp(`Manter a carta ${primeira + 1} \\(a sua\\)`));
+});
+
+test('Monty Hall: depois de decidir, a tela diz se trocou e traz a lição', () => {
+  const base = reduzir(reduzir(novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante' }], seed: 5, teste: { casa: 'evento' } }), { tipo: 'ROLAR' }), { tipo: 'PARTICIPAR' });
+  const trocando = reduzir(base, { tipo: 'ESCOLHER_CARTA', valor: 0 });
+  const trocou = viewJogo(reduzir(trocando, { tipo: 'TROCAR' }));
+  const manteve = viewJogo(reduzir(trocando, { tipo: 'MANTER' }));
+  assert.match(trocou, /Você trocou de carta/);
+  assert.match(manteve, /Você manteve a sua carta/);
+  for (const html of [trocou, manteve]) {
+    assert.match(html, /problema de Monty Hall/);
+    assert.match(html, /As outras cartas eram/);
+    assert.ok(!html.includes('undefined') && !html.includes('NaN'));
+  }
 });

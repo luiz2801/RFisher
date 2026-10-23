@@ -5,7 +5,7 @@ import { parDadosHtml } from './components/dado.js';
 import { CASAS, NUM_CASAS, ROTULO_CASA, coordenadas } from '../engine/board.js';
 import { jogadorAtual, carteira, classificacao, vencedores, ehCooperativo, ehBot, ehFalido, empresaFalida, julgarBalanco, classificarEmpresa, dinheiroInicialDe, reputacaoInicialDe, sequenciaDe } from '../engine/state.js';
 import { DIRETORIAS } from '../engine/papeis.js';
-import { metaTrimestral } from '../engine/machine.js';
+import { metaTrimestral, dinheiroDoEvento } from '../engine/machine.js';
 import { relatorioDesempenho } from '../engine/desempenho.js';
 import { CONFIANCA, ROTULO_CONFIANCA, NIVEL, confiancaEfetiva, multiplicadorSequencia } from '../engine/scoring.js';
 import { totalInvestido, ganhoComConsultoria, honorarioDaConsultoria } from '../engine/investimentos.js';
@@ -647,19 +647,83 @@ function blocoCalculo(def, r, escolhida, certa, c0, quem) {
   <p><strong>Como calcular:</strong> ${esc(preencher(def.feedback.como_calcular, vars))}</p>`;
 }
 
-    function viewEvento(e) {
-  const carta = EVENTOS.find((x) => x.id === e.eventoAtual.id);
-    const efeitos = [];
-    const dinheiro = e.eventoAtual.dinheiro ?? carta.dinheiro;
-    if (dinheiro) efeitos.push(brlSinal(dinheiro));
-    if (carta.reputacao) efeitos.push(`Reputação ${carta.reputacao > 0 ? '+' : '−'}${Math.abs(carta.reputacao)}`);
-    return `${bannerBalanco(e)}<div class="evento ${dinheiro >= 0 ? 'bom' : 'ruim'}">
-      <h2>Evento: ${esc(carta.titulo)}</h2>
+const ROTULO_CARTA = { boa: '🍀 Oportunidade', ruim: '💥 Revés', troll: '🤡 Troll' };
+const CLASSE_CARTA = { boa: 'bom', ruim: 'ruim', troll: 'troll' };
+
+// Efeitos de uma carta em texto; `dinheiro` já vem com o amortecimento do cooperativo, se houve.
+function efeitosDaCarta(carta, dinheiro) {
+  const efeitos = [];
+  if (dinheiro) efeitos.push(brlSinal(dinheiro));
+  if (carta.reputacao) efeitos.push(`Reputação ${carta.reputacao > 0 ? '+' : '−'}${Math.abs(carta.reputacao)}`);
+  return efeitos.length ? efeitos.join(' · ') : 'Sem efeito';
+}
+
+// Carta revelada (fisher.md 3.15). Saves antigos guardam só o id da carta já aplicada, e a tela é a mesma.
+function cartaRevelada(e, carta, dinheiro, crise) {
+  const efeitos = efeitosDaCarta(carta, dinheiro);
+  const bom = dinheiro > 0 || (dinheiro === 0 && carta.reputacao > 0);
+  return `<div class="evento ${CLASSE_CARTA[carta.tipo]}">
+      <p class="tipo-carta">${ROTULO_CARTA[carta.tipo]}</p>
+      <h2>${esc(carta.titulo)}</h2>
       <p>${esc(carta.texto)}</p>
-      <p class="delta">${dinheiro >= 0 ? '▲' : '▼'} ${efeitos.join(' · ')}${dinheiro !== carta.dinheiro ? ' (amortecido pela diretoria do setor)' : ''}</p>
-      ${e.eventoAtual.crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}
-      <p class="licao"><strong>Lição:</strong> ${esc(carta.licao)}</p>
-    </div>${botaoContinuar}`;
+      <p class="delta">${bom ? '▲' : '▼'} ${efeitos}${dinheiro !== carta.dinheiro ? ' (amortecido pela diretoria do setor)' : ''}</p>
+      ${crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}
+      ${carta.licao ? `<p class="licao"><strong>Lição:</strong> ${esc(carta.licao)}</p>` : ''}
+    </div>`;
+}
+
+function viewEvento(e) {
+  const ev = e.eventoAtual;
+  const cabecalho = bannerBalanco(e);
+  if (!ev.cartas && ev.decisao !== 'recusou') {
+    const carta = EVENTOS.find((x) => x.id === ev.id);
+    return `${cabecalho}${cartaRevelada(e, carta, ev.dinheiro ?? carta.dinheiro, ev.crise)}${botaoContinuar}`;
+  }
+  if (ev.decisao === 'recusou') {
+    return `${cabecalho}<h2>Evento</h2><p>O rival passou pelo Evento e não participou.</p>${botaoContinuar}`;
+  }
+  if (ev.decisao === null) {
+    return `${cabecalho}<h2>Evento: arriscar ou passar?</h2>
+      <p>Há três cartas viradas na mesa: uma <strong>oportunidade</strong>, um <strong>revés</strong> e uma carta <strong>troll</strong>. Se participar, você escolhe uma sem saber qual é qual. O jogo então revela uma das outras e você decide se mantém a sua ou troca. Só depois o efeito vale.</p>
+      <p class="ajuda">Passar não custa nada. Participar é uma aposta de sorte: o que há de bom pode vir com o que há de ruim.</p>
+      <div class="opcoes">
+        <button class="primario" data-acao="PARTICIPAR">Participar e escolher uma carta</button>
+        <button class="discreto" data-acao="RECUSAR">Passar sem participar</button>
+      </div>`;
+  }
+  if (ev.decisao === 'escolhendo') {
+    return `${cabecalho}<h2>Escolha uma carta</h2>
+      <p class="ajuda">Uma é oportunidade, outra é revés e outra é troll. Qual é qual, só virando.</p>
+      <div class="cartas">${ev.cartas.map((_, i) => `<button class="carta-virada" data-acao="ESCOLHER_CARTA" data-valor="${i}" aria-label="Carta ${i + 1}, virada">
+        <span aria-hidden="true">?</span><small>Carta ${i + 1}</small></button>`).join('')}</div>`;
+  }
+  if (ev.decisao === 'trocando') {
+    const aberta = EVENTOS.find((x) => x.id === ev.cartas[ev.revelada]);
+    const slots = ev.cartas.map((_, i) => {
+      if (i === ev.revelada) {
+        return `<div class="carta-aberta ${CLASSE_CARTA[aberta.tipo]}"><small>Carta ${i + 1}, revelada</small>
+          <strong>${ROTULO_CARTA[aberta.tipo]}</strong><span>${esc(aberta.titulo)}</span><span>${efeitosDaCarta(aberta, dinheiroDoEvento(e, aberta))}</span></div>`;
+      }
+      const minha = i === ev.primeira;
+      return `<button class="carta-virada${minha ? ' minha' : ''}" data-acao="${minha ? 'MANTER' : 'TROCAR'}" aria-label="${minha ? `Manter a carta ${i + 1}, a sua` : `Trocar pela carta ${i + 1}`}">
+        <span aria-hidden="true">?</span><small>${minha ? `Manter a carta ${i + 1} (a sua)` : `Trocar pela carta ${i + 1}`}</small></button>`;
+    });
+    return `${cabecalho}<h2>Manter ou trocar?</h2>
+      <p>O jogo revelou uma das cartas que você não escolheu, e ela <strong>nunca é a oportunidade</strong>. Você pode manter a sua carta ou trocar pela que sobrou na mesa.</p>
+      <div class="cartas">${slots.join('')}</div>`;
+  }
+  const outras = ev.cartas
+    .map((id, i) => ({ carta: EVENTOS.find((x) => x.id === id), i }))
+    .filter(({ i }) => i !== ev.escolhida);
+  const montyHall = ev.trocou === undefined
+    ? ''
+    : `<p class="ajuda">Você ${ev.trocou ? 'trocou de carta' : 'manteve a sua carta'}.</p>
+      <p class="licao"><strong>Lição (problema de Monty Hall):</strong> a carta revelada nunca é a oportunidade, então ela carrega informação. Sua primeira escolha tinha 1 chance em 3 de ser a oportunidade, e a carta que sobrou herda as outras 2 em 3. Trocar leva à oportunidade em 2 de cada 3 vezes.</p>`;
+  const escolhida = EVENTOS.find((x) => x.id === ev.id);
+  return `${cabecalho}${cartaRevelada(e, escolhida, ev.dinheiro, ev.crise)}${montyHall}
+    <div class="cartas-restantes"><h3>As outras cartas eram</h3><ul>${outras
+      .map(({ carta }) => `<li class="${CLASSE_CARTA[carta.tipo]}"><strong>${ROTULO_CARTA[carta.tipo]}: ${esc(carta.titulo)}</strong> <span>${efeitosDaCarta(carta, dinheiroDoEvento(e, carta))}</span></li>`)
+      .join('')}</ul></div>${botaoContinuar}`;
 }
 
 // ---------- mercado (investimentos, fisher.md 3.14) ----------

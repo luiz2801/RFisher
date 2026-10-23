@@ -552,7 +552,7 @@ import {
   CORTE_ORCAMENTO, CORTE_ORCAMENTO_REPUTACAO, REDUCAO_PREJUIZO_PASSIVA, REPUTACAO_BALANCO_RH,
 } from '../src/engine/config.js';
 import { receitaBalanco } from '../src/engine/scoring.js';
-import { EVENTOS } from '../src/scenarios/content/eventos.js';
+import { EVENTOS, TIPOS_CARTA, eventosDoTipo } from '../src/scenarios/content/eventos.js';
 
 // Parado na casa 27 com o Balanço forçado: qualquer dado passa pelo início e a jogada termina em MOSTRAR_BALANCO.
 function noBalanco(modo, { dinheiro, reputacao, ...extra } = {}) {
@@ -564,15 +564,18 @@ function noBalanco(modo, { dinheiro, reputacao, ...extra } = {}) {
   return e;
 }
 
-// Parado na rolagem com uma carta de evento já no topo do baralho. `posicao` 27 faz a jogada passar pelo Balanço.
+// Rola na casa de Evento e escolhe (e mantém) a carta `idCarta`, posta na mão com uma carta de cada um dos outros tipos.
+// `posicao` 27 faz a jogada passar pelo Balanço.
 function comEvento(modo, idCarta, { dinheiro, reputacao, posicao = 0 } = {}) {
   const e = novoJogo({ jogadores: jogadores('iniciante'), modo, seed: 5, teste: { casa: 'evento' } });
-  e.baralhoEventos = [idCarta];
   e.jogadores[0].posicao = posicao;
   const w = carteira(e);
   if (dinheiro !== undefined) w.dinheiro = dinheiro;
   if (reputacao !== undefined) w.reputacao = reputacao;
-  return e;
+  const rolado = reduzir(e, { tipo: 'ROLAR' });
+  const { tipo } = EVENTOS.find((c) => c.id === idCarta);
+  rolado.eventoAtual.cartas = [idCarta, ...TIPOS_CARTA.filter((t) => t !== tipo).map((t) => eventosDoTipo(t)[0].id)];
+  return reduzir(reduzir(reduzir(rolado, { tipo: 'PARTICIPAR' }), { tipo: 'ESCOLHER_CARTA', valor: 0 }), { tipo: 'MANTER' });
 }
 
 test('cooperativo: o Balanço dá o bônus do RH à reputação da empresa e o expõe em balanco.bonusRh', () => {
@@ -652,7 +655,7 @@ test('cooperativo: prejuízo de evento é reduzido em 30% e arredondado à cente
   assert.equal(REDUCAO_PREJUIZO_PASSIVA, 0.3);
   const carta = EVENTOS.find((c) => c.id === 'taxa_base');
   assert.equal(carta.dinheiro, -5000);
-  const e = reduzir(comEvento('cooperativo', 'taxa_base'), { tipo: 'ROLAR' });
+  const e = comEvento('cooperativo', 'taxa_base');
   assert.equal(e.fase, 'MOSTRAR_EVENTO');
   assert.equal(e.eventoAtual.dinheiro, -3500);
   assert.equal(e.empresa.dinheiro, DINHEIRO_INICIAL - 3500);
@@ -663,21 +666,21 @@ test('cooperativo: prejuízo de evento é reduzido em 30% e arredondado à cente
 test('cooperativo: evento de ganho não sofre alteração', () => {
   const carta = EVENTOS.find((c) => c.id === 'sobrevivencia');
   assert.ok(carta.dinheiro > 0);
-  const e = reduzir(comEvento('cooperativo', 'sobrevivencia'), { tipo: 'ROLAR' });
+  const e = comEvento('cooperativo', 'sobrevivencia');
   assert.equal(e.eventoAtual.dinheiro, carta.dinheiro);
   assert.equal(e.empresa.dinheiro, DINHEIRO_INICIAL + carta.dinheiro);
 });
 
 test('competitivo: prejuízo de evento não é amortecido', () => {
-  const e = reduzir(comEvento('competitivo', 'taxa_base'), { tipo: 'ROLAR' });
+  const e = comEvento('competitivo', 'taxa_base');
   assert.equal(e.eventoAtual.dinheiro, -5000);
   assert.equal(e.jogadores[0].dinheiro, DINHEIRO_INICIAL - 5000);
 });
 
 test('amortecimento vale para toda carta de evento: só prejuízo, só no cooperativo, sempre à centena', () => {
   for (const carta of EVENTOS) {
-    const coopE = reduzir(comEvento('cooperativo', carta.id), { tipo: 'ROLAR' });
-    const compE = reduzir(comEvento('competitivo', carta.id), { tipo: 'ROLAR' });
+    const coopE = comEvento('cooperativo', carta.id);
+    const compE = comEvento('competitivo', carta.id);
     assert.equal(compE.eventoAtual.dinheiro, carta.dinheiro, `competitivo ${carta.id}`);
     const esperado = carta.dinheiro < 0 ? Math.round((carta.dinheiro * (1 - REDUCAO_PREJUIZO_PASSIVA)) / 100) * 100 : carta.dinheiro;
     assert.equal(coopE.eventoAtual.dinheiro, esperado, `cooperativo ${carta.id}`);
@@ -759,18 +762,18 @@ test('sem crise quando a reputação resiste à penalidade da decisão', () => {
 test('crise de imagem por evento: perda de reputação até zero cobra a multa e volta a 20', () => {
   const carta = EVENTOS.find((c) => c.id === 'correlacao'); // -3 de reputação
   assert.equal(carta.reputacao, -3);
-  const e = reduzir(comEvento('competitivo', 'correlacao', { dinheiro: 100000, reputacao: 3 }), { tipo: 'ROLAR' });
+  const e = comEvento('competitivo', 'correlacao', { dinheiro: 100000, reputacao: 3 });
   assert.equal(e.eventoAtual.crise, true);
   assert.equal(e.jogadores[0].reputacao, REPUTACAO_POS_CRISE);
   assert.equal(e.jogadores[0].dinheiro, 100000 + carta.dinheiro - MULTA_CRISE);
   // Reputação 4 resiste (fica em 1).
-  const resiste = reduzir(comEvento('competitivo', 'correlacao', { reputacao: 4 }), { tipo: 'ROLAR' });
+  const resiste = comEvento('competitivo', 'correlacao', { reputacao: 4 });
   assert.equal(resiste.eventoAtual.crise, false);
   assert.equal(resiste.jogadores[0].reputacao, 1);
 });
 
 test('crise de imagem por evento no cooperativo: a multa sai do caixa da empresa, junto do prejuízo amortecido', () => {
-  const e = reduzir(comEvento('cooperativo', 'correlacao', { dinheiro: 100000, reputacao: 2 }), { tipo: 'ROLAR' });
+  const e = comEvento('cooperativo', 'correlacao', { dinheiro: 100000, reputacao: 2 });
   assert.equal(e.eventoAtual.crise, true);
   assert.equal(e.eventoAtual.dinheiro, -7000);
   assert.equal(e.empresa.reputacao, REPUTACAO_POS_CRISE);
@@ -779,7 +782,7 @@ test('crise de imagem por evento no cooperativo: a multa sai do caixa da empresa
 });
 
 test('evento sem perda de reputação nunca dispara crise, mesmo com reputação zerada no limite', () => {
-  const e = reduzir(comEvento('competitivo', 'eixo_truncado', { reputacao: 1 }), { tipo: 'ROLAR' });
+  const e = comEvento('competitivo', 'eixo_truncado', { reputacao: 1 });
   assert.equal(e.eventoAtual.crise, false);
   assert.equal(e.jogadores[0].reputacao, 1);
 });
@@ -837,7 +840,7 @@ test('crise causando falência no competitivo: a multa de um evento na jogada do
   const receita = receitaBalanco(3);
   const carta = EVENTOS.find((c) => c.id === 'correlacao');
   const caixa = 2000 - (receita - CUSTOS_BALANCO + carta.dinheiro); // depois do Balanço e do evento, sem multa: R$ 2.000
-  let e = reduzir(comEvento('competitivo', 'correlacao', { dinheiro: caixa, reputacao: 3, posicao: 27 }), { tipo: 'ROLAR' });
+  let e = comEvento('competitivo', 'correlacao', { dinheiro: caixa, reputacao: 3, posicao: 27 });
   assert.ok(e.balanco, 'a jogada passou pelo Balanço');
   assert.equal(e.eventoAtual.crise, true);
   assert.equal(e.jogadores[0].dinheiro, 2000 - MULTA_CRISE);
@@ -911,4 +914,224 @@ test('sequência: evento e Balanço não alteram a sequência', () => {
     e = proxima(reduzir(e, { tipo: 'ROLAR' }));
     assert.deepEqual(e.jogadores[0].sequencia, antes, casa);
   }
+});
+
+// ---------- casa de Evento: participar ou passar, três cartas viradas (fisher.md 3.15) ----------
+
+const naCasaDeEvento = (extra = {}) => reduzir(novoJogo({ jogadores: jogadores('iniciante'), seed: 5, teste: { casa: 'evento' }, ...extra }), { tipo: 'ROLAR' });
+
+test('evento: a casa oferece participar ou passar, com três cartas, uma de cada tipo, e nada aplicado ainda', () => {
+  const e = naCasaDeEvento();
+  assert.equal(e.fase, 'MOSTRAR_EVENTO');
+  assert.equal(e.eventoAtual.decisao, null);
+  assert.equal(e.eventoAtual.cartas.length, 3);
+  assert.deepEqual(e.eventoAtual.cartas.map((id) => EVENTOS.find((c) => c.id === id).tipo).sort(), [...TIPOS_CARTA].sort());
+  assert.equal(e.jogadores[0].dinheiro, DINHEIRO_INICIAL);
+  assert.equal(e.jogadores[0].reputacao, REPUTACAO_INICIAL);
+});
+
+test('evento: participar põe as cartas na mesa e, escolhida uma e mantida, só o efeito dela vale', () => {
+  let e = reduzir(naCasaDeEvento(), { tipo: 'PARTICIPAR' });
+  assert.equal(e.eventoAtual.decisao, 'escolhendo');
+  assert.equal(e.jogadores[0].dinheiro, DINHEIRO_INICIAL, 'ainda sem efeito');
+  e = reduzir(e, { tipo: 'ESCOLHER_CARTA', valor: '1' }); // o botão manda texto
+  assert.equal(e.eventoAtual.decisao, 'trocando');
+  assert.equal(e.eventoAtual.primeira, 1);
+  assert.equal(e.jogadores[0].dinheiro, DINHEIRO_INICIAL, 'a escolha ainda pode ser trocada: sem efeito');
+  e = reduzir(e, { tipo: 'MANTER' });
+  const carta = EVENTOS.find((c) => c.id === e.eventoAtual.cartas[1]);
+  assert.equal(e.eventoAtual.decisao, 'participou');
+  assert.equal(e.eventoAtual.escolhida, 1);
+  assert.equal(e.eventoAtual.trocou, false);
+  assert.equal(e.eventoAtual.id, carta.id);
+  assert.equal(e.fase, 'MOSTRAR_EVENTO', 'a pessoa vê a carta antes de continuar');
+  assert.equal(e.jogadores[0].dinheiro, DINHEIRO_INICIAL + carta.dinheiro);
+  assert.equal(e.jogadores[0].reputacao, REPUTACAO_INICIAL + carta.reputacao);
+});
+
+test('evento: a carta escolhida é a da posição, e a posição das cartas muda de uma casa para outra', () => {
+  const posicoes = new Set();
+  for (let seed = 1; seed <= 30; seed++) {
+    const e = naCasaDeEvento({ seed });
+    posicoes.add(e.eventoAtual.cartas.map((id) => EVENTOS.find((c) => c.id === id).tipo).join());
+    for (let i = 0; i < 3; i++) {
+      const r = reduzir(reduzir(reduzir(e, { tipo: 'PARTICIPAR' }), { tipo: 'ESCOLHER_CARTA', valor: i }), { tipo: 'MANTER' });
+      assert.equal(r.eventoAtual.id, e.eventoAtual.cartas[i]);
+    }
+  }
+  assert.ok(posicoes.size >= 4, 'as seis ordens possíveis tendem a aparecer');
+});
+
+test('evento: passar segue para o próximo jogador sem efeito algum', () => {
+  const e = reduzir(naCasaDeEvento(), { tipo: 'RECUSAR' });
+  assert.equal(e.fase, 'ROLAR_DADO');
+  assert.equal(e.eventoAtual, null);
+  assert.equal(e.jogadores[0].dinheiro, DINHEIRO_INICIAL);
+  assert.equal(e.jogadores[0].reputacao, REPUTACAO_INICIAL);
+});
+
+test('evento: seguir sem decidir vale como passar, mas com as cartas na mesa é preciso escolher', () => {
+  const oferta = naCasaDeEvento();
+  const passou = reduzir(oferta, { tipo: 'CONTINUAR' });
+  assert.equal(passou.fase, 'ROLAR_DADO');
+  assert.equal(passou.jogadores[0].dinheiro, DINHEIRO_INICIAL);
+  const naMesa = reduzir(oferta, { tipo: 'PARTICIPAR' });
+  assert.deepEqual(reduzir(naMesa, { tipo: 'CONTINUAR' }), naMesa);
+  assert.deepEqual(reduzir(naMesa, { tipo: 'RECUSAR' }), naMesa, 'não dá para desistir depois de participar');
+  const trocando = reduzir(naMesa, { tipo: 'ESCOLHER_CARTA', valor: 0 });
+  assert.deepEqual(reduzir(trocando, { tipo: 'CONTINUAR' }), trocando, 'é preciso manter ou trocar');
+  assert.deepEqual(reduzir(trocando, { tipo: 'RECUSAR' }), trocando);
+});
+
+test('evento: ações fora de hora ou inválidas são ignoradas', () => {
+  const oferta = naCasaDeEvento();
+  for (const valor of [-1, 3, 1.5, 'x', undefined]) {
+    assert.deepEqual(reduzir(oferta, { tipo: 'ESCOLHER_CARTA', valor }), oferta, 'sem participar não há carta a escolher');
+    const naMesa = reduzir(oferta, { tipo: 'PARTICIPAR' });
+    assert.deepEqual(reduzir(naMesa, { tipo: 'ESCOLHER_CARTA', valor }), naMesa, `valor ${valor}`);
+  }
+  for (const acao of ['MANTER', 'TROCAR']) {
+    assert.deepEqual(reduzir(oferta, { tipo: acao }), oferta, `${acao} sem a carta escolhida`);
+    const naMesa = reduzir(oferta, { tipo: 'PARTICIPAR' });
+    assert.deepEqual(reduzir(naMesa, { tipo: acao }), naMesa, `${acao} sem a carta escolhida`);
+  }
+  const trocando = reduzir(reduzir(oferta, { tipo: 'PARTICIPAR' }), { tipo: 'ESCOLHER_CARTA', valor: 0 });
+  assert.deepEqual(reduzir(trocando, { tipo: 'ESCOLHER_CARTA', valor: 1 }), trocando, 'a escolha já foi feita');
+  assert.deepEqual(reduzir(trocando, { tipo: 'PARTICIPAR' }), trocando);
+  const feito = reduzir(trocando, { tipo: 'MANTER' });
+  for (const acao of [{ tipo: 'ESCOLHER_CARTA', valor: 1 }, { tipo: 'MANTER' }, { tipo: 'TROCAR' }, { tipo: 'PARTICIPAR' }, { tipo: 'RECUSAR' }]) {
+    assert.deepEqual(reduzir(feito, acao), feito, `${acao.tipo} depois de decidir`);
+  }
+});
+
+test('evento: o rival do solo passa sem participar e sem gastar sorteios', () => {
+  const solo = novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante' }, { nome: 'Rival', nivel: 'iniciante', bot: 'medio' }], seed: 5, teste: { casa: 'evento' } });
+  solo.jogadorAtual = 1;
+  const antes = solo.baralhoEventos.length;
+  const e = reduzir(solo, { tipo: 'ROLAR' });
+  assert.equal(e.fase, 'MOSTRAR_EVENTO');
+  assert.equal(e.eventoAtual.decisao, 'recusou');
+  assert.equal(e.eventoAtual.cartas, null);
+  assert.equal(e.baralhoEventos.length, antes, 'o baralho não foi mexido');
+  assert.equal(e.jogadores[1].dinheiro, DINHEIRO_INICIAL);
+  assert.match(viewJogo(e), /O rival passou pelo Evento/);
+  assert.equal(reduzir(e, { tipo: 'CONTINUAR' }).fase, 'ROLAR_DADO');
+});
+
+test('evento: cada tipo tem seu baralho, que não repete carta dentro do ciclo', () => {
+  let e = novoJogo({ jogadores: jogadores('iniciante'), seed: 9, teste: { casa: 'evento' } });
+  const vistas = { boa: [], ruim: [], troll: [] };
+  for (let i = 0; i < eventosDoTipo('troll').length; i++) {
+    const oferta = reduzir(e, { tipo: 'ROLAR' });
+    for (const id of oferta.eventoAtual.cartas) vistas[EVENTOS.find((c) => c.id === id).tipo].push(id);
+    e = reduzir(oferta, { tipo: 'RECUSAR' });
+  }
+  for (const tipo of TIPOS_CARTA) assert.equal(new Set(vistas[tipo]).size, vistas[tipo].length, `${tipo} sem repetição no ciclo`);
+  assert.equal(vistas.troll.length, eventosDoTipo('troll').length);
+  assert.deepEqual(new Set(vistas.troll), new Set(eventosDoTipo('troll').map((c) => c.id)), 'o ciclo das trolls passa por todas');
+});
+
+test('evento: um save antigo, com o baralho misturado de cartas já vistas, continua a sacar por tipo', () => {
+  const e = novoJogo({ jogadores: jogadores('iniciante'), seed: 5, teste: { casa: 'evento' } });
+  e.baralhoEventos = ['eixo_truncado', 'sobrevivencia', 'correlacao'];
+  const r = reduzir(e, { tipo: 'ROLAR' });
+  assert.ok(r.eventoAtual.cartas.includes('eixo_truncado') && r.eventoAtual.cartas.includes('sobrevivencia'));
+  assert.ok(!r.baralhoEventos.includes('eixo_truncado') && !r.baralhoEventos.includes('sobrevivencia'));
+  assert.ok(r.baralhoEventos.includes('correlacao'), 'a carta ruim que não saiu continua no baralho');
+});
+
+test('evento: um save em MOSTRAR_EVENTO do formato antigo (efeito já aplicado) mostra a carta e continua', () => {
+  const e = novoJogo({ jogadores: jogadores('iniciante'), seed: 5 });
+  e.fase = 'MOSTRAR_EVENTO';
+  e.eventoAtual = { id: 'eixo_truncado', crise: false, dinheiro: -8000 };
+  const html = viewJogo(e);
+  assert.match(html, /O gráfico que enganou/);
+  assert.match(html, /Lição:/);
+  assert.equal(reduzir(e, { tipo: 'CONTINUAR' }).fase, 'ROLAR_DADO');
+});
+
+// ---------- troca de carta, como no problema de Monty Hall (fisher.md 3.15) ----------
+
+const tipoDe = (e, i) => EVENTOS.find((c) => c.id === e.eventoAtual.cartas[i]).tipo;
+const escolhendo = (seed, extra = {}) => reduzir(naCasaDeEvento({ seed, ...extra }), { tipo: 'PARTICIPAR' });
+
+test('Monty Hall: a carta revelada nunca é a boa nem a escolhida, e nada é aplicado antes de decidir', () => {
+  for (let seed = 1; seed <= 60; seed++) {
+    for (let i = 0; i < 3; i++) {
+      const e = reduzir(escolhendo(seed), { tipo: 'ESCOLHER_CARTA', valor: i });
+      const { revelada, primeira } = e.eventoAtual;
+      assert.notEqual(revelada, primeira, 'não revela a carta escolhida');
+      assert.notEqual(tipoDe(e, revelada), 'boa', 'a revelada nunca é a boa');
+      assert.equal(e.jogadores[0].dinheiro, DINHEIRO_INICIAL);
+      assert.equal(e.jogadores[0].reputacao, REPUTACAO_INICIAL);
+    }
+  }
+});
+
+test('Monty Hall: quem escolheu uma carta ruim ou troll vê a outra delas revelada (não há alternativa)', () => {
+  for (let seed = 1; seed <= 30; seed++) {
+    const base = escolhendo(seed);
+    for (let i = 0; i < 3; i++) {
+      if (tipoDe(base, i) === 'boa') continue;
+      const e = reduzir(base, { tipo: 'ESCOLHER_CARTA', valor: i });
+      const outraNaoBoa = [0, 1, 2].find((j) => j !== i && tipoDe(base, j) !== 'boa');
+      assert.equal(e.eventoAtual.revelada, outraNaoBoa);
+    }
+  }
+});
+
+test('Monty Hall: quem escolheu a boa vê qualquer uma das duas outras revelada, e o sorteio usa o rng da partida', () => {
+  const reveladas = new Set();
+  for (let seed = 1; seed <= 80; seed++) {
+    const base = escolhendo(seed);
+    const i = [0, 1, 2].find((j) => tipoDe(base, j) === 'boa');
+    const e = reduzir(base, { tipo: 'ESCOLHER_CARTA', valor: i });
+    reveladas.add(tipoDe(e, e.eventoAtual.revelada));
+    assert.notDeepEqual(e.rng, base.rng, 'sorteou com o rng da partida');
+    assert.deepEqual(reduzir(base, { tipo: 'ESCOLHER_CARTA', valor: i }), e, 'determinístico pela seed');
+  }
+  assert.deepEqual([...reveladas].sort(), ['ruim', 'troll']);
+});
+
+test('Monty Hall: trocar leva à carta que sobrou, e manter, à primeira escolha', () => {
+  for (let seed = 1; seed <= 30; seed++) {
+    for (let i = 0; i < 3; i++) {
+      const e = reduzir(escolhendo(seed), { tipo: 'ESCOLHER_CARTA', valor: i });
+      const { primeira, revelada } = e.eventoAtual;
+      const sobrou = [0, 1, 2].find((j) => j !== primeira && j !== revelada);
+      const trocou = reduzir(e, { tipo: 'TROCAR' }).eventoAtual;
+      assert.equal(trocou.escolhida, sobrou);
+      assert.equal(trocou.trocou, true);
+      assert.equal(trocou.id, e.eventoAtual.cartas[sobrou]);
+      assert.equal(trocou.decisao, 'participou');
+      const manteve = reduzir(e, { tipo: 'MANTER' }).eventoAtual;
+      assert.equal(manteve.escolhida, primeira);
+      assert.equal(manteve.trocou, false);
+    }
+  }
+});
+
+test('Monty Hall: o efeito aplicado é o da carta final, nos dois modos', () => {
+  for (const modo of ['competitivo', 'cooperativo']) {
+    const e = reduzir(escolhendo(4, { modo }), { tipo: 'ESCOLHER_CARTA', valor: 0 });
+    const r = reduzir(e, { tipo: 'TROCAR' });
+    const carta = EVENTOS.find((c) => c.id === r.eventoAtual.id);
+    const carteira = modo === 'cooperativo' ? r.empresa : r.jogadores[0];
+    assert.equal(carteira.dinheiro, DINHEIRO_INICIAL + r.eventoAtual.dinheiro);
+    assert.equal(carteira.reputacao, REPUTACAO_INICIAL + carta.reputacao);
+  }
+});
+
+test('Monty Hall: quem troca sempre fica com a carta boa em cerca de 2 de cada 3 vezes, e quem mantém em 1 de 3', () => {
+  let trocaBoa = 0;
+  let mantemBoa = 0;
+  const n = 600;
+  for (let seed = 1; seed <= n; seed++) {
+    const e = reduzir(escolhendo(seed), { tipo: 'ESCOLHER_CARTA', valor: seed % 3 });
+    if (tipoDe(e, reduzir(e, { tipo: 'TROCAR' }).eventoAtual.escolhida) === 'boa') trocaBoa++;
+    if (tipoDe(e, e.eventoAtual.primeira) === 'boa') mantemBoa++;
+  }
+  assert.ok(Math.abs(trocaBoa / n - 2 / 3) < 0.07, `trocar: ${trocaBoa / n}`);
+  assert.ok(Math.abs(mantemBoa / n - 1 / 3) < 0.07, `manter: ${mantemBoa / n}`);
+  assert.equal(trocaBoa + mantemBoa, n, 'a boa é sempre a primeira escolha ou a que sobra');
 });

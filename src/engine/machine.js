@@ -17,16 +17,11 @@ import { equivocosDaEscolha } from './desempenho.js';
 import { diretoriaDoSetor } from './papeis.js';
 import { OPCOES_DIAGNOSTICO, sortearOferta, ganhoComConsultoria, honorarioDaConsultoria, liquidarTodos, investimentosDe } from './investimentos.js';
 import { instanciar, obterCenario, idsCenarios } from '../scenarios/loader.js';
-import { EVENTOS } from '../scenarios/content/eventos.js';
+import { EVENTOS, TIPOS_CARTA, eventosDoTipo } from '../scenarios/content/eventos.js';
 import { obterEmpresa } from '../scenarios/content/investimentos.js';
 
 // Máquina de estados do turno: cada transição é (estado, ação) -> novo estado.
 // Ação inválida para a fase atual é ignorada.
-
-function sacar(e, chave, todos, rng) {
-  if (!e[chave].length) e[chave] = rng.embaralhar(todos);
-  return e[chave].shift();
-}
 
 // Cenário do baralho com dificuldade mais próxima do progresso do jogador (sem repetir no ciclo).
 function sacarCenario(e, progresso, rng) {
@@ -82,8 +77,20 @@ function aplicarBalanco(e, rng) {
   };
 }
 
+// Carta do tipo dado, sem repetir dentro do ciclo. `baralhoEventos` é uma lista só: ao faltar carta do tipo, as do tipo
+// entram embaralhadas no fim. Saves antigos guardam cartas de todos os tipos misturadas, que saem normalmente.
+function sacarCarta(e, tipo, rng) {
+  const doTipo = (id) => EVENTOS.find((c) => c.id === id)?.tipo === tipo;
+  if (!e.baralhoEventos.some(doTipo)) e.baralhoEventos.push(...rng.embaralhar(eventosDoTipo(tipo).map((c) => c.id)));
+  const [id] = e.baralhoEventos.splice(e.baralhoEventos.findIndex(doTipo), 1);
+  return id;
+}
+
+// As três cartas viradas da casa de Evento: uma de cada tipo, em posições embaralhadas (fisher.md 3.15).
+const sacarMao = (e, rng) => rng.embaralhar(TIPOS_CARTA.map((tipo) => sacarCarta(e, tipo, rng)));
+
 // Prejuízo de evento do setor de uma diretoria é amortecido (todo setor tem diretor no cooperativo).
-function dinheiroDoEvento(e, carta) {
+export function dinheiroDoEvento(e, carta) {
   if (!ehCooperativo(e) || carta.dinheiro >= 0 || !diretoriaDoSetor(carta.setor)) return carta.dinheiro;
   return Math.round((carta.dinheiro * (1 - REDUCAO_PREJUIZO_PASSIVA)) / 100) * 100;
 }
@@ -121,13 +128,10 @@ const TRANSICOES = {
         };
         e.fase = 'ESCOLHER_METRICA';
       } else if (casa === 'evento') {
-        const idCarta = sacar(e, 'baralhoEventos', EVENTOS.map((x) => x.id), rng);
-        const carta = EVENTOS.find((ev) => ev.id === idCarta);
-        const dinheiro = dinheiroDoEvento(e, carta);
-        const w = carteira(e);
-        w.dinheiro += dinheiro;
-        const crise = carta.reputacao !== 0 ? mudarReputacao(w, carta.reputacao) : false;
-        e.eventoAtual = { id: carta.id, crise, dinheiro };
+        // O rival do solo não participa: passa pelo Evento sem cartas (e sem gastar sorteios), como no Mercado.
+        e.eventoAtual = ehBot(j)
+          ? { cartas: null, decisao: 'recusou', escolhida: null }
+          : { cartas: sacarMao(e, rng), decisao: null, escolhida: null };
         e.fase = 'MOSTRAR_EVENTO';
       } else if (casa === 'mercado') {
         // O rival do solo não investe: passa pelo Mercado sem oferta (e sem gastar sorteios).
@@ -277,6 +281,68 @@ TRANSICOES.MOSTRAR_MERCADO = {
   },
 };
 
+// Casa de Evento (fisher.md 3.15): a pessoa pode participar ou passar. Ao participar, escolhe uma de três cartas
+// viradas (uma boa, uma ruim e uma troll). Como no problema de Monty Hall, o jogo então revela uma das outras duas,
+// nunca a boa, e a pessoa decide manter a carta ou trocá-la pela que sobrou; só depois o efeito vale.
+// `decisao`: null (oferta aberta), 'escolhendo' (cartas na mesa), 'trocando' (uma carta revelada, à espera de manter
+// ou trocar), 'participou' ou 'recusou'. Eventos de saves antigos não têm `cartas`: o efeito já foi aplicado e só
+// falta continuar.
+function revelarCarta(e, indice, trocou) {
+  const ev = e.eventoAtual;
+  const carta = EVENTOS.find((c) => c.id === ev.cartas[indice]);
+  const w = carteira(e);
+  const dinheiro = dinheiroDoEvento(e, carta);
+  w.dinheiro += dinheiro;
+  const crise = carta.reputacao !== 0 ? mudarReputacao(w, carta.reputacao) : false;
+  Object.assign(ev, { decisao: 'participou', escolhida: indice, trocou, id: carta.id, crise, dinheiro });
+}
+
+// A carta que o jogo revela depois da primeira escolha: uma das outras duas que não seja a boa. Se a primeira
+// escolha foi a boa, as duas outras servem e o rng da partida decide; senão, só uma serve.
+function cartaParaRevelar(e, primeira) {
+  const ev = e.eventoAtual;
+  const outras = ev.cartas.map((_, i) => i).filter((i) => i !== primeira);
+  const naoBoas = outras.filter((i) => EVENTOS.find((c) => c.id === ev.cartas[i]).tipo !== 'boa');
+  if (naoBoas.length === 1) return naoBoas[0];
+  const rng = criarRng(e.rng);
+  const revelada = naoBoas[rng.inteiro(0, naoBoas.length - 1)];
+  e.rng = rng.estado;
+  return revelada;
+}
+
+TRANSICOES.MOSTRAR_EVENTO = {
+  PARTICIPAR(e) {
+    if (!e.eventoAtual?.cartas || e.eventoAtual.decisao !== null) return e;
+    e.eventoAtual.decisao = 'escolhendo';
+    return e;
+  },
+  ESCOLHER_CARTA(e, { valor }) {
+    const indice = Number(valor);
+    if (e.eventoAtual?.decisao !== 'escolhendo' || !Number.isInteger(indice) || indice < 0 || indice >= e.eventoAtual.cartas.length) return e;
+    Object.assign(e.eventoAtual, { decisao: 'trocando', primeira: indice, revelada: cartaParaRevelar(e, indice) });
+    return e;
+  },
+  MANTER(e) {
+    if (e.eventoAtual?.decisao !== 'trocando') return e;
+    revelarCarta(e, e.eventoAtual.primeira, false);
+    return e;
+  },
+  TROCAR(e) {
+    const ev = e.eventoAtual;
+    if (ev?.decisao !== 'trocando') return e;
+    revelarCarta(e, ev.cartas.findIndex((_, i) => i !== ev.primeira && i !== ev.revelada), true);
+    return e;
+  },
+  // Passar adianta a vez, sem tela de resultado: não houve efeito a mostrar.
+  RECUSAR(e) {
+    return e.eventoAtual?.cartas && e.eventoAtual.decisao === null ? continuar(e) : e;
+  },
+  // Seguir sem escolher vale como passar; com as cartas na mesa, a pessoa precisa escolher e decidir.
+  CONTINUAR(e) {
+    return ['escolhendo', 'trocando'].includes(e.eventoAtual?.decisao) ? e : continuar(e);
+  },
+};
+
 // Pontua a decisão com as escolhas já gravadas em `cenarioAtual` (por uma pessoa ou pelo bot).
 function resolverEscolhas(e) {
   const c = e.cenarioAtual;
@@ -409,7 +475,7 @@ function apurarInvestimentosFinais(e) {
   e.apuracaoFinal = apuracao.length ? apuracao : null;
 }
 
-for (const fase of ['MOSTRAR_RESULTADO', 'MOSTRAR_EVENTO', 'MOSTRAR_BALANCO']) {
+for (const fase of ['MOSTRAR_RESULTADO', 'MOSTRAR_BALANCO']) {
   TRANSICOES[fase] = { CONTINUAR: continuar };
 }
 

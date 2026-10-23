@@ -761,6 +761,122 @@ td {
   border-color: var(--ruim);
 }
 
+.painel .evento.troll {
+  border-color: var(--m3);
+}
+
+.tipo-carta {
+  margin: .25rem 0 0;
+  font-size: .85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--suave);
+}
+
+.painel .evento h2 {
+  margin-top: .15rem;
+}
+
+.cartas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .5rem;
+  margin: 1rem 0;
+}
+
+.carta-virada {
+  display: grid;
+  place-items: center;
+  gap: .25rem;
+  aspect-ratio: 3 / 4;
+  width: 100%;
+  max-width: 12rem;
+  justify-self: center;
+  padding: .5rem;
+  border: 2px solid var(--primaria);
+  border-radius: 12px;
+  background: repeating-linear-gradient(45deg, var(--surface), var(--surface) 8px, var(--bg) 8px, var(--bg) 16px);
+}
+
+.carta-virada.minha {
+  border-width: 4px;
+}
+
+.carta-aberta {
+  display: grid;
+  aspect-ratio: 3 / 4;
+  width: 100%;
+  max-width: 12rem;
+  justify-self: center;
+  align-content: center;
+  gap: .35rem;
+  padding: .5rem;
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: .9rem;
+  text-align: center;
+}
+
+.carta-aberta.bom {
+  border-color: var(--bom);
+}
+
+.carta-aberta.ruim {
+  border-color: var(--ruim);
+}
+
+.carta-aberta.troll {
+  border-color: var(--m3);
+}
+
+.carta-virada span {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--primaria);
+}
+
+.carta-virada:hover,
+.carta-virada:focus-visible {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, .25);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .carta-virada {
+    transition: transform .15s, box-shadow .15s;
+  }
+}
+
+.cartas-restantes ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: .4rem;
+}
+
+.cartas-restantes li {
+  display: grid;
+  gap: .1rem;
+  padding: .4rem .75rem;
+  border-left: 4px solid var(--borda);
+  background: var(--surface);
+  font-size: .9rem;
+}
+
+.cartas-restantes li.bom {
+  border-left-color: var(--bom);
+}
+
+.cartas-restantes li.ruim {
+  border-left-color: var(--ruim);
+}
+
+.cartas-restantes li.troll {
+  border-left-color: var(--m3);
+}
+
 .resultado.sorte,
 .resultado.incoerencia {
   border-color: var(--aviso);
@@ -1256,4 +1372,17 @@ html {
 
 .investimentos .perda {
   color: var(--ruim);
+}
+
+.carta-virada small,
+.carta-aberta {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .carta-virada,
+  .carta-aberta {
+    padding: .25rem;
+    font-size: .8rem;
+  }
 }
