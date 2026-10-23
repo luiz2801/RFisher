@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # O lint pega erro de sintaxe em arquivo sem teste (como src/main.js).
+      - run: npm run lint
       - run: npm test
 
   deploy:
