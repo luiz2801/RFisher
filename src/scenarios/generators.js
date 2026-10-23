@@ -13,6 +13,13 @@ function padronizado(n, alvoMedia, alvoDp, rng, nCasas) {
   return z.map((v) => casas(alvoMedia + ((v - m) / s) * alvoDp, nCasas));
 }
 
+function pearson(x, y) {
+  const mx = media(x);
+  const my = media(y);
+  const cov = soma(x.map((v, i) => (v - mx) * (y[i] - my)));
+  return cov / Math.sqrt(soma(x.map((v) => (v - mx) ** 2)) * soma(y.map((v) => (v - my) ** 2)));
+}
+
 function sortearComPesos(n, pesos, primeiro, rng) {
   const total = pesos.reduce((s, w) => s + w, 0);
   return Array.from({ length: n }, () => {
@@ -235,6 +242,78 @@ const GERADORES = {
     invariante([v]) {
       const m = media(v);
       return m - mediana(v) >= 0.2 && Math.abs(m - moda(v)) >= 0.5 && percentil(v, 90) > 1.5 * m;
+    },
+  },
+
+  // Paradoxo de Simpson na contratação: as mulheres têm taxa de aprovação maior em Engenharia e em Vendas, mas a
+  // geral delas é menor, porque 90% delas se candidatam à área de aprovação difícil (e 90% deles, à fácil).
+  // Séries: taxa dos homens e das mulheres (Engenharia, Vendas, Geral, em %) e candidatos de cada grupo (Engenharia, Vendas, Total).
+  paradoxo_simpson_rh: {
+    gerar(p) {
+      const [hEng, mEng] = p.taxasEngenharia;
+      const [hVen, mVen] = p.taxasVendas;
+      const geral = (eng, nEng, ven, nVen) => casas((eng * nEng + ven * nVen) / (nEng + nVen), 1);
+      return {
+        series: [
+          { nome: 'Taxa de aprovação dos homens', valores: [hEng, hVen, geral(hEng, p.volumeH_Eng, hVen, p.volumeH_Ven)] },
+          { nome: 'Taxa de aprovação das mulheres', valores: [mEng, mVen, geral(mEng, p.volumeM_Eng, mVen, p.volumeM_Ven)] },
+          { nome: 'Candidatos homens', valores: [p.volumeH_Eng, p.volumeH_Ven, p.volumeH_Eng + p.volumeH_Ven] },
+          { nome: 'Candidatas mulheres', valores: [p.volumeM_Eng, p.volumeM_Ven, p.volumeM_Eng + p.volumeM_Ven] },
+        ],
+      };
+    },
+    invariante([homens, mulheres, candH, candM]) {
+      const melhoresNosDois = mulheres[0] > homens[0] && mulheres[1] > homens[1];
+      const geralInverte = mulheres[2] < homens[2];
+      const concentradas = candM[0] / candM[2] > 0.5 && candH[1] / candH[2] > 0.5 && homens[1] > homens[0];
+      return melhoresNosDois && geralInverte && concentradas;
+    },
+  },
+
+  // Viés de sobrevivência: a pesquisa só alcança quem ficou, então as notas de usabilidade são quase todas máximas.
+  // Meia-normal colada no 10 (média ≈ `nota_ativos`), com uma casa decimal. Quem desistiu não aparece nos dados.
+  vies_sobrevivencia: {
+    gerar(p, rng) {
+      const dp = (10 - p.nota_ativos) / Math.sqrt(2 / Math.PI);
+      const notas = Array.from({ length: p.amostra }, () => casas(10 - Math.abs(rng.normal(0, dp)), 1));
+      return { series: [{ nome: 'Notas dos usuários ativos', valores: notas }] };
+    },
+    invariante([v], p) {
+      return Math.max(...v) <= 10 && Math.min(...v) >= 8 && Math.abs(media(v) - p.nota_ativos) < 0.15;
+    },
+  },
+
+  // Falácia da taxa base: com 99% de precisão e 1 fraude em 10.000, os alarmes falsos (~100) engolem o verdadeiro.
+  // Determinístico. Séries (Fraudes, Legítimas, Total): transações e alarmes disparados.
+  taxa_base_bayes: {
+    gerar(p) {
+      const fraudes = Math.round(p.total_transacoes * p.taxa_fraude);
+      const legitimas = p.total_transacoes - fraudes;
+      const certos = Math.round(fraudes * p.precisao_ia);
+      const falsos = Math.round(legitimas * (1 - p.precisao_ia));
+      return {
+        series: [
+          { nome: 'Transações', valores: [fraudes, legitimas, p.total_transacoes] },
+          { nome: 'Alarmes disparados', valores: [certos, falsos, certos + falsos] },
+        ],
+      };
+    },
+    invariante([transacoes, alarmes]) {
+      return alarmes[0] >= 1 && alarmes[1] > 50 * alarmes[0] && alarmes[0] / alarmes[2] < 0.05 && transacoes[0] >= 1;
+    },
+  },
+
+  // Correlação espúria: a chuva (variável oculta) move o gasto com anúncios e as vendas de guarda-chuvas, que
+  // então correlacionam entre si sem relação causal. Séries: gasto com Ads, vendas e chuva (mm), uma posição por mês.
+  correlacao_terceira_variavel: {
+    gerar(p, rng) {
+      const chuva = Array.from({ length: p.meses }, () => rng.inteiro(30, 300));
+      const ads = chuva.map((c) => arredondar(2000 + 20 * c + rng.normal(0, 450), 50));
+      const vendas = chuva.map((c) => Math.round(60 + 1.2 * c + rng.normal(0, 18)));
+      return { series: [{ nome: 'Gasto com Ads', valores: ads }, { nome: 'Vendas de guarda-chuvas', valores: vendas }, { nome: 'Chuva (mm)', valores: chuva }] };
+    },
+    invariante([ads, vendas, chuva], p) {
+      return pearson(ads, vendas) >= p.r_pearson - 0.03 && pearson(ads, chuva) >= 0.9 && pearson(vendas, chuva) >= 0.9 && Math.min(...vendas) > 0;
     },
   },
 

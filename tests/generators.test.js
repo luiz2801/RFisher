@@ -222,3 +222,47 @@ test('cenário 21: as taxas sobem nos dois segmentos e a geral cai porque o trá
     assert.ok(visDepois[1] / (visDepois[0] + visDepois[1]) > visAntes[1] / (visAntes[0] + visAntes[1]));
   }
 });
+
+test('cenário 22: as mulheres lideram nos dois departamentos e perdem no geral porque se concentram em Engenharia', () => {
+  const g = geradorDe('cenario_22_simpson_rh');
+  for (let seed = 1; seed <= 200; seed++) {
+    const [homens, mulheres, candH, candM] = gerar(g, criarRng(seed)).series.map((s) => s.valores);
+    assert.deepEqual(homens, [5, 20, 18.5]);
+    assert.deepEqual(mulheres, [8, 25, 9.7]);
+    assert.ok(mulheres[0] > homens[0] && mulheres[1] > homens[1]);
+    assert.ok(mulheres[2] < homens[2]);
+    assert.ok(candM[0] > candM[1] && candH[1] > candH[0]);
+  }
+});
+
+test('cenário 23: as notas dos sobreviventes são quase todas máximas', () => {
+  const g = geradorDe('cenario_23_sobrevivencia_produto');
+  for (let seed = 1; seed <= 200; seed++) {
+    const v = gerar(g, criarRng(seed)).series[0].valores;
+    assert.equal(v.length, 100);
+    assert.ok(Math.max(...v) <= 10 && Math.min(...v) >= 8);
+    assert.ok(Math.abs(media(v) - 9.8) < 0.15);
+  }
+});
+
+test('cenário 24: os ~100 alarmes falsos engolem o único alarme verdadeiro (chance real abaixo de 1%)', () => {
+  const g = geradorDe('cenario_24_taxa_base_fraude');
+  const [transacoes, alarmes] = gerar(g, criarRng(1)).series.map((s) => s.valores);
+  assert.deepEqual(transacoes, [1, 9999, 10000]);
+  assert.deepEqual(alarmes, [1, 100, 101]);
+  assert.ok(alarmes[0] / alarmes[2] < 0.01);
+});
+
+test('cenário 25: anúncios e vendas correlacionam porque ambos seguem a chuva', () => {
+  const g = geradorDe('cenario_25_correlacao_espuria');
+  const r = (x, y) => {
+    const mx = media(x);
+    const my = media(y);
+    return x.reduce((s, v, i) => s + (v - mx) * (y[i] - my), 0) / Math.sqrt(x.reduce((s, v) => s + (v - mx) ** 2, 0) * y.reduce((s, v) => s + (v - my) ** 2, 0));
+  };
+  for (let seed = 1; seed <= 200; seed++) {
+    const [ads, vendas, chuva] = gerar(g, criarRng(seed)).series.map((s) => s.valores);
+    assert.equal(ads.length, 12);
+    assert.ok(r(ads, vendas) >= 0.92 && r(ads, chuva) >= 0.9 && r(vendas, chuva) >= 0.9);
+  }
+});

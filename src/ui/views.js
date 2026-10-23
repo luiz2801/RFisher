@@ -404,11 +404,27 @@ function tabelaSegmentos(c, revelar) {
     <thead><tr><th scope="col">Dispositivo</th><th scope="col">Antes</th><th scope="col">Depois</th>${extra}</tr></thead><tbody>${linhas}</tbody></table>`;
 }
 
+// Cenário de tabela de séries (tipo_grafico 'tabela_series'): cada série é uma coluna e cada posição, uma linha
+// (`dados.rotulos_linhas`). As colunas de `dados.ocultas_ate_resultado` — o que explica a resposta — só aparecem no resultado.
+function tabelaSeries(def, c, revelar) {
+  const d = def.dados;
+  const colunas = c.series.map((serie, i) => ({ serie, formato: d.formatos?.[i] ?? d.formato })).filter((_, i) => revelar || !d.ocultas_ate_resultado?.includes(i));
+  const cabecalho = colunas.map(({ serie }) => `<th scope="col">${esc(serie.nome)}</th>`).join('');
+  const linhas = d.rotulos_linhas
+    .map((rotulo, r) => `<tr><th scope="row">${esc(rotulo)}</th>${colunas.map(({ serie, formato }) => `<td>${esc(formatar(formato, serie.valores[r]))}</td>`).join('')}</tr>`)
+    .join('');
+  return `<table class="tabela-dados" aria-describedby="desc-tabela"><caption>${esc(d.legenda)}</caption>
+    <thead><tr><td></td>${cabecalho}</tr></thead><tbody>${linhas}</tbody></table><p id="desc-tabela" hidden>${esc(d.descricao_acessivel)}</p>`;
+}
+
       function blocoCenario(e, marcadoresRevelacao) {
   const c = e.cenarioAtual;
       const def = obterCenario(c.id);
       if (def.dados.tipo_grafico === 'segmentos') {
         return { def, html: `<h2>${esc(def.titulo)}</h2><p class="contexto">${esc(preencher(def.contexto, c.vars))}</p>${tabelaSegmentos(c, marcadoresRevelacao !== undefined)}` };
+      }
+      if (def.dados.tipo_grafico === 'tabela_series') {
+        return { def, html: `<h2>${esc(def.titulo)}</h2><p class="contexto">${esc(preencher(def.contexto, c.vars))}</p>${tabelaSeries(def, c, marcadoresRevelacao !== undefined)}` };
       }
       const discreto = def.dados.tipo_grafico === 'barras_discretas';
       const dominio = calcularDominio(c.series, discreto);

@@ -14,4 +14,7 @@ export const CONCEITOS = {
   cv: 'Coeficiente de variação (dispersão relativa)',
   media_aparada: 'Média aparada (trimmed mean)',
   paradoxo_simpson: 'Paradoxo de Simpson',
+  vies_sobrevivencia: 'Viés de sobrevivência',
+  falacia_taxa_base: 'Falácia da taxa base (falsos positivos)',
+  correlacao_causalidade: 'Correlação não implica causalidade',
 };
