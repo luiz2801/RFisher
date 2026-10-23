@@ -686,19 +686,19 @@ function viewMercado(e) {
     <h3>${esc(def.nome)}</h3>
     <p class="ajuda">${esc(def.setor)} · ${esc(def.tempo)} de mercado</p>
     <p><strong>O fundador diz:</strong> ${esc(def.fundador)}</p>
-    ${m.consultoria ? '' : '<p class="ajuda">Lucros, retornos possíveis e chance de sucesso só aparecem no relatório da consultoria.</p>'}
+    ${historicoEmpresa(def)}
+    ${m.consultoria ? '' : '<p class="ajuda">Retornos possíveis e chance de sucesso só aparecem no relatório da consultoria.</p>'}
   </article>`;
 
-  // Todas as métricas de desempenho ficam atrás do relatório da consultoria.
+  // Chance de sucesso e retornos possíveis ficam atrás do relatório da consultoria; os lucros da empresa são sempre públicos.
   const relatorio = m.consultoria
     ? `<section class="ficha"><h3>Relatório da consultoria</h3>
-      ${historicoEmpresa(def)}
       <p>Chance de sucesso: <strong>${pctMercado(m.prob)}</strong> · chance de fracasso: ${pctMercado(1 - m.prob)}.</p>
       <p>Se der certo: <strong>+${pctMercado(ganho)}</strong> sobre o aporte (já sem os ${pctMercado(CONSULTORIA_PENALIDADE)} do retorno cobrados pela consultoria). Se der errado: <strong>−${pctMercado(m.perda)}</strong> do aporte, mais ${brl(honorario)} de honorários.</p></section>`
     : '';
 
   const consultoria = !m.consultoria && aberta
-    ? `<button class="discreto" data-acao="ABRIR_CONSULTORIA">Contratar consultoria (relatório com lucros, retornos e chance exata; se você investir, ela cobra ${pctMercado(CONSULTORIA_PENALIDADE)} do retorno quando der certo e ${brl(CONSULTORIA_HONORARIO_FRACASSO)} quando der errado)</button>`
+    ? `<button class="discreto" data-acao="ABRIR_CONSULTORIA">Contratar consultoria (relatório com a chance exata e os retornos possíveis; se você investir, ela cobra ${pctMercado(CONSULTORIA_PENALIDADE)} do retorno quando der certo e ${brl(CONSULTORIA_HONORARIO_FRACASSO)} quando der errado)</button>`
     : '';
 
   let diagnostico = '';

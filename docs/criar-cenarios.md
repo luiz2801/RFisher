@@ -341,7 +341,7 @@ Em `investimentos.js`, acrescente um objeto a `EMPRESAS` (regras em `fisher.md` 
 - **A pista precisa estar no texto do `fundador`** (ou no `historico`), sem nomear a falácia. Quem lê deve poder descobrir; a `explicacao` só aparece depois da decisão.
 - **Mantenha a proporção:** cada porte com ao menos 2 empresas sólidas e 2 furadas, e cada falácia em ao menos uma empresa. O investimento às cegas deve ficar perto de zero em média (o teste confere por porte), senão o chute passa a compensar.
 - A consultoria cobra 50% do ganho e R$ 15.000 no fracasso, então quase nenhuma empresa tem valor esperado positivo depois dela; isso é intencional (ela é informação cara). Não ajuste o catálogo para compensar.
-- O `historico` e os números de `prob`, `ganho` e `perda` só aparecem no relatório da consultoria; a pista da falácia precisa estar no texto do `fundador`.
+- O `historico` é sempre visível na ficha; `prob`, `ganho` e `perda` só aparecem no relatório da consultoria. A pista da falácia deve estar no texto do `fundador` ou no `historico`.
 - Empresas novas entram no baralho de seu porte no próximo ciclo. Não renomeie nem remova um `id`: aportes salvos referenciam o id (a apuração tolera id ausente, mas perde a narrativa).
 - Narrativas de sucesso e fracasso são exibidas no Balanço ao apurar; escreva-as de modo a fazer sentido para qualquer um dos dois desfechos, sem citar números.
 
