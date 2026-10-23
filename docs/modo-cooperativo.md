@@ -75,6 +75,18 @@ Sem pressão, o cooperativo fica morno.
 
 ---
 
+## 4.1 Investimentos no Mercado
+
+**Implementado** (`fisher.md` 3.14). As casas de Mercado funcionam também no cooperativo, com estas diferenças:
+
+- O porte da empresa ofertada vem da **reputação da empresa**, e o aporte sai do **caixa da empresa** (no máximo o caixa disponível).
+- Cada aporte fica registrado em quem o fez (`jogadores[].investimentos`) e é apurado quando **essa pessoa** passa pelo Balanço. O retorno entra no caixa da empresa **antes da meta trimestral**, então um investimento bem-sucedido ajuda a cumprir a meta e um aporte em custódia reduz o caixa que a meta compara. O risco que o aporte de um jogador impõe ao orçamento comum é assunto do grupo: a conversa faz parte do jogo (como nas decisões de cenário).
+- Diagnóstico certo ou errado do argumento do fundador muda a reputação da empresa.
+- Os aportes ainda em custódia no fim dos trimestres são apurados no encerramento e entram no caixa final, que define a faixa da empresa. Falência da empresa encerra a partida sem apuração.
+- O painel da empresa mostra o total investido.
+
+---
+
 ## 5. Camada competitiva leve
 
 - **Destaque do ano:** ranking individual por mérito (decisões com justificativa correta, ponderadas pelo nível, e pareceres certos). Não define vitória, mas serve como avaliação formativa.
@@ -90,6 +102,7 @@ Sem pressão, o cooperativo fica morno.
 | O jogador de nível alto domina as decisões | Só o decisor clica, e o parecer é limitado a um por turno. O multiplicador de nível continua sendo o de quem decide |
 | Perda da comparação competitiva | Manter os dois modos, com `modo` no estado. Comparar os dois em playtest |
 | Calibragem da meta | Escalar com o número de jogadores e turnos. Calibrar por simulação (fase 2 do roadmap) |
+| Um jogador faz um investimento arriscado e pesa no caixa comum | Aceito: o grupo discute o risco. O aporte tem teto de R$ 50.000 e só pode usar o caixa disponível (4.1) |
 | Habilidades desbalanceadas | Cada habilidade só dá informação e tem limite de uso |
 
 ---
