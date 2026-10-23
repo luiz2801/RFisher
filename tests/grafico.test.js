@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calcularBarras, calcularDominio, grafico } from '../src/ui/components/grafico.js';
+import { calcularBarras, calcularDominio, calcularTicks, grafico } from '../src/ui/components/grafico.js';
 
 const serie = (valores) => ({ nome: 'S', valores });
 const soma = (barras) => barras.reduce((s, b) => s + b.qtd, 0);
@@ -130,4 +130,24 @@ test('grafico: escapa HTML nos rótulos e desenha os marcadores com valor format
   assert.match(html, /&lt;script&gt;/);
   assert.match(html, /class="marcador m0 certo"/);
   assert.match(html, /Mediana: R\$ 25/);
+});
+
+// ---------- calcularTicks ----------
+
+test('calcularTicks: marcas redondas, todas dentro do domínio e em ordem crescente', () => {
+  assert.deepEqual(calcularTicks([-0.2, 10.2]), [0, 2, 4, 6, 8, 10]);
+  assert.deepEqual(calcularTicks([-134, 230434]), [0, 50000, 100000, 150000, 200000]);
+  assert.deepEqual(calcularTicks([39.2, 82.8]), [40, 50, 60, 70, 80]);
+});
+
+test('calcularTicks: domínio estreito usa passo fracionário sem ruído de ponto flutuante', () => {
+  assert.deepEqual(calcularTicks([9.286, 10.014]), [9.4, 9.6, 9.8, 10]);
+});
+
+test('calcularTicks: nunca sai do domínio (sem salário negativo nem nota acima de 10)', () => {
+  for (const dominio of [[-0.2, 10.2], [0.6, 29.4], [-2.2, 5.0], [18, 3912]]) {
+    const ticks = calcularTicks(dominio);
+    assert.ok(ticks.length >= 2);
+    assert.ok(ticks.every((t) => t >= dominio[0] && t <= dominio[1]));
+  }
 });

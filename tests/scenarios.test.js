@@ -165,3 +165,7 @@ test('validador: conceito ausente ou inválido', () => {
 test('validador: placeholder inexistente no contexto', () => {
   erroUnico((d) => { d.contexto += ' {{nao_existe}}'; }, /placeholder inexistente: \{\{nao_existe\}\}/);
 });
+
+test('validador: marcador de dispersão não vira linha no eixo', () => {
+  erroUnico((d) => { d.feedback.revelacao.marcadores.push({ chave: 'iqr', rotulo: 'IQR' }); }, /marcador de dispersão.*iqr/);
+});

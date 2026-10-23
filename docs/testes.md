@@ -146,10 +146,10 @@ As views são funções puras `estado → string HTML`, testáveis sem navegador
 - Cada fase tem uma view e nenhuma fase cai no ramo padrão.
 - Conteúdo condicional: dica só para `iniciante`, oculta até ser pedida (`ABRIR_DICA`), com bônus de confiança reduzido nos ganhos; revelação de marcadores no resultado; aviso de crise; banner de balanço; meta do Balanço no cooperativo; placar competitivo versus painel da empresa; empate no fim de jogo; faixas de fim cooperativo.
 - Formatos numéricos em `pt-BR` e sinais (+/−) corretos nos deltas.
-- **`grafico.js`**: `calcularBarras` (discreto: uma barra por inteiro; contínuo: 12 faixas, valor máximo cai na última faixa, soma das barras = nº de valores), `calcularDominio` (folga, série constante, discreto).
+- **`grafico.js`**: `calcularBarras` (discreto: uma barra por inteiro; contínuo: 12 faixas, valor máximo cai na última faixa, soma das barras = nº de valores), `calcularDominio` (folga, série constante, discreto), `calcularTicks` (marcas redondas, todas dentro do domínio, sem ruído de ponto flutuante).
 - **Snapshots** opcionais de telas-chave, para detectar mudança involuntária de marcação (usar `assert.snapshot` do `node:test` somente se a versão do Node o suportar).
 
-**Situação:** `tests/views.test.js` cobre o menu e a travessia completa. `tests/grafico.test.js` cobre `calcularBarras`, `calcularDominio` e a marcação acessível de `grafico`. Falta o conteúdo condicional das views.
+**Situação:** `tests/views.test.js` cobre o menu e a travessia completa. `tests/grafico.test.js` cobre `calcularBarras`, `calcularDominio`, `calcularTicks` e a marcação acessível de `grafico`. Falta o conteúdo condicional das views.
 
 ## 10. Segurança (XSS)
 
