@@ -19,6 +19,7 @@ classDiagram
         +int turnoAtual
         +int turnosPorJogador
         +int dinheiroInicial
+        +int reputacaoInicial
         +boolean falencia
         +int jogadorAtual
         +Fase fase
@@ -109,11 +110,41 @@ classDiagram
 
     class EventoCarta {
         +string id
+        +TipoCarta tipo
+        +string setor
         +string titulo
         +string texto
         +string licao
         +number dinheiro
         +number reputacao
+    }
+
+    class TipoCarta {
+        <<enumeration>>
+        boa
+        ruim
+        troll
+    }
+
+    class DecisaoEvento {
+        <<enumeration>>
+        null
+        escolhendo
+        trocando
+        participou
+        recusou
+    }
+
+    class EventoAtual {
+        +string[] cartas
+        +DecisaoEvento decisao
+        +int primeira
+        +int revelada
+        +int escolhida
+        +boolean trocou
+        +string id
+        +boolean crise
+        +int dinheiro
     }
 
     class Investimento {
@@ -140,6 +171,7 @@ classDiagram
         +Analise analise
         +int aporte
         +string decisao
+        +int honorarioPago
     }
 
     class EmpresaDef {
@@ -236,7 +268,8 @@ classDiagram
     Jogador "1" *-- "1" Sequencia : acumula
     Jogador "1" *-- "*" Investimento : mantém em custódia até o Balanço
     GameState "1" o-- "0..1" CenarioDef : executa em 'decisao'
-    GameState "1" o-- "0..1" EventoCarta : aciona em 'evento'
+    GameState "1" o-- "0..1" EventoAtual : apresenta em 'evento'
+    EventoAtual "1" ..> "3" EventoCarta : mão sorteada (uma boa, uma ruim, uma troll)
     GameState "1" o-- "0..1" OfertaMercado : apresenta em 'mercado'
     OfertaMercado "1" ..> "1" EmpresaDef : sorteada do catálogo
     CenarioDef "1" *-- "5" Opcao : possui
@@ -285,13 +318,19 @@ stateDiagram-v2
             ESCOLHER_CONFIANCA --> MOSTRAR_RESULTADO : CONFIANCA('chute' | 'duvida' | 'provavel' | 'confiante' | 'certeza')
         }
         
+        state FluxoEvento {
+            MOSTRAR_EVENTO --> MOSTRAR_EVENTO : PARTICIPAR (decisao = escolhendo; três cartas viradas)
+            MOSTRAR_EVENTO --> MOSTRAR_EVENTO : ESCOLHER_CARTA(0, 1 ou 2) (revela uma das outras, nunca a boa; decisao = trocando)
+            MOSTRAR_EVENTO --> MOSTRAR_EVENTO : MANTER / TROCAR (aplica o efeito da carta final; decisao = participou)
+        }
+
         state FluxoMercado {
             MOSTRAR_MERCADO --> MOSTRAR_MERCADO : ABRIR_CONSULTORIA / DIAGNOSTICAR(falácia) (oferta aberta, uma vez cada)
-            MOSTRAR_MERCADO --> MOSTRAR_MERCADO : INVESTIR(aporte) / RECUSAR (fecha a oferta e paga o diagnóstico)
+            MOSTRAR_MERCADO --> MOSTRAR_MERCADO : INVESTIR(aporte) / RECUSAR (fecha a oferta, paga o diagnóstico e, se contratou a consultoria sem investir, debita o honorário)
         }
 
         MOSTRAR_RESULTADO --> ValidaFimTurno : CONTINUAR
-        MOSTRAR_EVENTO --> ValidaFimTurno : CONTINUAR
+        MOSTRAR_EVENTO --> ValidaFimTurno : RECUSAR (passa a vez, sem efeito) / CONTINUAR (sem decidir vale RECUSAR; com as cartas na mesa ou à espera de manter ou trocar é ignorado; depois de decidir, segue)
         MOSTRAR_MERCADO --> ValidaFimTurno : CONTINUAR (sem decidir, vale RECUSAR)
         MOSTRAR_BALANCO --> ValidaFimTurno : CONTINUAR
         
@@ -351,7 +390,8 @@ sequenceDiagram
         Loader-->>Machine: { series, num, vars }
         Note over Machine: fase = 'ESCOLHER_METRICA'
     else Casa == 'evento'
-        Note over Machine: Aplica efeito e fase = 'MOSTRAR_EVENTO'
+        Machine->>RNG: sacarMao (uma carta boa, uma ruim e uma troll, em posições embaralhadas)
+        Note over Machine: fase = 'MOSTRAR_EVENTO' (decisao = null, sem efeito até a pessoa escolher uma carta)
     else Casa == 'mercado'
         Machine->>Invest: sortearOferta(e, reputacao, rng)
         Invest-->>Machine: oferta (empresa do porte e chance sorteada)
@@ -481,9 +521,10 @@ graph TD
 | Módulo | Responsabilidade Principal |
 | :--- | :--- |
 | **`src/engine/machine.js`** | Máquina de estados finitos que orquestra as transições a partir de ações do jogador. |
-| **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`, que aceita `turnos` (1 a 64) e `dinheiroInicial` (R$ 10.000 a R$ 1.000.000), ambos limitados, e `soConceitual`, para excluir os cenários de cálculo, e os atalhos de teste do menu: casa forçada e baralho restrito, ver `fisher.md` 5.8.1) e `diretoria` e `papeis` por jogador (a partir da escolha de setor no menu; `atribuirPapeis(n, escolhas)` em `papeis.js`) e funções seletoras puras (`jogadorAtual`, `dinheiroInicialDe`, `ehBot`, `ehFalido`, `empresaFalida`, `jogadoresAtivos`, `classificacao`, `vencedores`, `progressoDoJogador`). Falência (`fisher.md` 3.12): `continuar` em `machine.js` marca `falido` (ou `falencia` no cooperativo) quando o caixa fecha negativo uma jogada que passou pelo Balanço; `julgarBalanco` (em `state.js`) decide quem perde entre os negativados, adiando o veredito se um rival com saldo pior ainda não passou pelo Balanço; `classificacao` e `vencedores` põem o falido por último. |
+| **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`, que aceita `turnos` (1 a 64), `dinheiroInicial` (R$ 10.000 a R$ 1.000.000) e `reputacaoInicial` (10 a 100), todos limitados, e `soConceitual`, para excluir os cenários de cálculo, e os atalhos de teste do menu: casa forçada e baralho restrito, ver `fisher.md` 5.8.1) e `diretoria` e `papeis` por jogador (a partir da escolha de setor no menu; `atribuirPapeis(n, escolhas)` em `papeis.js`) e funções seletoras puras (`jogadorAtual`, `dinheiroInicialDe`, `ehBot`, `ehFalido`, `empresaFalida`, `jogadoresAtivos`, `classificacao`, `vencedores`, `progressoDoJogador`). Falência (`fisher.md` 3.12): `continuar` em `machine.js` marca `falido` (ou `falencia` no cooperativo) quando o caixa fecha negativo uma jogada que passou pelo Balanço; `julgarBalanco` (em `state.js`) decide quem perde entre os negativados, adiando o veredito se um rival com saldo pior ainda não passou pelo Balanço; `classificacao` e `vencedores` põem o falido por último. |
 | **`src/engine/bot.js`** | Rival do modo solo: acerta métrica e justificativa com a probabilidade do perfil (menor nos cenários difíceis), escolhe distratores ao errar e deriva a confiança de uma certeza interna ruidosa. Perfis em `config.js`, calibração em `scripts/simular-bot.mjs` (`fisher.md` 3.11). |
 | **`src/engine/investimentos.js`** | Investimentos do Mercado (`fisher.md` 3.14): porte da empresa pela reputação (`porteDaReputacao`), oferta sem repetir no ciclo e com a chance de sucesso sorteada em torno da do catálogo (`sortearOferta`), retorno com a penalidade da consultoria (`ganhoComConsultoria`), valor esperado, sorteio do desfecho e crédito de cada aporte (`liquidar`, `liquidarTodos`) e o total em custódia. A máquina o chama ao cair no Mercado, no Balanço e no fim da partida; as empresas ficam em `scenarios/content/investimentos.js`. |
+| **`src/engine/machine.js` (Eventos)** | Casa de Evento (`fisher.md` 3.15): `sacarMao` tira uma carta de cada tipo (`boa`, `ruim`, `troll`) do `baralhoEventos`, que não repete carta dentro do ciclo de cada tipo, e as embaralha; `PARTICIPAR` põe as cartas na mesa, `ESCOLHER_CARTA` registra a primeira escolha e revela uma das outras, nunca a boa (`cartaParaRevelar`, que só usa o rng da partida quando a escolhida é a boa), `MANTER` ou `TROCAR` aplicam o efeito da carta final (`revelarCarta`, com o amortecimento do cooperativo e a crise de imagem) e `RECUSAR` passa a vez. O rival do solo passa sem participar. As cartas ficam em `scenarios/content/eventos.js`. |
 | **`src/engine/dificuldade.js`** | Dificuldade-alvo a partir do progresso do jogador e sorteio ponderado de cenários do baralho. |
 | **`src/engine/rng.js`** | Gerador pseudo-aleatório determinístico baseado no algoritmo `mulberry32` com estado serializável em 32-bits. |
 | **`src/engine/desempenho.js`** | Perfil de desempenho do jogador a partir do histórico: domínio e diagnóstico por conceito, pontos fortes, deficiências, equívocos recorrentes e calibração da certeza; e o relatório de fim de jogo (`relatorioDesempenho`): acertos e erros, assuntos que mais e menos domina e sugestões de estudo com os materiais de `content/materiais.js` (`fisher.md` 4.6). |

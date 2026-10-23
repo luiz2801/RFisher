@@ -32,7 +32,7 @@
 | **Papel do jogador** | CEO de uma empresa; cada jogador escolhe no menu o setor (diretoria: Operações, Tecnologia ou Pessoas e Finanças) que representa, o mesmo nos dois modos |
 | **Modo** | Competitivo, cooperativo ou solo (competitivo contra o computador) |
 | **Objetivo** | Ter mais dinheiro ao fim de N turnos, sem quebrar: caixa negativo na jogada do Balanço é falência e derrota automática (3.12) |
-| **Configuração da partida** | No menu de nova partida, os jogadores escolhem a duração (N, de 1 a 64 rounds por jogador; padrão 10) e o caixa inicial (R$ 10.000 a R$ 1.000.000, em passos de R$ 10.000; padrão R$ 100.000). O caixa vale para cada jogador no competitivo e no solo, e para a empresa no cooperativo |
+| **Configuração da partida** | No menu de nova partida, os jogadores escolhem a duração (N, de 1 a 64 rounds por jogador; padrão 10) o caixa inicial (R$ 10.000 a R$ 1.000.000, em passos de R$ 10.000; padrão R$ 100.000) e a reputação inicial (10 a 100, em passos de 5; padrão 50). Caixa e reputação valem para cada jogador no competitivo e no solo, e para a empresa no cooperativo |
 | **Métricas** | Dinheiro e reputação |
 | **Juiz** | O computador (regras determinísticas, sem IA). No modo solo, o computador também joga como rival, sem IA: um perfil estatístico de acertos (3.11) |
 | **Duração alvo** | 30 a 40 minutos (10 a 12 turnos por jogador); a duração é escolhida no menu, de 1 a 64 |
@@ -78,7 +78,9 @@ Rola os dois dados (soma, 2 a 12) → cai numa casa → vê o cenário/gráfico 
 | 14 | **Sequências de erros e acertos** (implementado, 3.13): cada sucesso absoluto seguido multiplica o fator da sequência por 1,1 (teto 2) e cada erro total seguido por 0,9 (piso 0,5); o fator multiplica o ganho do sucesso e, invertido, a perda do erro total. Evento e Balanço não mexem na sequência | Faz o histórico recente pesar na aposta: errar em série fica caro e acertar em série compensa, sem premiar o acerto parcial. Valores e a leitura de "acertar" e "errar" são pontos de partida a calibrar no playtest; a sequência é por jogador, também no cooperativo |
 | 15 | **Dados iguais dão jogada extra** (implementado, 3.2): se os dois dados saem com a mesma face, o jogador resolve a casa normalmente e, ao continuar, joga de novo, sem gastar trimestre. Vale a todos os jogadores e modos, inclusive o rival do solo | Dá ao dado um lance de sorte visível sem tirar o peso do conhecimento (princípio 3): a jogada extra rende mais casas, não mais pontos por decisão. Sem limite de repetições (a chance de cada repetição é 1/6) e a jogada extra não conta como trimestre, então a partida mantém a duração escolhida. Quem faliu na jogada perde a vez e a partida que acabou não continua. Pode ser calibrado no playtest |
 | 16 | **Legendas do gráfico** (implementado, 5.9): o eixo X do histograma usa marcas redondas dentro do intervalo dos dados (passo 1, 2 ou 5 × 10^k), e um marcador de revelação só pode ser uma métrica que é **posição** na escala dos dados (média, mediana, moda, percentis, máximo etc.); métricas de dispersão (IQR, desvio padrão, amplitude, CV) não viram linha. O cenário 06 passou a marcar P25 e P75, as bordas da faixa central, como o 18 | O eixo antigo rotulava as pontas do intervalo com folga e mostrava valores que os dados não podem ter (salário negativo, nota 10,2), e o marcador "IQR: 5,8 min" desenhava uma linha na posição 5,8 min do eixo, o que não é onde o IQR está |
-| 17 | **Investimentos no Mercado** (implementado, 3.14): duas casas de Mercado oferecem aportar R$ 10 mil, 25 mil ou 50 mil numa empresa do porte da reputação. A pessoa **não vê a chance de sucesso**; a **consultoria** a revela, e libera também lucros e retornos, cobrando de quem investe depois 50% do retorno do sucesso, ou R$ 15.000 se der errado. O argumento do fundador carrega (ou não) uma falácia estatística, que a pessoa pode diagnosticar (reputação ±). O resultado é sorteado no próximo Balanço (e no fim da partida, para o que sobrar) | Dá um destino à reputação (ela abre portes melhores de empresa) e leva ao jogo a ideia de risco × retorno, sem virar roleta: investir às cegas rende ≈ 0 em média e a análise rende ≈ +0,19 por real. Segue a proposta de investimentos, com as escolhas do autor: probabilidades ocultas e vendidas como consultoria (como a dica, 3.4), falácias nas fichas e casa própria, para as cartas de Evento continuarem só com lições. O aporte arriscado de um jogador pode pesar no caixa comum do cooperativo; a decisão é do grupo. Fora do modelo: o rival do solo não investe, e a chance de sucesso, os retornos e os aportes são pontos de partida a calibrar no playtest |
+| 17 | **Investimentos no Mercado** (implementado, 3.14): duas casas de Mercado oferecem aportar R$ 10 mil, 25 mil ou 50 mil numa empresa do porte da reputação. A pessoa **não vê a chance de sucesso**; a **consultoria** a revela, e libera também lucros e retornos, cobrando de quem investe depois 50% do retorno do sucesso, ou R$ 15.000 se der errado, e os mesmos R$ 15.000 na hora de quem a contrata e não investe. O argumento do fundador carrega (ou não) uma falácia estatística, que a pessoa pode diagnosticar (reputação ±). O resultado é sorteado no próximo Balanço (e no fim da partida, para o que sobrar) | Dá um destino à reputação (ela abre portes melhores de empresa) e leva ao jogo a ideia de risco × retorno, sem virar roleta: investir às cegas rende ≈ 0 em média e a análise rende ≈ +0,19 por real. Segue a proposta de investimentos, com as escolhas do autor: probabilidades ocultas e vendidas como consultoria (como a dica, 3.4), falácias nas fichas e casa própria, para as cartas de Evento continuarem só com lições. O aporte arriscado de um jogador pode pesar no caixa comum do cooperativo; a decisão é do grupo. Fora do modelo: o rival do solo não investe, e a chance de sucesso, os retornos e os aportes são pontos de partida a calibrar no playtest |
+| 18 | **Reputação inicial configurável** (implementado): de 10 a 100, em passos de 5 (padrão 50), escolhida no menu como o caixa inicial, igual para todos e, no cooperativo, a da empresa | Deixa o grupo escolher de onde a reputação começa. Reputação alta põe a pessoa no porte maior do Mercado (3.14) e aumenta os ganhos (3.6); reputação baixa aproxima a crise de imagem (zero dispara a multa). As faixas finais do cooperativo continuam absolutas (reputação 75 e 60) e não acompanham a inicial, então uma inicial alta facilita a faixa Líder. Saves antigos valem 50. A calibrar no playtest |
+| 19 | **Eventos com escolha de carta** (implementado, 3.15): ao cair numa casa de Evento a pessoa escolhe participar ou passar. Ao participar, vê três cartas viradas, **uma boa, uma ruim e uma troll**, e escolhe uma sem saber qual é qual, como as portas do problema de Monty Hall. As boas são oportunidades bem acima da média, as ruins são reveses pesados e as trolls são vexames engraçados que custam reputação e quase nenhum dinheiro | Troca o sorteio às cegas pela **sensação de escolha**: participar é uma aposta com a composição conhecida (uma de cada), mas posições desconhecidas. O valor esperado em dinheiro fica perto de zero, então passar é uma opção legítima de quem prefere não arriscar, e o custo médio em reputação (as trolls) pesa contra participar sem necessidade. As 18 cartas de lição seguem no jogo (as positivas viram boas e as negativas, ruins), junto de 23 cartas novas. **Troca no estilo Monty Hall:** depois da escolha, o jogo revela uma das outras duas cartas, nunca a boa, e a pessoa decide manter a sua ou trocar pela que sobrou; quem sabe que trocar leva à carta boa em 2 de cada 3 vezes ganha, em média, bem mais que quem mantém. Fora do modelo: o rival do solo não participa. Valores das cartas e o peso dessa vantagem a calibrar no playtest |
 
 ---
 
@@ -91,7 +93,7 @@ Circuito de aproximadamente **20 casas**. Cada casa coloca pelo menos uma métri
 | Tipo de casa | Qtd. | O que acontece |
 | --- | --- | --- |
 | **Decisão** | ~8 | Cenário estatístico com gráfico: escolhe a métrica, depois a justificativa. Dinheiro e reputação em jogo |
-| **Evento** | ~5 | Sorte ou revés com mini-lição (ex.: gráfico com eixo truncado engana um investidor) |
+| **Evento** | ~5 | A pessoa escolhe participar ou passar. Ao participar, escolhe 1 de 3 cartas viradas (uma boa, uma ruim e uma troll), sem saber qual é qual (3.15). As cartas boas e ruins trazem mini-lição (ex.: gráfico com eixo truncado engana um investidor) |
 | **Duelo** | ~2 | Mesma pergunta para dois jogadores. Quem acertar leva dinheiro do outro |
 | **Mercado** | 2 | Oportunidade de investimento em empresa, com consultoria opcional (3.14). Seguro de reputação e glossário seguem previstos |
 | **Imprensa/Auditoria** | ~2 | Reputação em xeque |
@@ -105,6 +107,7 @@ Circuito de aproximadamente **20 casas**. Cada casa coloca pelo menos uma métri
 2. Resolve a casa (decisão, evento, duelo, mercado, auditoria ou balanço).
 3. Em casas de decisão: **métrica → justificativa → confiança → resultado → explicação**. Nos cenários de cálculo (4.7), entre a métrica e a justificativa entra a etapa **valor calculado**.
    Na casa de **Mercado**: oferta da empresa → (consultoria e diagnóstico, opcionais) → investir ou recusar → explicação do argumento (3.14).
+   Na casa de **Evento**: participar ou passar → (se participar) escolher uma de três cartas viradas → o jogo revela uma das outras (nunca a boa) → manter ou trocar → carta final, com o efeito e as outras duas cartas (3.15).
 4. Atualiza o estado e passa a vez. **Exceção (dados iguais):** se os dois dados saíram com a mesma face, o mesmo jogador joga de novo em vez de passar a vez. A jogada extra não gasta trimestre, repete-se enquanto saírem dados iguais e não vale para quem faliu na jogada nem depois do fim da partida (decisão nº 15).
 
 ### 3.3 Decisão em duas etapas
@@ -220,6 +223,8 @@ A punição é ajustável. O ponto de partida é perda de dinheiro e reputação
 
 A variância é alta: em 10 turnos cada jogador decide cerca de 6 vezes, e a diferença final de dinheiro entre os dois tem desvio padrão de R$ 49 a 58 mil, contra uma diferença média de até R$ 31 mil. O rival difícil perde partidas, e o fácil ganha algumas, o que é saudável. Os números são pontos de partida. Depois do playtest, o acerto de referência deve ser trocado pelo acerto real medido no `historico`, e a calibração refeita.
 
+**Evento (3.15).** O rival também passa pelas casas de Evento sem participar e sem gastar sorteios, como o jogador de referência da simulação, que segue sem participar. Uma pessoa que participa e troca (Monty Hall) tem valor esperado ≈ +R$ 6.500 por Evento, vantagem que a calibração não mede. Com as cartas novas a simulação foi refeita (4.000 partidas): 73,0%, 49,5% e 28,2% de vitória da referência, contra os alvos de 70%, 50% e 30%, dentro da variação da medição anterior (72,2%, 48,4% e 28,1%). Os perfis ficaram como estavam.
+
 **Mercado (3.14).** O rival não investe: passa pela casa de Mercado sem oferta e sem gastar sorteios, então a calibração acima não conta investimentos, e uma pessoa que investe bem se afasta dela. Com as duas casas de Mercado no lugar de dois Eventos, a simulação foi refeita (4.000 partidas): 72,2%, 48,4% e 28,1% de vitória da referência, contra os alvos de 70%, 50% e 30%. Os perfis ficaram como estavam.
 
 **Fora do modelo, de propósito:** *rubber-banding* (o rival errar quando está à frente), porque desfaz a relação entre aprender e ganhar; rival que conhece a resposta e a embaralha; correlação entre métrica e justificativa, e pontos fortes por conceito, que ficam para uma fase posterior.
@@ -272,11 +277,11 @@ A variância é alta: em 10 turnos cada jogador decide cerca de 6 vezes, e a dif
 | 70 a 89 | Empresas consolidadas e indústrias nacionais | Sucesso de +25% a +35%; perda de 15% a 40% |
 | 90 a 100 | Blue chips, petrolíferas e big techs | Sucesso de +15% a +30%; perda de 20% a 40% |
 
-A oferta sai de um baralho por porte, sem repetir empresa dentro do ciclo. A reputação inicial (50) cai no porte das PMEs; reputações altas dão acesso a empresas mais estáveis, o que dá à reputação um uso além do multiplicador de ganhos (3.6).
+A oferta sai de um baralho por porte, sem repetir empresa dentro do ciclo. A reputação inicial padrão (50, ou a escolhida no menu, decisão nº 18) cai no porte das PMEs; reputações altas dão acesso a empresas mais estáveis, o que dá à reputação um uso além do multiplicador de ganhos (3.6).
 
 **A ficha.** Nome, setor, tempo de mercado, o que o fundador diz e o **lucro (ou prejuízo) dos 4 últimos trimestres, sempre visível**. Ficam ocultos a **chance de sucesso e de fracasso** e o **retorno provável de cada aporte** (em porcentagem e em reais): só aparecem no relatório da consultoria. A pessoa decide pelo texto do fundador e pelos lucros, como nas decisões de cenário.
 
-**Consultoria e relatório.** Botão opcional, como a dica (3.4). **Enquanto a consultoria não entrega o relatório, a chance de sucesso e de fracasso e o retorno provável de cada aporte ficam ocultos** (os botões de aporte mostram só o valor); os lucros da empresa são públicos. Ao contratá-la, o relatório libera a **chance exata** de sucesso e de fracasso e os retornos possíveis em porcentagem e em reais. **Se a pessoa investir depois de ver o relatório,** a consultoria cobra pelo resultado: **50% do retorno** quando der certo (`CONSULTORIA_PENALIDADE`; +80% vira +40%) e **R$ 15.000 de honorários** quando der errado (`CONSULTORIA_HONORARIO_FRACASSO`), além da perda. Por isso o crédito do fracasso pode ficar negativo (R$ 10.000 aportados e perdidos custam R$ 25.000). Ver o relatório e recusar não custa nada. O relatório já mostra os retornos descontados.
+**Consultoria e relatório.** Botão opcional, como a dica (3.4). **Enquanto a consultoria não entrega o relatório, a chance de sucesso e de fracasso e o retorno provável de cada aporte ficam ocultos** (os botões de aporte mostram só o valor); os lucros da empresa são públicos. Ao contratá-la, o relatório libera a **chance exata** de sucesso e de fracasso e os retornos possíveis em porcentagem e em reais. **Se a pessoa investir depois de ver o relatório,** a consultoria cobra pelo resultado: **50% do retorno** quando der certo (`CONSULTORIA_PENALIDADE`; +80% vira +40%) e **R$ 15.000 de honorários** quando der errado (`CONSULTORIA_HONORARIO_FRACASSO`), além da perda. Por isso o crédito do fracasso pode ficar negativo (R$ 10.000 aportados e perdidos custam R$ 25.000). **Se contratar a consultoria e não investir** (recusar, ou seguir sem decidir), a pessoa paga **os mesmos R$ 15.000 na hora**, debitados do caixa ao fechar a oferta (`honorarioPago` em `mercadoAtual`): o relatório nunca sai de graça. Quem investe não paga na hora; o honorário só vem se der errado. Nunca se paga os dois. O relatório já mostra os retornos descontados.
 
 **Diagnóstico do argumento (opcional).** A pessoa aponta se o que o fundador diz tem uma falha estatística: viés de sobrevivência, falácia da taxa-base, regressão à média, amostra pequena, ou "nenhuma falha". Metade das empresas do catálogo tem uma falha e é uma **furada** (valor esperado negativo); a outra metade tem argumento sólido e é um **bom negócio**, ainda que arriscado. O diagnóstico é conferido **ao decidir** (investir ou recusar): acertar rende **+3 de reputação** e errar custa **−2** (`ANALISE_BONUS_REPUTACAO`, `ANALISE_PENALIDADE_REPUTACAO`). Chutar entre as 5 opções rende −1 de reputação em média, então não compensa. A resposta e a explicação aparecem só depois da decisão, em qualquer caso (princípio 1: toda decisão termina com a explicação), para o diagnóstico não virar uma dica gratuita.
 
@@ -293,6 +298,47 @@ A oferta sai de um baralho por porte, sem repetir empresa dentro do ciclo. A rep
 
 **Calibração.** Pontos de partida, a calibrar no playtest. Valor esperado por real aportado, `p × ganho − (1 − p) × perda` (4.8): as furadas ficam entre −0,10 e −0,25 e as sólidas entre +0,10 e +0,30 (depois da consultoria, o valor esperado fica negativo em quase todas, porque o honorário fixo pesa mais no aporte pequeno; só uma sólida, com aporte de R$ 50.000, segue positiva). Investir sem critério em tudo que aparece dá ≈ +0,02 por real, perto de zero (e com variância alta), e escolher só as sólidas dá ≈ +0,19, o que cumpre o princípio 2 (acertar por sorte não compensa). Um aporte de R$ 50.000 numa empresa sólida vale ≈ +R$ 10.000 em média, comparável a uma decisão de cenário de V = R$ 20.000; o teto de R$ 50.000 e o custo da consultoria são os parâmetros mais prováveis de ajuste. Com o custo atual (50% do retorno e R$ 15.000), a consultoria funciona como informação cara: quem investe depois de lê-la quase sempre tem valor esperado negativo, então ela serve sobretudo para decidir recusar ou confirmar uma suspeita. Questão em aberto nº 12.
 
+
+### 3.15 Eventos: escolher uma carta
+
+**Implementado** (`src/engine/machine.js`, fase `MOSTRAR_EVENTO`; cartas em `src/scenarios/content/eventos.js`). Decisão nº 19. Nasceu do pedido de dar ao jogador a **sensação de escolha** na casa de Evento, em vez de uma carta surpresa.
+
+**Fluxo.** Ao cair numa casa de Evento, a pessoa vê a oferta e decide:
+
+1. **Passar:** a vez segue, sem efeito algum e sem custo (`RECUSAR`; seguir sem decidir, `CONTINUAR`, vale o mesmo).
+2. **Participar** (`PARTICIPAR`): três cartas viradas aparecem na mesa. A pessoa sabe que são **uma boa, uma ruim e uma troll**, mas não sabe qual é qual. Escolhe uma (`ESCOLHER_CARTA`, posição 0, 1 ou 2) e **não pode mais desistir**. Nada vale ainda.
+3. **Revelação (Monty Hall):** o jogo revela uma das duas cartas que a pessoa não escolheu, **nunca a boa**, e a tela avisa isso. Se a escolhida foi a boa, qualquer uma das outras pode ser revelada (sorteio com o rng da partida); senão, é a outra carta não boa, sem sorteio.
+4. **Manter ou trocar** (`MANTER` ou `TROCAR`): a pessoa fica com a sua carta ou troca pela que sobrou na mesa. Só agora o efeito da carta final é aplicado. Não há como voltar atrás.
+5. **Carta final:** aparece com o texto, o efeito e a lição, se houver, seguida de uma lição sobre o problema de Monty Hall e das outras duas cartas, com o efeito que teriam, para a pessoa ver o que perdeu ou evitou. Depois, `CONTINUAR`.
+
+**Por que trocar compensa.** A primeira escolha tem 1 chance em 3 de ser a boa, e como a carta revelada nunca é a boa, a que sobrou herda as outras 2 em 3. Quem **sempre troca** termina com a boa em 2 de cada 3 vezes (a ruim e a troll em 1 de 6 cada), e quem **sempre mantém** em 1 de 3. A tela não conta isso antes da decisão, só depois, na lição.
+
+As três cartas e a ordem delas são sorteadas ao cair na casa, com o rng da partida (determinístico pela seed), quer a pessoa participe ou não. O estado fica em `eventoAtual` (ver `docs/formato-de-save.md`).
+
+**Os três tipos.**
+
+| Tipo | Papel | Efeito típico | Lição |
+| --- | --- | --- | --- |
+| **Boa** (🍀 oportunidade) | Ganho bem acima da média: investidor-anjo, contrato fora da curva, startup que triplica | +R$ 5.000 a +R$ 30.000; reputação de +2 a +8 | Sim |
+| **Ruim** (💥 revés) | Perda pesada: carga roubada, sequestro de dados, recall, processo | −R$ 5.000 a −R$ 28.000; reputação de −2 a −7 | Sim |
+| **Troll** (🤡) | Vexame engraçado: cartão recusado na frente dos investidores, microfone aberto, slide errado | R$ 0 a ±R$ 1.500; reputação de −1 a −5 | Não (é humor) |
+
+As oportunidades são **ganhos fixos**, não aportes: investir continua sendo coisa da casa de Mercado (3.14). O efeito da carta é fixo e **não** é multiplicado pela reputação, como antes. Reputação que chega a zero dispara a crise de imagem (multa), inclusive por uma troll.
+
+**Baralho.** Há 41 cartas: 16 boas, 16 ruins e 9 trolls (`tipo` em cada uma). As 18 cartas antigas de lição entraram nos baralhos conforme o sinal do efeito (as 9 positivas como boas e as 9 negativas como ruins), e 23 cartas novas se juntaram a elas. Cada tipo tem seu ciclo sem repetição (`baralhoEventos` guarda os ids das cartas ainda não vistas, de todos os tipos numa lista só); ao acabar as cartas de um tipo, aquele tipo é embaralhado de novo. Assim, as cartas boas e ruins variam de tamanho, com as novas bem maiores que as antigas, enquanto as trolls ciclam a cada 9 casas de Evento.
+
+**Cooperativo.** O prejuízo em dinheiro da carta escolhida é reduzido em 30% quando o setor da carta tem diretoria (`docs/modo-cooperativo.md`), e o caixa e a reputação são os da empresa. Vale também para as cartas reveladas ao final, que mostram o valor já amortecido.
+
+**Rival do solo.** Passa pela casa sem participar e sem gastar sorteios, como no Mercado (3.11).
+
+**Valor esperado.** A média das boas é ≈ +R$ 13.000, a das ruins ≈ −R$ 13.250 e a das trolls ≈ +R$ 60; em reputação, +3,6, −3,9 e −3,1. Por participação:
+
+| Estratégia | Boa | Ruim | Troll | Dinheiro | Reputação |
+| --- | --- | --- | --- | --- | --- |
+| Sempre manter | 1/3 | 1/3 | 1/3 | ≈ −R$ 65 | ≈ −1,1 |
+| Sempre trocar | 2/3 | 1/6 | 1/6 | ≈ +R$ 6.500 | ≈ +1,2 |
+
+Quem mantém joga uma aposta de variância, com leve custo de imagem, e passar é uma opção legítima. Quem **troca** tem valor esperado claramente positivo: o conhecimento do problema de Monty Hall vale dinheiro, de acordo com o princípio 3. Em ≈ 2,5 casas de Evento numa partida de 10 turnos, isso são cerca de R$ 16.000 a mais para quem troca. O rival do solo não participa (3.11), então essa vantagem só existe para a pessoa e aumenta a taxa de vitória dela. Valores e peso da vantagem a calibrar no playtest (questão em aberto nº 13).
 
 ---
 
@@ -516,7 +562,7 @@ INICIO_TURNO
         └─> MOVER
              └─> RESOLVER_CASA
                   ├─ Decisão ─> ESCOLHER_METRICA ─> [INFORMAR_VALOR, só em cenário de cálculo] ─> ESCOLHER_JUSTIFICATIVA ─> ESCOLHER_CONFIANCA ─> MOSTRAR_RESULTADO ─> MOSTRAR_EXPLICACAO
-                  ├─ Evento ──> MOSTRAR_EVENTO ─> APLICAR_EFEITO
+                  ├─ Evento ──> MOSTRAR_EVENTO ─> [PARTICIPAR ─> ESCOLHER_CARTA ─> MANTER | TROCAR (efeito aplicado) | RECUSAR] ─> CONTINUAR
                   ├─ Duelo ───> (jogador A e B respondem em tela oculta) ─> COMPARAR ─> MOSTRAR_EXPLICACAO
                   ├─ Mercado ─> MOSTRAR_MERCADO ─> [ABRIR_CONSULTORIA] [DIAGNOSTICAR] ─> INVESTIR | RECUSAR ─> CONTINUAR
                   └─ Auditoria> RESOLVER_REPUTACAO
@@ -534,6 +580,7 @@ Cada transição é uma função pura `(estado, ação) -> novoEstado`, o que fa
   turnoAtual: 3,
   turnosPorJogador: 10,
   dinheiroInicial: 100000,
+  reputacaoInicial: 50,
   jogadorAtual: 1,
   fase: "ESCOLHER_METRICA",
   jogadores: [
@@ -725,7 +772,8 @@ A ideia original era validar justificativas escritas com IA no navegador. Ficou 
 | Múltipla escolha mede reconhecimento, não produção | Reforço com Duelo e, no futuro, modo texto livre |
 | Níveis desbalanceados no mesmo jogo | Multiplicador por nível; validar em playtest com jogadores mistos |
 | O investimento virar roleta de ações e diluir o caráter pedagógico (3.14) | Chance oculta e vendida como consultoria; fichas com falácias estatísticas que a pessoa precisa reconhecer; investir às cegas rende ≈ 0 em média |
-| O Mercado tomar o espaço das lições de Evento | Casa própria: os Eventos seguem só com cartas de lição (7 casas de Evento, 2 de Mercado) |
+| O Mercado tomar o espaço das lições de Evento | Casa própria: os Eventos seguem com cartas de lição (7 casas de Evento, 2 de Mercado) |
+| As cartas trolls e os ganhos grandes dos Eventos diluírem o caráter pedagógico | Toda carta boa ou ruim traz uma lição estatística; só as trolls ficam sem lição, por serem humor. O valor esperado de participar é perto de zero, então a sorte não substitui as decisões de cenário (3.15) |
 | Aporte arriscado de um jogador arruinar o caixa comum no cooperativo | Aceito: o grupo conversa sobre o risco, que faz parte do jogo (3.14) |
 
 ---
@@ -744,6 +792,7 @@ A ideia original era validar justificativas escritas com IA no navegador. Ficou 
 10. **Plano de playtest:** quem testa, e quais métricas coletar (acerto por cenário, onde travam, o chute compensa?).
 11. **Perfil de desempenho (4.6) depois do fim da partida:** o relatório já aparece na tela de fim de jogo e pode ser impresso, mas se apaga com o save em `FIM_DE_JOGO`. Falta decidir se deve ficar guardado (histórico entre partidas) e se os equívocos recorrentes entram no relatório (exigiria um rótulo legível para cada id de equívoco).
 12. **Calibração do Mercado (3.14):** o teto do aporte (R$ 50.000), o custo da consultoria (50% do retorno e R$ 15.000 no fracasso), as chances e retornos de cada empresa e o bônus e a perda do diagnóstico (+3 e −2 de reputação). Observar no playtest se investir em empresas sólidas domina as decisões de cenário como fonte de dinheiro, se a consultoria é usada, se o diagnóstico é lido ou ignorado e se o cooperativo discute o risco. O catálogo tem 16 empresas, então partidas repetidas reaproveitam fichas (a chance varia ±0,04, mas a história é a mesma).
+13. **Calibração dos Eventos (3.15):** o tamanho das cartas boas (de +R$ 5.000 a +R$ 30.000) e ruins (de −R$ 5.000 a −R$ 28.000), o custo em reputação das trolls (−1 a −5) e a proporção entre as cartas de lição antigas, menores, e as novas, maiores. Observar no playtest se a pessoa participa sempre ou nunca (o valor esperado está perto de zero em dinheiro e levemente negativo em reputação), se a variação de um Evento pesa mais que uma Decisão e se a falência por azar aparece. Com a troca de carta (Monty Hall), quem troca ganha ≈ +R$ 6.500 por Evento: observar se a pessoa descobre a troca, se a vantagem pesa demais frente ao rival do solo (que não participa) e se vale fazer o rival participar e trocar, ou reduzir o tamanho das cartas boas.
 
 ---
 

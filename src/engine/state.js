@@ -1,29 +1,32 @@
 import { criarRng } from './rng.js';
 import {
   DINHEIRO_INICIAL, REPUTACAO_INICIAL, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX,
-  PASSO_MEDIO_DADO, PERFIS_BOT,
+  REPUTACAO_INICIAL_MIN, REPUTACAO_INICIAL_MAX, PASSO_MEDIO_DADO, PERFIS_BOT,
 } from './config.js';
 import { atribuirPapeis, DIRETORIAS } from './papeis.js';
 
 // Inteiro dentro de [min, max]; valor que não é número cai no padrão.
 const limitar = (valor, min, max, padrao) => (Number.isFinite(valor) ? Math.min(max, Math.max(min, Math.round(valor))) : padrao);
 
-// `turnos` (1 a 64) e `dinheiroInicial` (o caixa de cada jogador, ou da empresa no cooperativo) vêm do menu e são limitados aqui.
+// `turnos` (1 a 64), `dinheiroInicial` (o caixa de cada jogador, ou da empresa no cooperativo) e `reputacaoInicial`
+// (de 10 a 100, o mesmo para todos, ou para a empresa) vêm do menu e são limitados aqui.
 // `teste` (opcional) só serve para depurar: `{ casa, cenarios }` força a casa em que o peão cai e restringe o baralho.
-export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, dinheiroInicial = DINHEIRO_INICIAL, seed = Date.now(), modo = 'competitivo', teste = null, soConceitual = false }) {
+export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, dinheiroInicial = DINHEIRO_INICIAL, reputacaoInicial = REPUTACAO_INICIAL, seed = Date.now(), modo = 'competitivo', teste = null, soConceitual = false }) {
   const semente = seed >>> 0;
   const cooperativo = modo === 'cooperativo';
   const caixaInicial = limitar(dinheiroInicial, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL);
+  const reputacaoIni = limitar(reputacaoInicial, REPUTACAO_INICIAL_MIN, REPUTACAO_INICIAL_MAX, REPUTACAO_INICIAL);
   const papeis = atribuirPapeis(jogadores.length, jogadores.map((j) => j.diretoria));
   return {
     versao: 1,
     modo: cooperativo ? 'cooperativo' : 'competitivo',
-    empresa: cooperativo ? { dinheiro: caixaInicial, reputacao: REPUTACAO_INICIAL } : null,
+    empresa: cooperativo ? { dinheiro: caixaInicial, reputacao: reputacaoIni } : null,
     seed: semente,
     rng: criarRng(semente).estado,
     turnoAtual: 1,
     turnosPorJogador: limitar(turnos, TURNOS_MIN, TURNOS_MAX, TURNOS_PADRAO),
     dinheiroInicial: caixaInicial,
+    reputacaoInicial: reputacaoIni,
     jogadorAtual: 0,
     falencia: false,
     fase: 'ROLAR_DADO',
@@ -36,7 +39,7 @@ export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, dinheiroInicial = 
       nome: j.nome,
       nivel: j.nivel,
       dinheiro: caixaInicial,
-      reputacao: REPUTACAO_INICIAL,
+      reputacao: reputacaoIni,
       posicao: 0,
       distancia: 0,
       historico: [],
@@ -73,6 +76,9 @@ export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, dinheiroInicial = 
 
 // Saves antigos não têm `dinheiroInicial`: valia o padrão.
 export const dinheiroInicialDe = (e) => e.dinheiroInicial ?? DINHEIRO_INICIAL;
+
+// Saves antigos não têm `reputacaoInicial`: valia o padrão.
+export const reputacaoInicialDe = (e) => e.reputacaoInicial ?? REPUTACAO_INICIAL;
 
 export const jogadorAtual = (e) => e.jogadores[e.jogadorAtual];
 

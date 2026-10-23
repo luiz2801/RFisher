@@ -12,6 +12,9 @@ export const TURNOS_MAX = 64;
 export const DINHEIRO_INICIAL_MIN = 10000;
 export const DINHEIRO_INICIAL_MAX = 1000000;
 export const DINHEIRO_INICIAL_PASSO = 10000;
+export const REPUTACAO_INICIAL_MIN = 10;
+export const REPUTACAO_INICIAL_MAX = 100;
+export const REPUTACAO_INICIAL_PASSO = 5;
 export const MAX_JOGADORES = 3;
 
 // Sequências (fisher.md 3.13): cada sucesso absoluto seguido multiplica o fator da sequência por 1,1 (teto 2) e cada

@@ -82,6 +82,7 @@ function iniciar(form) {
     jogadores,
     turnos: lerInteiro(dados.get('turnos')),
     dinheiroInicial: lerInteiro(dados.get('dinheiro')),
+    reputacaoInicial: lerInteiro(dados.get('reputacao')),
     modo: dados.get('modo') === 'cooperativo' ? 'cooperativo' : 'competitivo',
     seed: Number.isInteger(seedEscolhida) && seedEscolhida >= 1 && seedEscolhida <= QTD_SEMENTES ? seedEscolhida : Math.floor(Math.random() * 2 ** 32),
     soConceitual: dados.get('apoio') === 'conceitual',

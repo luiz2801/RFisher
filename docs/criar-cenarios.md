@@ -298,21 +298,31 @@ Em `eventos.js`, acrescente um objeto a `EVENTOS`:
 ```js
 {
   id: 'regressao_media',            // único
+  tipo: 'ruim',                     // 'boa', 'ruim' ou 'troll' (TIPOS_CARTA)
   setor: 'rh',                      // um de SETORES
   titulo: 'A ilusão do mês recorde',
   texto: 'Situação narrada como acontecimento na empresa.',
-  licao: 'O conceito estatístico em uma frase.',
-  dinheiro: -5000,                  // pode ser positivo ou negativo
+  licao: 'O conceito estatístico em uma frase.',   // obrigatória em boa e ruim; opcional em troll
+  dinheiro: -5000,
   reputacao: -2,
 }
 ```
 
-- **Sorte ou revés com mini-lição:** o texto narra o fato; a `licao` nomeia o conceito. Há eventos bons (o jogador evitou o erro) e ruins (caiu nele).
+Na casa de Evento a pessoa escolhe participar ou passar e, ao participar, escolhe **uma de três cartas viradas: uma `boa`, uma `ruim` e uma `troll`** (`fisher.md` 3.15). Cada tipo tem seu baralho, sem repetição no ciclo. Escolha o `tipo` pelo papel da carta:
+
+| Tipo | Papel | Faixa usada hoje (dinheiro; reputação) | Lição |
+| --- | --- | --- | --- |
+| `boa` | Oportunidade acima da média (ou um erro que o jogador evitou) | +5.000 a +30.000; +2 a +8 | Obrigatória |
+| `ruim` | Revés pesado | −5.000 a −28.000; −2 a −7 | Obrigatória |
+| `troll` | Vexame engraçado, sem lição | −1.500 a +1.500; −1 a −5 | Não |
+
+- **O texto narra o fato;** a `licao` nomeia o conceito. As trolls são humor: o texto basta, e a reputação é o custo principal.
 - O efeito é fixo e **não** é multiplicado pela reputação.
-- No cooperativo, o prejuízo (`dinheiro < 0`) de um evento do setor de uma diretoria é reduzido em 30 % (`REDUCAO_PREJUIZO_PASSIVA`). Ganhos não são alterados.
-- Reputação que chega a 0 dispara a crise de imagem (multa e recuperação parcial).
-- Ordens de grandeza usadas hoje: dinheiro de −10.000 a +10.000 e reputação de −5 a +5. Mantenha o equilíbrio entre cartas positivas e negativas (hoje 9 positivas e 9 negativas), senão o jogo tende a punir sem compensar.
-- Eventos não têm validação além do setor. Revise à mão: id único, `licao` presente, valores numéricos.
+- No cooperativo, o prejuízo (`dinheiro < 0`) de uma carta do setor de uma diretoria é reduzido em 30 % (`REDUCAO_PREJUIZO_PASSIVA`). Ganhos não são alterados.
+- Reputação que chega a 0 dispara a crise de imagem (multa e recuperação parcial), inclusive por uma troll.
+- **Equilíbrio:** escolher uma carta e mantê-la vale ≈ R$ 0 em dinheiro (média das boas ≈ +13.000, das ruins ≈ −13.250, das trolls ≈ 0). Quem troca (Monty Hall) leva a boa em 2 de cada 3 vezes, então o ganho dessa estratégia é ≈ 2/3 da média das boas menos o resto: cartas boas maiores aumentam a vantagem de trocar. Ao acrescentar cartas boas, acrescente ruins de tamanho parecido, e mantenha as trolls pequenas em dinheiro, senão o jogo recompensa ou pune quem participa. O teste `o valor esperado de participar fica perto de zero em dinheiro` (`tests/scenarios.test.js`) avisa se o equilíbrio se perder. Mantenha também pelo menos 9 cartas de cada tipo.
+- Os efeitos de dinheiro são múltiplos de R$ 500 (o teste de conteúdo confere), para o amortecimento do cooperativo cair em centenas.
+- Um teste de conteúdo (`tests/scenarios.test.js`) confere tipo válido, ids únicos, efeitos numéricos, sinal coerente com o tipo e lição presente nas boas e ruins. Revise à mão o resto: setor válido e texto.
 
 ## Criar uma empresa do Mercado
 
@@ -340,7 +350,7 @@ Em `investimentos.js`, acrescente um objeto a `EMPRESAS` (regras em `fisher.md` 
 - **A falha e o valor esperado andam juntos.** Empresa com `falha` é uma furada e precisa de valor esperado negativo, `prob × ganho − (1 − prob) × perda < 0`. Empresa com `falha: null` precisa de argumento realmente sólido (dados completos, inclusive os casos ruins) e de valor esperado positivo. Isso vale mesmo no pior sorteio da chance: a cada oferta `prob` varia até ±0,04 (`SORTEIO_PROBABILIDADE`).
 - **A pista precisa estar no texto do `fundador`** (ou no `historico`), sem nomear a falácia. Quem lê deve poder descobrir; a `explicacao` só aparece depois da decisão.
 - **Mantenha a proporção:** cada porte com ao menos 2 empresas sólidas e 2 furadas, e cada falácia em ao menos uma empresa. O investimento às cegas deve ficar perto de zero em média (o teste confere por porte), senão o chute passa a compensar.
-- A consultoria cobra 50% do ganho e R$ 15.000 no fracasso, então quase nenhuma empresa tem valor esperado positivo depois dela; isso é intencional (ela é informação cara). Não ajuste o catálogo para compensar.
+- A consultoria cobra 50% do ganho e R$ 15.000 no fracasso (ou na hora, se a pessoa não investir), então quase nenhuma empresa tem valor esperado positivo depois dela; isso é intencional (ela é informação cara). Não ajuste o catálogo para compensar.
 - O `historico` é sempre visível na ficha; `prob`, `ganho` e `perda` só aparecem no relatório da consultoria. A pista da falácia deve estar no texto do `fundador` ou no `historico`.
 - Empresas novas entram no baralho de seu porte no próximo ciclo. Não renomeie nem remova um `id`: aportes salvos referenciam o id (a apuração tolera id ausente, mas perde a narrativa).
 - Narrativas de sucesso e fracasso são exibidas no Balanço ao apurar; escreva-as de modo a fazer sentido para qualquer um dos dois desfechos, sem citar números.
@@ -379,7 +389,7 @@ O validador **não** confere que a opção marcada `correta` é de fato a corret
 - [ ] Teste específico do gerador adicionado ou atualizado.
 - [ ] Cenário de cálculo: convenção de percentil/desvio avisada na tela, `como_calcular` escrito e valores exatos conferidos em relação ao limiar de 100 da margem.
 - [ ] `dados.formato` e rótulos dos eixos corretos; `descricao_acessivel` escrita.
-- [ ] Cenário incluído em `cenarios.json` (ou evento em `EVENTOS`).
+- [ ] Cenário incluído em `cenarios.json` (ou carta de evento em `EVENTOS`, com `tipo`).
 - [ ] README atualizado: contagem e lista de cenários e eventos (obrigatório pelo `CLAUDE.md`).
 - [ ] `fisher.md` atualizado se o conteúdo mudar a especificação (seção 4).
 - [ ] Empresa do Mercado: `falha` coerente com o sinal do valor esperado, pista no texto do fundador, `explicacao` e narrativas escritas, catálogo (4.8) e README atualizados.

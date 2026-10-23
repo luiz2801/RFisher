@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { criarRng } from '../src/engine/rng.js';
 import { todosCenarios, validarCenario, instanciar, preencher } from '../src/scenarios/loader.js';
+import { EVENTOS, TIPOS_CARTA, eventosDoTipo } from '../src/scenarios/content/eventos.js';
 
 test('todo o conteúdo é válido (várias seeds)', () => {
   for (const def of todosCenarios()) {
@@ -36,6 +37,27 @@ test('todo evento tem um setor válido', async () => {
   const { EVENTOS } = await import('../src/scenarios/content/eventos.js');
   const { SETORES } = await import('../src/engine/papeis.js');
   for (const ev of EVENTOS) assert.ok(SETORES.includes(ev.setor), `evento sem setor: ${ev.id}`);
+});
+
+test('o conteúdo das cartas: três tipos, lição nas boas e ruins, efeitos coerentes com o tipo', () => {
+  const ids = EVENTOS.map((c) => c.id);
+  assert.equal(new Set(ids).size, ids.length, 'ids únicos');
+  for (const c of EVENTOS) {
+    assert.ok(TIPOS_CARTA.includes(c.tipo), `tipo inválido: ${c.id}`);
+    assert.ok(Number.isFinite(c.dinheiro) && Number.isFinite(c.reputacao), `efeitos numéricos: ${c.id}`);
+    assert.ok(c.dinheiro % 500 === 0, `dinheiro em múltiplo de 500: ${c.id}`);
+    if (c.tipo !== 'troll') assert.ok(c.licao, `lição ausente: ${c.id}`);
+    if (c.tipo === 'boa') assert.ok(c.dinheiro > 0 && c.reputacao >= 0, `carta boa deve ganhar: ${c.id}`);
+    if (c.tipo === 'ruim') assert.ok(c.dinheiro < 0 && c.reputacao <= 0, `carta ruim deve custar: ${c.id}`);
+    if (c.tipo === 'troll') assert.ok(c.reputacao < 0 && Math.abs(c.dinheiro) <= 1500, `troll custa reputação e pouco dinheiro: ${c.id}`);
+  }
+  for (const tipo of TIPOS_CARTA) assert.ok(eventosDoTipo(tipo).length >= 9, `poucas cartas do tipo ${tipo}`);
+});
+
+test('o valor esperado de participar fica perto de zero em dinheiro', () => {
+  const media = (tipo) => eventosDoTipo(tipo).reduce((a, c) => a + c.dinheiro, 0) / eventosDoTipo(tipo).length;
+  const esperado = (media('boa') + media('ruim') + media('troll')) / 3;
+  assert.ok(Math.abs(esperado) < 1000, `valor esperado ${esperado}`);
 });
 
 test('o validador exige setor no cenário', () => {
