@@ -1,4 +1,4 @@
-import { FAIXAS_MERCADO, CONSULTORIA_PENALIDADE, SORTEIO_PROBABILIDADE } from './config.js';
+import { FAIXAS_MERCADO, CONSULTORIA_PENALIDADE, CONSULTORIA_HONORARIO_FRACASSO, SORTEIO_PROBABILIDADE } from './config.js';
 import { EMPRESAS, FALACIAS, obterEmpresa } from '../scenarios/content/investimentos.js';
 
 // Investimentos do Mercado (fisher.md 3.14): oferta por porte, retorno com consultoria e liquidação no Balanço.
@@ -15,8 +15,9 @@ export const porteDaReputacao = (reputacao) => [...FAIXAS_MERCADO].reverse().fin
 // Retorno esperado por real investido: chance de sucesso × ganho − chance de fracasso × perda.
 export const valorEsperado = ({ prob, ganho, perda }) => prob * ganho - (1 - prob) * perda;
 
-// Quem investe depois de ver a chance exata (consultoria) perde parte do retorno do sucesso; a perda não muda.
+// Quem investe depois do relatório da consultoria paga metade do retorno do sucesso e, no fracasso, um honorário fixo.
 export const ganhoComConsultoria = (ganho) => ganho * (1 - CONSULTORIA_PENALIDADE);
+export const honorarioDaConsultoria = (consultoria) => (consultoria ? CONSULTORIA_HONORARIO_FRACASSO : 0);
 
 // Saves antigos não têm `investimentos`.
 export const investimentosDe = (j) => j?.investimentos ?? [];
@@ -50,13 +51,15 @@ export function sortearOferta(e, reputacao, rng) {
 export function liquidar(inv, rng) {
   const sucesso = rng.prox() < inv.prob;
   const retorno = sucesso ? inv.ganho : -inv.perda;
-  const credito = arredondar(inv.valor * (1 + retorno));
+  const honorario = sucesso ? 0 : inv.honorario ?? 0; // o honorário pode deixar o crédito negativo
+  const credito = arredondar(inv.valor * (1 + retorno)) - honorario;
   const def = obterEmpresa(inv.empresaId);
   return {
     empresaId: inv.empresaId,
     nome: inv.nome,
     valor: inv.valor,
     consultoria: inv.consultoria,
+    honorario,
     desfecho: sucesso ? 'sucesso' : 'fracasso',
     retorno,
     credito,

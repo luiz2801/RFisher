@@ -170,31 +170,32 @@ test('o placar mostra a sequência de erros ou de sucessos em andamento (fisher.
 const naOferta = (extra = {}) => reduzir(novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante' }, { nome: 'Bia', nivel: 'iniciante' }], seed: 7, teste: { casa: 'mercado' }, ...extra }), { tipo: 'ROLAR' });
 const sinalOk = (html, fase) => assert.ok(!html.includes('undefined') && !html.includes('{{') && !html.includes('NaN'), `tela quebrada: ${fase}`);
 
-test('a oferta do Mercado mostra a ficha da empresa, mas esconde a chance de sucesso até a consultoria', () => {
+test('sem consultoria a ficha não mostra nenhuma métrica: nem lucros, nem retornos, nem chance', () => {
   const e = naOferta();
   const html = viewJogo(e);
   sinalOk(html, 'oferta');
   const def = obterEmpresa(e.mercadoAtual.empresaId);
   assert.match(html, /Mercado: oportunidade de investimento/);
   assert.ok(html.includes(esc(def.nome)) && html.includes(esc(def.fundador)));
-  assert.match(html, /Lucro \(prejuízo\) por trimestre/);
-  assert.match(html, /Se der certo: <strong>\+/);
-  assert.ok(!/chance de sucesso/i.test(html), 'a chance de sucesso não aparece antes da consultoria');
+  assert.doesNotMatch(html, /Lucro \(prejuízo\)|chance de sucesso de|Se der certo|Se der errado|<h3>Relatório da consultoria/i);
+  assert.match(html, /só aparecem no relatório da consultoria/);
   assert.match(html, /data-acao="ABRIR_CONSULTORIA"/);
+  assert.match(html, /50% do retorno quando der certo e R\$ 15\.000 quando der errado/);
   assert.match(html, /data-acao="RECUSAR"/);
   for (const a of APORTES) assert.match(html, new RegExp(`data-acao="INVESTIR" data-valor="${a}"`));
   assert.match(html, /data-acao="DIAGNOSTICAR" data-valor="nenhuma"/);
   assert.ok(!html.includes('class="resultado"'), 'o veredito só vem depois da decisão');
 });
 
-test('a consultoria revela a chance exata e o retorno já descontado', () => {
-  const o = naOferta();
-  const e = reduzir(o, { tipo: 'ABRIR_CONSULTORIA' });
+test('o relatório da consultoria libera lucros, chance e retornos já com o custo da consultoria', () => {
+  const e = reduzir(naOferta(), { tipo: 'ABRIR_CONSULTORIA' });
   const html = viewJogo(e);
   sinalOk(html, 'consultoria');
-  assert.match(html, /chance de sucesso de <strong>/);
+  assert.match(html, /Relatório da consultoria/);
+  assert.match(html, /Lucro \(prejuízo\) por trimestre/);
   assert.ok(html.includes(`${(e.mercadoAtual.prob * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`));
-  assert.match(html, /já descontada a consultoria/);
+  assert.match(html, /mais R\$ 15\.000 de honorários/);
+  assert.match(html, /Se der certo: \+R\$ [\d.]+ · Se der errado: −R\$ [\d.]+/);
   assert.ok(!html.includes('data-acao="ABRIR_CONSULTORIA"'), 'o botão some depois de aberto');
 });
 

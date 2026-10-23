@@ -50,7 +50,7 @@ export const EMPRESAS = [
     ganho: 2.2,
     perda: 1.0,
     falha: 'regressao_media',
-    explicacao: 'O último trimestre (31 mil) ficou muito acima dos anteriores (2, 1 e 3 mil). Resultados fora do comum tendem a ser seguidos por outros mais perto da média: tomar o pico como rotina ignora a regressão à média.',
+    explicacao: 'O último trimestre ficou muito acima dos anteriores (31 mil contra 2, 1 e 3 mil). Resultados fora do comum tendem a ser seguidos por outros mais perto da média: tomar o pico como rotina ignora a regressão à média.',
     sucesso: 'A temporada seguinte também foi forte, e o quiosque ganhou uma segunda barraca.',
     fracasso: 'Fora da alta temporada o movimento voltou ao normal e as contas não fecharam.',
   },

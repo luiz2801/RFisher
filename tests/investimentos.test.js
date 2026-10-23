@@ -4,12 +4,12 @@ import { criarRng } from '../src/engine/rng.js';
 import { novoJogo } from '../src/engine/state.js';
 import { reduzir } from '../src/engine/machine.js';
 import {
-  porteDaReputacao, valorEsperado, ganhoComConsultoria, sortearOferta, liquidar, totalInvestido, OPCOES_DIAGNOSTICO,
+  porteDaReputacao, valorEsperado, ganhoComConsultoria, sortearOferta, liquidar, totalInvestido, honorarioDaConsultoria, OPCOES_DIAGNOSTICO,
 } from '../src/engine/investimentos.js';
 import { EMPRESAS, PORTES, FALACIAS, obterEmpresa } from '../src/scenarios/content/investimentos.js';
 import {
   APORTES, FAIXAS_MERCADO, CONSULTORIA_PENALIDADE, SORTEIO_PROBABILIDADE, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO,
-  CUSTOS_BALANCO,
+  CUSTOS_BALANCO, CONSULTORIA_HONORARIO_FRACASSO,
 } from '../src/engine/config.js';
 import { receitaBalanco } from '../src/engine/scoring.js';
 
@@ -69,10 +69,12 @@ test('investir sem critério fica perto de zero em cada porte, e escolher só as
   assert.ok(Math.abs(media(EMPRESAS)) < 0.05);
 });
 
-test('a consultoria corta o retorno do sucesso, mas não torna ruim o negócio sólido de ganho folgado', () => {
-  assert.equal(ganhoComConsultoria(1), 1 - CONSULTORIA_PENALIDADE);
-  const folgadas = EMPRESAS.filter((x) => !x.falha && valorEsperado({ ...x, ganho: ganhoComConsultoria(x.ganho) }) > 0.05);
-  assert.ok(folgadas.length >= 6, 'a maioria dos negócios sólidos segue valendo a pena depois da consultoria');
+test('a consultoria cobra metade do retorno do sucesso e um honorário fixo no fracasso', () => {
+  assert.equal(ganhoComConsultoria(1), 0.5);
+  assert.equal(CONSULTORIA_PENALIDADE, 0.5);
+  assert.equal(CONSULTORIA_HONORARIO_FRACASSO, 15000);
+  assert.equal(honorarioDaConsultoria(true), 15000);
+  assert.equal(honorarioDaConsultoria(false), 0);
 });
 
 // ---------- porte e oferta ----------
@@ -127,6 +129,16 @@ test('liquidar: com chance 1 sempre sucesso e com chance 0 sempre fracasso, com 
   assert.equal(perde.liquido, -4000);
   const total = liquidar(inv({ prob: 0, perda: 1 }), criarRng(1));
   assert.equal(total.credito, 0);
+});
+
+test('liquidar: o honorário da consultoria só é cobrado no fracasso, e pode deixar o crédito negativo', () => {
+  const fracasso = liquidar(inv({ prob: 0, perda: 0.4, honorario: 15000, consultoria: true }), criarRng(1));
+  assert.equal(fracasso.credito, 6000 - 15000);
+  assert.equal(fracasso.liquido, -4000 - 15000);
+  assert.equal(fracasso.honorario, 15000);
+  const sucesso = liquidar(inv({ prob: 1, ganho: 0.25, honorario: 15000, consultoria: true }), criarRng(1));
+  assert.equal(sucesso.honorario, 0);
+  assert.equal(sucesso.liquido, 2500);
 });
 
 test('liquidar: a frequência de sucesso acompanha a chance', () => {
@@ -202,6 +214,8 @@ test('com a consultoria o retorno do sucesso guardado cai pela penalidade, e a p
   const guardado = agir(consultado, 'INVESTIR', 10000).jogadores[0].investimentos[0];
   assert.equal(guardado.consultoria, true);
   assert.equal(guardado.ganho, ganhoComConsultoria(o.mercadoAtual.ganho));
+  assert.equal(guardado.honorario, 15000);
+  assert.equal(agir(o, 'INVESTIR', 10000).jogadores[0].investimentos[0].honorario, 0, 'sem consultoria, sem honorário');
   assert.ok(guardado.ganho < o.mercadoAtual.ganho);
   assert.equal(guardado.perda, o.mercadoAtual.perda);
   assert.equal(agir(o, 'INVESTIR', 10000).jogadores[0].investimentos[0].ganho, o.mercadoAtual.ganho, 'sem consultoria, retorno cheio');

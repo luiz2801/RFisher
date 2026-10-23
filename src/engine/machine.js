@@ -15,7 +15,7 @@ import { lerNumero } from '../stats/format.js';
 import { escolherPorDificuldade } from './dificuldade.js';
 import { equivocosDaEscolha } from './desempenho.js';
 import { diretoriaDoSetor } from './papeis.js';
-import { OPCOES_DIAGNOSTICO, sortearOferta, ganhoComConsultoria, liquidarTodos, investimentosDe } from './investimentos.js';
+import { OPCOES_DIAGNOSTICO, sortearOferta, ganhoComConsultoria, honorarioDaConsultoria, liquidarTodos, investimentosDe } from './investimentos.js';
 import { instanciar, obterCenario, idsCenarios } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
 import { obterEmpresa } from '../scenarios/content/investimentos.js';
@@ -227,6 +227,7 @@ function decidirMercado(e, decisao, aporte = null) {
         ganho: m.consultoria ? ganhoComConsultoria(m.ganho) : m.ganho,
         perda: m.perda,
         consultoria: m.consultoria,
+        honorario: honorarioDaConsultoria(m.consultoria),
         turnoAporte: e.turnoAtual,
       },
     ];

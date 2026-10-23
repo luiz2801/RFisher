@@ -8,8 +8,8 @@ import { DIRETORIAS } from '../engine/papeis.js';
 import { metaTrimestral } from '../engine/machine.js';
 import { relatorioDesempenho } from '../engine/desempenho.js';
 import { CONFIANCA, ROTULO_CONFIANCA, NIVEL, confiancaEfetiva, multiplicadorSequencia } from '../engine/scoring.js';
-import { totalInvestido, ganhoComConsultoria } from '../engine/investimentos.js';
-import { MAX_JOGADORES, APORTES, CONSULTORIA_PENALIDADE, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL_PASSO, PERFIS_BOT, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
+import { totalInvestido, ganhoComConsultoria, honorarioDaConsultoria } from '../engine/investimentos.js';
+import { MAX_JOGADORES, APORTES, CONSULTORIA_PENALIDADE, CONSULTORIA_HONORARIO_FRACASSO, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL_PASSO, PERFIS_BOT, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
 import { obterCenario, todosCenarios, preencher, valorDoMarcador } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
 import { PORTES, FALACIAS, obterEmpresa } from '../scenarios/content/investimentos.js';
@@ -362,7 +362,7 @@ const metaTexto = (b) =>
 
 // Retorno dos aportes apurados (no Balanço ou no encerramento): o desfecho sorteado e o que ele rendeu ou custou.
 const linhaInvestimento = (r) => `<li><strong>${esc(r.nome)}</strong> (aporte de ${brl(r.valor)}${r.consultoria ? ', com consultoria' : ''}):
-  <span class="${r.desfecho === 'sucesso' ? 'ganho' : 'perda'}">${r.desfecho === 'sucesso' ? '▲ deu certo' : '▼ deu errado'}, ${brlSinal(r.liquido)}</span>. ${esc(r.texto)}</li>`;
+  <span class="${r.desfecho === 'sucesso' ? 'ganho' : 'perda'}">${r.desfecho === 'sucesso' ? '▲ deu certo' : '▼ deu errado'}, ${brlSinal(r.liquido)}${r.honorario ? ` (inclui ${brl(r.honorario)} de honorários da consultoria)` : ''}</span>. ${esc(r.texto)}</li>`;
 const listaInvestimentos = (itens = []) =>
   itens.length ? `<div class="aviso"><strong>Retorno dos investimentos</strong><ul class="investimentos">${itens.map(linhaInvestimento).join('')}</ul></div>` : '';
 
@@ -680,20 +680,26 @@ function viewMercado(e) {
   const caixa = carteira(e).dinheiro;
   const aberta = !m.decisao;
   const ganho = m.consultoria ? ganhoComConsultoria(m.ganho) : m.ganho;
+  const honorario = honorarioDaConsultoria(m.consultoria);
 
   const ficha = `<article class="ficha">
     <h3>${esc(def.nome)}</h3>
     <p class="ajuda">${esc(def.setor)} · ${esc(def.tempo)} de mercado</p>
     <p><strong>O fundador diz:</strong> ${esc(def.fundador)}</p>
-    ${historicoEmpresa(def)}
-    <p>Se der certo: <strong>+${pctMercado(ganho)}</strong> sobre o aporte${m.consultoria ? ' (já descontada a consultoria)' : ''}. Se der errado: <strong>−${pctMercado(m.perda)}</strong> do aporte.</p>
+    ${m.consultoria ? '' : '<p class="ajuda">Lucros, retornos possíveis e chance de sucesso só aparecem no relatório da consultoria.</p>'}
   </article>`;
 
-  const consultoria = m.consultoria
-    ? `<p class="dica"><strong>Consultoria:</strong> chance de sucesso de <strong>${pctMercado(m.prob)}</strong> e de fracasso de ${pctMercado(1 - m.prob)}. Quem investe depois de ver isso fica com ${pctMercado(1 - CONSULTORIA_PENALIDADE)} do retorno do sucesso.</p>`
-    : aberta
-      ? `<button class="discreto" data-acao="ABRIR_CONSULTORIA">Contratar consultoria (mostra a chance exata de sucesso, mas reduz em ${pctMercado(CONSULTORIA_PENALIDADE)} o retorno do sucesso se você investir)</button>`
-      : '';
+  // Todas as métricas de desempenho ficam atrás do relatório da consultoria.
+  const relatorio = m.consultoria
+    ? `<section class="ficha"><h3>Relatório da consultoria</h3>
+      ${historicoEmpresa(def)}
+      <p>Chance de sucesso: <strong>${pctMercado(m.prob)}</strong> · chance de fracasso: ${pctMercado(1 - m.prob)}.</p>
+      <p>Se der certo: <strong>+${pctMercado(ganho)}</strong> sobre o aporte (já sem os ${pctMercado(CONSULTORIA_PENALIDADE)} do retorno cobrados pela consultoria). Se der errado: <strong>−${pctMercado(m.perda)}</strong> do aporte, mais ${brl(honorario)} de honorários.</p></section>`
+    : '';
+
+  const consultoria = !m.consultoria && aberta
+    ? `<button class="discreto" data-acao="ABRIR_CONSULTORIA">Contratar consultoria (relatório com lucros, retornos e chance exata; se você investir, ela cobra ${pctMercado(CONSULTORIA_PENALIDADE)} do retorno quando der certo e ${brl(CONSULTORIA_HONORARIO_FRACASSO)} quando der errado)</button>`
+    : '';
 
   let diagnostico = '';
   if (aberta && !m.diagnostico) {
@@ -710,7 +716,7 @@ function viewMercado(e) {
       <p class="ajuda">O dinheiro fica em custódia até você passar pelo Balanço, quando o resultado é sorteado. Caixa disponível: ${brl(caixa)}.</p>
       <div class="opcoes">${APORTES.map((a) => `<button class="opcao" data-acao="INVESTIR" data-valor="${a}"${a > caixa ? ' disabled' : ''}>
         <strong>Investir ${brl(a)}</strong>
-        <span>Se der certo: ${brlSinal(a * ganho)} · Se der errado: ${brlSinal(-a * m.perda)}</span>
+        ${m.consultoria ? `<span>Se der certo: ${brlSinal(a * ganho)} · Se der errado: ${brlSinal(-a * m.perda - honorario)}</span>` : ''}
       </button>`).join('')}</div>
       <button class="discreto" data-acao="RECUSAR">Não investir</button>`;
   } else {
@@ -728,7 +734,7 @@ function viewMercado(e) {
 
   return `${bannerBalanco(e)}<h2>Mercado: oportunidade de investimento</h2>
     <p class="ajuda">Empresas do porte: ${esc(porte.nome)} (reputação ${porte.reputacao}).</p>
-    ${ficha}${consultoria}${diagnostico}${decisao}`;
+    ${ficha}${relatorio}${consultoria}${diagnostico}${decisao}`;
 }
 
     function viewBalanco(e) {
