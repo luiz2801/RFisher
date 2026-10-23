@@ -7,6 +7,9 @@ import { SETORES } from '../engine/papeis.js';
 import { DIFICULDADE_MAX } from '../engine/config.js';
 import { ehCalculo } from '../engine/calculo.js';
 
+// Medem espalhamento, não um ponto da escala dos dados: uma linha na posição delas no eixo engana.
+const METRICAS_DE_DISPERSAO = ['iqr', 'dp', 'amplitude', 'cv'];
+
 const POR_ID = new Map(CENARIOS.map((c) => [c.id, c]));
 
 export const obterCenario = (id) => POR_ID.get(id);
@@ -96,6 +99,7 @@ export function validarCenario(def, rng) {
     }
   }
   for (const m of def.feedback.revelacao.marcadores) {
+    if (METRICAS_DE_DISPERSAO.includes(m.chave)) err(`marcador de dispersão não é posição no eixo: ${m.chave} (use as bordas, como p25 e p75)`);
     const chave = m.chave in num ? m.chave : `${m.chave}_a`;
     if (!(chave in num)) err(`marcador sem valor: ${m.chave}`);
   }

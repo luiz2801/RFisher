@@ -754,12 +754,13 @@
       "revelacao": {
         "marcadores": [
           {
-            "chave": "mediana",
-            "rotulo": "Mediana"
+            "chave": "p25",
+            "rotulo": "P25 (início da faixa central)",
+            "correto": true
           },
           {
-            "chave": "iqr",
-            "rotulo": "IQR (faixa central)",
+            "chave": "p75",
+            "rotulo": "P75 (fim da faixa central)",
             "correto": true
           }
         ]

@@ -148,7 +148,7 @@ revelacao: {
 }
 ```
 
-Cada marcador desenha uma linha no gráfico do resultado. `chave` é uma das métricas da [tabela de placeholders](#placeholders). Em cenários com duas séries, a chave sem sufixo se refere à série A; use `chave: 'media'` e o jogo resolve por série. O marcador `correto: true` destaca a resposta certa.
+Cada marcador desenha uma linha no gráfico do resultado. `chave` é uma das métricas da [tabela de placeholders](#placeholders). Em cenários com duas séries, a chave sem sufixo se refere à série A; use `chave: 'media'` e o jogo resolve por série. O marcador `correto: true` destaca a resposta certa. Um marcador é uma linha na escala dos dados, então só serve para métricas de **posição** (`media`, `mediana`, `moda`, `p25`, `p75`, `p90`, `p95`, `maximo`, `minimo`, `ponto_medio`, `media_aparada`). Para dispersão (`iqr`, `dp`, `amplitude`, `cv`) marque as bordas, como `p25` e `p75` para o IQR: uma linha "IQR" cairia na posição do valor do IQR no eixo, que não é onde a faixa central está.
 
 ### Placeholders
 
@@ -325,7 +325,7 @@ Em `eventos.js`, acrescente um objeto a `EVENTOS`:
 
 `npm test` executa, entre outros, estes testes sobre todo o conteúdo:
 
-- `validarCenario` em várias seeds. Ele reporta: dificuldade inválida ou ausente, setor inválido, conceito fora do catálogo, número de opções ≠ 5, opções corretas ≠ 1, justificativas fora de 6–8, justificativas corretas ≠ 1, `equivoco` sem feedback, opção errada sem `equivoco`, tipo de justificativa inválido, placeholder inexistente e marcador sem valor.
+- `validarCenario` em várias seeds. Ele reporta: dificuldade inválida ou ausente, setor inválido, conceito fora do catálogo, número de opções ≠ 5, opções corretas ≠ 1, justificativas fora de 6–8, justificativas corretas ≠ 1, `equivoco` sem feedback, opção errada sem `equivoco`, tipo de justificativa inválido, placeholder inexistente, marcador sem valor e marcador de dispersão (`iqr`, `dp`, `amplitude`, `cv`).
 - Unicidade dos `id` dos cenários.
 - `dificuldade` inteira de 1 a 3 em todo cenário, com ao menos um cenário por nível.
 - Invariantes de todos os geradores em 1.000 seeds.

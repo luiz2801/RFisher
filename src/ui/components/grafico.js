@@ -34,12 +34,25 @@ export function calcularDominio(series, discreto) {
   return [min - folga, max + folga];
 }
 
+// Marcas "redondas" (passo 1, 2 ou 5 × 10^k) dentro do domínio, para o eixo não exibir valores que os dados não têm
+// (como salário negativo ou nota acima de 10), que apareceriam nas pontas do domínio com folga.
+export function calcularTicks(dominio, alvo = 5) {
+  const [min, max] = dominio;
+  const bruto = (max - min) / alvo;
+  const pot = 10 ** Math.floor(Math.log10(bruto));
+  const f = bruto / pot;
+  const passo = (f < Math.SQRT2 ? 1 : f < Math.sqrt(10) ? 2 : f < Math.sqrt(50) ? 5 : 10) * pot;
+  const ticks = [];
+  for (let k = Math.ceil(min / passo - 1e-9); k * passo <= max + passo * 1e-9; k++) ticks.push(Number((k * passo).toPrecision(12)));
+  return ticks;
+}
+
 const TRACOS = ['', '7 4', '2 4', '10 3 2 3'];
 
 export function grafico({ serie, dominio, discreto, formato, rotuloX, rotuloY, marcadores = [], titulo, descricao }) {
   const W = 560;
   const H = 240;
-  const m = { l: 44, r: 16, t: 40, b: 46 };
+  const m = { l: 44, r: 28, t: 40, b: 46 };
   const pw = W - m.l - m.r;
   const ph = H - m.t - m.b;
   const x = (v) => m.l + ((v - dominio[0]) / (dominio[1] - dominio[0])) * pw;
@@ -59,10 +72,7 @@ export function grafico({ serie, dominio, discreto, formato, rotuloX, rotuloY, m
 
   const ticksX = discreto
     ? barras.map((b) => ({ pos: x((b.de + b.ate) / 2), txt: b.rotulo }))
-    : Array.from({ length: 5 }, (_, i) => {
-        const v = dominio[0] + ((dominio[1] - dominio[0]) * i) / 4;
-        return { pos: x(v), txt: fmt(v) };
-      });
+    : calcularTicks(dominio).map((v) => ({ pos: x(v), txt: fmt(v) }));
   const eixoX = ticksX
     .map((t) => `<line class="tick" x1="${t.pos}" x2="${t.pos}" y1="${m.t + ph}" y2="${m.t + ph + 4}"/><text class="rot" x="${t.pos}" y="${m.t + ph + 17}" text-anchor="middle">${esc(t.txt)}</text>`)
     .join('');
