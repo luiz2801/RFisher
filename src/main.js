@@ -250,7 +250,20 @@ function calcularNaCalculadora(form) {
   const p = lerNumero(form.elements.p.value);
   const r = calcularOperacao(c.series[0].valores, form.elements.operacao.value, p);
   const rotulo = form.elements.operacao.selectedOptions[0].textContent;
-  saida.textContent = r === null ? 'Não foi possível calcular: confira o P (0 a 100).' : `${rotulo}: ${formatarResultadoCalculadora(r)}`;
+  if (r === null) {
+    saida.textContent = 'Não foi possível calcular: confira o P (0 a 100).';
+    return;
+  }
+  const texto = formatarResultadoCalculadora(r);
+  saida.textContent = `${rotulo}: ${texto}`;
+  // O resultado vai direto para o campo do valor (sem confirmar); a pessoa ainda pode ajustá-lo e envia o formulário.
+  const campo = document.querySelector('form[data-form="valor"] input[name="valor"]');
+  if (campo) {
+    campo.value = texto;
+    campo.removeAttribute('aria-invalid');
+    const erro = campo.form.querySelector('.erro-campo');
+    if (erro) erro.hidden = true;
+  }
 }
 
 // Valor calculado de um cenário de cálculo: texto livre em pt-BR; se não for número, avisa e não avança.

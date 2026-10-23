@@ -403,7 +403,7 @@ function calculadoraHtml() {
       <button type="submit" class="discreto">Calcular</button>
       <output role="status" aria-live="polite" data-resultado></output>
     </form>
-    <p class="ajuda">Ela só faz a operação sobre os dados: escolher a métrica certa e arredondar o valor continuam com você. O resultado não é preenchido sozinho no campo abaixo.</p>
+    <p class="ajuda">Ela só faz a operação sobre os dados: escolher a métrica certa e arredondar o valor continuam com você. O resultado é colocado no campo abaixo, que você ainda pode ajustar; para confirmar, use o botão do valor.</p>
   </details>`;
 }
 
