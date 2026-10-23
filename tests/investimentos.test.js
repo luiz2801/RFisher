@@ -59,6 +59,16 @@ test('valor esperado: empresa com falha é furada e sem falha é bom negócio, m
   }
 });
 
+test('investir sem critério fica perto de zero em cada porte, e escolher só as sólidas rende bem mais (o chute não compensa)', () => {
+  const media = (lista) => lista.reduce((soma, x) => soma + valorEsperado(x), 0) / lista.length;
+  for (const porte of Object.keys(PORTES)) {
+    const doPorte = EMPRESAS.filter((x) => x.porte === porte);
+    assert.ok(Math.abs(media(doPorte)) < 0.06, `${porte}: o investimento às cegas deveria ficar perto de zero`);
+    assert.ok(media(doPorte.filter((x) => !x.falha)) > 0.08 + media(doPorte), `${porte}: a análise deveria render mais que o acaso`);
+  }
+  assert.ok(Math.abs(media(EMPRESAS)) < 0.05);
+});
+
 test('a consultoria corta o retorno do sucesso, mas não torna ruim o negócio sólido de ganho folgado', () => {
   assert.equal(ganhoComConsultoria(1), 1 - CONSULTORIA_PENALIDADE);
   const folgadas = EMPRESAS.filter((x) => !x.falha && valorEsperado({ ...x, ganho: ganhoComConsultoria(x.ganho) }) > 0.05);
