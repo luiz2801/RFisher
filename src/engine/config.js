@@ -14,6 +14,13 @@ export const DINHEIRO_INICIAL_MAX = 1000000;
 export const DINHEIRO_INICIAL_PASSO = 10000;
 export const MAX_JOGADORES = 3;
 
+// Sequências (fisher.md 3.13): cada sucesso absoluto seguido multiplica o fator da sequência por 1,1 (teto 2) e cada
+// erro total seguido por 0,9 (piso 0,5). O fator vale sobre o ganho do sucesso e, invertido, sobre a perda do erro total.
+export const SEQUENCIA_FATOR_ACERTO = 1.1;
+export const SEQUENCIA_TETO = 2;
+export const SEQUENCIA_FATOR_ERRO = 0.9;
+export const SEQUENCIA_PISO = 0.5;
+
 // Modo cooperativo (docs/modo-cooperativo.md). Valores a calibrar por simulação.
 export const MODOS = ['competitivo', 'cooperativo'];
 export const META_CRESCIMENTO_POR_JOGADOR = 2000; // aumento do caixa mínimo a cada trimestre, por jogador

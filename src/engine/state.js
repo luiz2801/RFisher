@@ -41,6 +41,8 @@ export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, dinheiroInicial = 
       historico: [],
       falido: false,
       negativado: false,
+      // Sequência de erros totais ou de sucessos absolutos seguidos (fisher.md 3.13).
+      sequencia: { erros: 0, acertos: 0 },
       // Perfil do rival controlado pelo computador (modo solo), ou null para uma pessoa.
       bot: Object.hasOwn(PERFIS_BOT, j.bot ?? '') ? j.bot : null,
       // Setor (diretoria) escolhido no menu. No competitivo é só o cargo; no cooperativo vale `papeis`. Ausente em saves antigos.
@@ -75,6 +77,9 @@ export const progressoDoJogador = (e, j) =>
 
 // Saves antigos não têm `modo`: eram sempre competitivos.
 export const ehCooperativo = (e) => e.modo === 'cooperativo';
+
+// Saves antigos não têm `sequencia`: valia zero.
+export const sequenciaDe = (j) => ({ erros: j?.sequencia?.erros ?? 0, acertos: j?.sequencia?.acertos ?? 0 });
 
 // Saves antigos não têm `bot`: todos eram pessoas.
 export const ehBot = (j) => Boolean(j?.bot);

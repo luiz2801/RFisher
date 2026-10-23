@@ -774,3 +774,70 @@ test('crise causando falência no competitivo: a multa de um evento na jogada do
   assert.equal(ehFalido(e.jogadores[0]), true);
   assert.equal(e.fase, 'FIM_DE_JOGO');
 });
+
+// Sequências (fisher.md 3.13): joga uma decisão de um cenário comum com a política dada e devolve o resultado.
+function decidir(e, { metricaCerta, justificativaCerta }) {
+  e = reduzir(e, { tipo: 'ROLAR' });
+  const def = obterCenario(e.cenarioAtual.id);
+  e = reduzir(e, { tipo: 'METRICA', valor: def.opcoes.find((o) => o.correta === metricaCerta).id });
+  if (e.fase === 'INFORMAR_VALOR') e = reduzir(e, { tipo: 'VALOR', valor: valorEsperado(def, e.cenarioAtual) });
+  e = reduzir(e, { tipo: 'JUSTIFICATIVA', valor: def.justificativas.find((x) => (x.tipo === 'correta') === justificativaCerta).id });
+  return reduzir(e, { tipo: 'CONFIANCA', valor: 'provavel' });
+}
+const proxima = (e) => reduzir(e, { tipo: 'CONTINUAR' });
+
+test('sequência: erros totais seguidos custam cada vez mais, e um sucesso troca a sequência de erros pela de acertos', () => {
+  let e = novoJogo({ jogadores: jogadores('iniciante'), turnos: 20, dinheiroInicial: 1000000, seed: 4, teste: { casa: 'decisao' } });
+  assert.deepEqual(e.jogadores[0].sequencia, { erros: 0, acertos: 0 });
+  const mults = [];
+  for (let i = 0; i < 3; i++) {
+    e = decidir(e, { metricaCerta: false, justificativaCerta: false });
+    mults.push(e.resultado.multiplicadorSequencia);
+    e = proxima(e);
+  }
+  assert.deepEqual(mults.map((m) => Math.round(m * 1000) / 1000), [1, 1.111, 1.235]);
+  assert.deepEqual(e.jogadores[0].sequencia, { erros: 3, acertos: 0 });
+  e = decidir(e, { metricaCerta: true, justificativaCerta: true });
+  assert.equal(e.resultado.categoria, 'sucesso');
+  assert.ok(Math.abs(e.resultado.multiplicadorSequencia - 0.729) < 1e-9, 'o sucesso depois de erros rende menos (×0,9³)');
+  assert.deepEqual(e.resultado.sequencia, { erros: 0, acertos: 1 });
+});
+
+test('sequência: sucessos absolutos seguidos ampliam o ganho; resposta parcial interrompe', () => {
+  let e = novoJogo({ jogadores: jogadores('iniciante'), turnos: 20, dinheiroInicial: 1000000, seed: 4, teste: { casa: 'decisao' } });
+  const mults = [];
+  for (let i = 0; i < 3; i++) {
+    e = decidir(e, { metricaCerta: true, justificativaCerta: true });
+    mults.push(e.resultado.multiplicadorSequencia);
+    e = proxima(e);
+  }
+  assert.deepEqual(mults.map((m) => Math.round(m * 1000) / 1000), [1, 1.1, 1.21]);
+  e = decidir(e, { metricaCerta: true, justificativaCerta: false });
+  assert.equal(e.resultado.categoria, 'sorte');
+  assert.equal(e.resultado.multiplicadorSequencia, 1);
+  assert.deepEqual(e.jogadores[0].sequencia, { erros: 0, acertos: 0 });
+});
+
+test('sequência: é por jogador, e saves antigos sem o campo valem zero', () => {
+  let e = novoJogo({ jogadores: jogadores('iniciante', 'iniciante'), turnos: 20, dinheiroInicial: 1000000, seed: 4, teste: { casa: 'decisao' } });
+  e = proxima(decidir(e, { metricaCerta: false, justificativaCerta: false }));
+  assert.equal(e.jogadorAtual, 1);
+  assert.deepEqual(e.jogadores[1].sequencia, { erros: 0, acertos: 0 });
+  e.jogadores[0].sequencia = undefined; // save antigo
+  e = decidir(proxima(decidir(e, { metricaCerta: false, justificativaCerta: false })), { metricaCerta: false, justificativaCerta: false });
+  assert.equal(e.resultado.multiplicadorSequencia, 1);
+  assert.deepEqual(e.jogadores[0].sequencia, { erros: 1, acertos: 0 });
+});
+
+test('sequência: evento e Balanço não alteram a sequência', () => {
+  for (const casa of ['evento', 'balanco']) {
+    let e = novoJogo({ jogadores: jogadores('iniciante'), turnos: 20, dinheiroInicial: 1000000, seed: 4, teste: { casa: 'decisao' } });
+    e = proxima(decidir(e, { metricaCerta: false, justificativaCerta: false }));
+    e = proxima(decidir(e, { metricaCerta: false, justificativaCerta: false }));
+    const antes = e.jogadores[0].sequencia;
+    assert.deepEqual(antes, { erros: 2, acertos: 0 });
+    e.teste.casa = casa;
+    e = proxima(reduzir(e, { tipo: 'ROLAR' }));
+    assert.deepEqual(e.jogadores[0].sequencia, antes, casa);
+  }
+});

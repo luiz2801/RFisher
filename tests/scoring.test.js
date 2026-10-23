@@ -76,3 +76,58 @@ test('dica reduz pela metade o bônus de confiança nos ganhos (seção 3.4)', (
   assert.equal(jogada(true, true, 'chute', { dicaUsada: true }).delta, 10000);
   assert.equal(jogada(false, false, 'certeza', { dicaUsada: true }).delta, -15000); // perda não muda
 });
+
+// Sequências (fisher.md 3.13)
+import { multiplicadorSequencia, fatorSequencia, atualizarSequencia, SEM_SEQUENCIA } from '../src/engine/scoring.js';
+
+const perto = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} != ${b}`);
+
+test('fator da sequência: ×1,1 por acerto seguido até o teto 2; ×0,9 por erro seguido até o piso 0,5', () => {
+  perto(fatorSequencia(SEM_SEQUENCIA), 1);
+  perto(fatorSequencia({ erros: 0, acertos: 1 }), 1.1);
+  perto(fatorSequencia({ erros: 0, acertos: 3 }), 1.331);
+  perto(fatorSequencia({ erros: 0, acertos: 7 }), 1.1 ** 7);
+  perto(fatorSequencia({ erros: 0, acertos: 8 }), 2);
+  perto(fatorSequencia({ erros: 0, acertos: 30 }), 2);
+  perto(fatorSequencia({ erros: 1, acertos: 0 }), 0.9);
+  perto(fatorSequencia({ erros: 3, acertos: 0 }), 0.729);
+  perto(fatorSequencia({ erros: 6, acertos: 0 }), 0.9 ** 6);
+  perto(fatorSequencia({ erros: 7, acertos: 0 }), 0.5);
+  perto(fatorSequencia({ erros: 30, acertos: 0 }), 0.5);
+});
+
+test('o sucesso absoluto rende o fator da sequência; depois de erros rende menos', () => {
+  const ganho = (acertos, erros = 0) => jogada(true, true, 'provavel', { sequencia: { erros, acertos } }).delta;
+  assert.deepEqual([0, 1, 2, 7, 8, 20].map((n) => ganho(n)), [20000, 22000, 24200, 39000, 40000, 40000]);
+  assert.deepEqual([1, 2, 7, 20].map((n) => ganho(0, n)), [18000, 16200, 10000, 10000]);
+});
+
+test('o erro total custa o inverso do fator: mais com erros seguidos (até 2×), menos com acertos seguidos (até 0,5×)', () => {
+  const perda = (erros, acertos = 0) => jogada(false, false, 'provavel', { sequencia: { erros, acertos } }).delta;
+  assert.deepEqual([0, 1, 2, 7, 20].map((n) => perda(n)), [-10000, -11100, -12300, -20000, -20000]);
+  assert.deepEqual([1, 2, 8, 20].map((n) => perda(0, n)), [-9100, -8300, -5000, -5000]);
+});
+
+test('o acerto parcial e a incoerência não recebem o fator de sequência', () => {
+  for (const sequencia of [{ erros: 3, acertos: 0 }, { erros: 0, acertos: 4 }]) {
+    for (const [m, j] of [[true, false], [false, true]]) {
+      const comSeq = jogada(m, j, 'certeza', { sequencia });
+      assert.equal(comSeq.delta, jogada(m, j, 'certeza').delta);
+      assert.equal(comSeq.multiplicadorSequencia, 1);
+    }
+  }
+});
+
+test('a sequência soma-se à reputação e ao nível', () => {
+  const r = jogada(true, true, 'provavel', { reputacao: 100, nivel: 'avancado', sequencia: { erros: 0, acertos: 2 } });
+  assert.equal(r.delta, centenas(20000 * 1.5 * 1.3 * 1.1 ** 2));
+});
+
+test('atualizarSequencia: erro total e sucesso estendem a própria sequência; parcial zera as duas', () => {
+  assert.deepEqual(atualizarSequencia('erro_total', { erros: 1, acertos: 0 }), { erros: 2, acertos: 0 });
+  assert.deepEqual(atualizarSequencia('sucesso', { erros: 2, acertos: 0 }), { erros: 0, acertos: 1 });
+  assert.deepEqual(atualizarSequencia('sucesso', { erros: 0, acertos: 1 }), { erros: 0, acertos: 2 });
+  assert.deepEqual(atualizarSequencia('erro_total', { erros: 0, acertos: 3 }), { erros: 1, acertos: 0 });
+  assert.deepEqual(atualizarSequencia('sorte', { erros: 2, acertos: 0 }), SEM_SEQUENCIA);
+  assert.deepEqual(atualizarSequencia('incoerencia', { erros: 0, acertos: 2 }), SEM_SEQUENCIA);
+});
