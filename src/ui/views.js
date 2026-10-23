@@ -3,11 +3,11 @@ import { esc } from './html.js';
 import { grafico, calcularDominio } from './components/grafico.js';
 import { parDadosHtml } from './components/dado.js';
 import { CASAS, NUM_CASAS, ROTULO_CASA, coordenadas } from '../engine/board.js';
-import { jogadorAtual, classificacao, vencedores, ehCooperativo, ehBot, ehFalido, empresaFalida, julgarBalanco, classificarEmpresa, dinheiroInicialDe } from '../engine/state.js';
+import { jogadorAtual, classificacao, vencedores, ehCooperativo, ehBot, ehFalido, empresaFalida, julgarBalanco, classificarEmpresa, dinheiroInicialDe, sequenciaDe } from '../engine/state.js';
 import { DIRETORIAS } from '../engine/papeis.js';
 import { metaTrimestral } from '../engine/machine.js';
 import { relatorioDesempenho } from '../engine/desempenho.js';
-import { CONFIANCA, ROTULO_CONFIANCA, NIVEL, confiancaEfetiva } from '../engine/scoring.js';
+import { CONFIANCA, ROTULO_CONFIANCA, NIVEL, confiancaEfetiva, multiplicadorSequencia } from '../engine/scoring.js';
 import { MAX_JOGADORES, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL_PASSO, PERFIS_BOT, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
 import { obterCenario, todosCenarios, preencher, valorDoMarcador } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
@@ -274,13 +274,23 @@ function painelEmpresa(e) {
   </div>`;
 }
 
+// Sequência em andamento, para o jogador saber o que está em jogo antes de apostar (fisher.md 3.13).
+function rotuloSequencia(j) {
+  const { erros, acertos } = sequenciaDe(j);
+  if (!erros && !acertos) return '';
+  const n = erros || acertos;
+  const f = (v) => v.toFixed(2).replace('.', ',');
+  const efeito = `ganhos ×${f(multiplicadorSequencia('sucesso', { erros, acertos }))}, perdas ×${f(multiplicadorSequencia('erro_total', { erros, acertos }))}`;
+  return ` · ${n} ${erros ? `erro${n > 1 ? 's' : ''}` : `sucesso${n > 1 ? 's' : ''}`} seguido${n > 1 ? 's' : ''} (${efeito})`;
+}
+
 function placar(e) {
   const coop = ehCooperativo(e);
   return `${coop ? painelEmpresa(e) : ''}<ul class="placar">${e.jogadores
     .map(
       (j) => `<li class="${j.id === e.jogadorAtual && e.fase !== 'FIM_DE_JOGO' ? 'ativo' : ''}${ehFalido(j) ? ' falido' : ''}">
         <span class="peao p${j.id}">${esc(j.nome.trim().charAt(0).toUpperCase() || '?')}</span>
-        <span class="nome">${esc(j.nome)} <small>${esc(cargoDe(e, j))} · ${NOME_NIVEL[j.nivel]}${ehFalido(j) ? ' · Falido' : ''}</small></span>
+        <span class="nome">${esc(j.nome)} <small>${esc(cargoDe(e, j))} · ${NOME_NIVEL[j.nivel]}${ehFalido(j) ? ' · Falido' : ''}${rotuloSequencia(j)}</small></span>
         ${
           coop
             ? ''
@@ -579,7 +589,12 @@ function tabelaSeries(def, c, revelar) {
 
     const rep = r.deltaReputacao ? ` · Reputação ${r.deltaReputacao > 0 ? '+' : '−'}${Math.abs(r.deltaReputacao)}` : '';
     const usouDica = r.dicaUsada ? ' · Dica usada: bônus de confiança reduzido pela metade' : '';
-    const mult = r.multiplicador !== 1 ? ` (bônus de reputação ×${r.multiplicador.toFixed(2).replace('.', ',')})` : '';
+    const x = (v) => v.toFixed(2).replace('.', ',');
+    const mult = r.multiplicador !== 1 ? ` (bônus de reputação ×${x(r.multiplicador)})` : '';
+    const favoravel = (r.categoria === 'sucesso') === (r.multiplicadorSequencia > 1);
+    const seq = r.multiplicadorSequencia !== 1 ? ` · ${favoravel ? 'Bônus' : 'Ônus'} de sequência ×${x(r.multiplicadorSequencia)}` : '';
+    const sequencia = r.sequencia?.erros ? `Sequência: ${r.sequencia.erros} erro${r.sequencia.erros > 1 ? 's' : ''} seguido${r.sequencia.erros > 1 ? 's' : ''}; os ganhos caem e as perdas crescem.`
+      : r.sequencia?.acertos ? `Sequência: ${r.sequencia.acertos} sucesso${r.sequencia.acertos > 1 ? 's' : ''} absoluto${r.sequencia.acertos > 1 ? 's' : ''} seguido${r.sequencia.acertos > 1 ? 's' : ''}; os ganhos crescem e as perdas diminuem.` : '';
 
     return `${bannerBalanco(e)}${titulo}${escolhasRival}
     <div class="resultado ${r.categoria}">

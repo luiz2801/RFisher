@@ -5,9 +5,9 @@ import {
   BONUS_INVESTIDOR_REPUTACAO, CORTE_ORCAMENTO, CORTE_ORCAMENTO_REPUTACAO, REDUCAO_PREJUIZO_PASSIVA,
   REPUTACAO_BALANCO_RH, PERFIS_BOT,
 } from './config.js';
-import { resolverDecisao, receitaBalanco, justificativaConta, CONFIANCA } from './scoring.js';
+import { resolverDecisao, receitaBalanco, justificativaConta, atualizarSequencia, CONFIANCA } from './scoring.js';
 import {
-  jogadorAtual, dinheiroInicialDe, carteira, ehCooperativo, ehBot, ehFalido, jogadoresAtivos, julgarBalanco, distanciaPercorrida, progressoDoJogador,
+  jogadorAtual, sequenciaDe, dinheiroInicialDe, carteira, ehCooperativo, ehBot, ehFalido, jogadoresAtivos, julgarBalanco, distanciaPercorrida, progressoDoJogador,
 } from './state.js';
 import { decidirBot } from './bot.js';
 import { ehCalculo, avaliarCalculo } from './calculo.js';
@@ -216,7 +216,9 @@ function resolverEscolhas(e) {
     confianca: c.confianca,
     impacto: def.impacto,
     dicaUsada: c.dicaUsada === true,
+    sequencia: sequenciaDe(j),
   });
+  j.sequencia = atualizarSequencia(r.categoria, sequenciaDe(j));
   w.dinheiro += r.delta;
   const crise = mudarReputacao(w, r.deltaReputacao);
 
@@ -232,6 +234,8 @@ function resolverEscolhas(e) {
     categoria: r.categoria,
     delta: r.delta,
     multiplicador: r.multiplicador,
+    multiplicadorSequencia: r.multiplicadorSequencia,
+    sequencia: { ...j.sequencia },
     deltaReputacao: r.deltaReputacao,
     crise,
   };

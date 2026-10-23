@@ -152,3 +152,13 @@ test('o menu oferece rounds (1 a 64) e caixa inicial como campos numéricos', ()
   assert.match(html, /<input type="number" name="turnos" min="1" max="64"/);
   assert.match(html, /<input type="number" name="dinheiro" min="10000" max="1000000"/);
 });
+
+test('o placar mostra a sequência de erros ou de sucessos em andamento (fisher.md 3.13)', () => {
+  const e = novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante' }, { nome: 'Bia', nivel: 'iniciante' }], seed: 1 });
+  assert.ok(!viewJogo(e).includes('seguido'));
+  e.jogadores[0].sequencia = { erros: 2, acertos: 0 };
+  e.jogadores[1].sequencia = { erros: 0, acertos: 3 };
+  const html = viewJogo(e);
+  assert.match(html, /2 erros seguidos \(ganhos ×0,81, perdas ×1,23\)/);
+  assert.match(html, /3 sucessos seguidos \(ganhos ×1,33, perdas ×0,75\)/);
+});

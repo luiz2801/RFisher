@@ -40,6 +40,7 @@ classDiagram
         +string nome
         +boolean falido
         +boolean negativado
+        +Sequencia sequencia
         +Nivel nivel
         +number dinheiro
         +number reputacao
@@ -47,6 +48,11 @@ classDiagram
         +int distancia
         +List~HistoricoDecisao~ historico
         +PerfilBot bot
+    }
+
+    class Sequencia {
+        +int erros
+        +int acertos
     }
 
     class HistoricoDecisao {
@@ -139,6 +145,9 @@ classDiagram
     class ScoringEngine {
         +multiplicadorReputacao(reputacao) number
         +justificativaConta(tipo) boolean
+        +fatorSequencia(sequencia) number
+        +multiplicadorSequencia(categoria, sequencia) number
+        +atualizarSequencia(categoria, sequencia) Sequencia
         +classificar(metricaCorreta, justCorreta) CategoriaResultado
         +resolverDecisao(params) ResultadoDecisao
         +receitaBalanco(reputacao) number
@@ -166,6 +175,7 @@ classDiagram
 
     GameState "1" *-- "1..3" Jogador : contém
     Jogador "1" *-- "*" HistoricoDecisao : registra
+    Jogador "1" *-- "1" Sequencia : acumula
     GameState "1" o-- "0..1" CenarioDef : executa em 'decisao'
     GameState "1" o-- "0..1" EventoCarta : aciona em 'evento'
     CenarioDef "1" *-- "5" Opcao : possui
@@ -393,7 +403,7 @@ graph TD
 | **`src/engine/rng.js`** | Gerador pseudo-aleatório determinístico baseado no algoritmo `mulberry32` com estado serializável em 32-bits. |
 | **`src/engine/desempenho.js`** | Perfil de desempenho do jogador a partir do histórico: domínio e diagnóstico por conceito, pontos fortes, deficiências, equívocos recorrentes e calibração da certeza; e o relatório de fim de jogo (`relatorioDesempenho`): acertos e erros, assuntos que mais e menos domina e sugestões de estudo com os materiais de `content/materiais.js` (`fisher.md` 4.6). |
 | **`src/engine/calculo.js`** | Cenários de cálculo (`fisher.md` 4.7): reconhece o tipo, avalia o valor informado contra o valor exato da métrica escolhida dentro de uma margem relativa (5% abaixo de 100, 2% a partir de 100) e fornece as notas de método (percentil linear, desvio padrão amostral) e as operações da calculadora embutida na etapa do valor (`calcularOperacao`, que não altera o estado). |
-| **`src/engine/scoring.js`** | Algoritmos de pontuação, multiplicadores de reputação, regras de aposta e crise de imagem. |
+| **`src/engine/scoring.js`** | Algoritmos de pontuação, multiplicadores de reputação e de sequência (fator de erros e acertos seguidos), regras de aposta e crise de imagem. |
 | **`src/scenarios/generators.js`** | Síntese de dados estatísticos com validação de invariantes conceituais. |
 | **`src/scenarios/loader.js`** | Instanciação de cenários, cálculo de resumo estatístico e substituição de variáveis nos enunciados. |
 | **`src/stats/metrics.js`** | Cálculos estatísticos fundamentais (média, mediana, moda, desvio padrão, percentil 90). |
