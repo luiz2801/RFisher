@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { criarRng } from '../src/engine/rng.js';
-import { novoJogo, vencedores } from '../src/engine/state.js';
+import { novoJogo, vencedores, reputacaoInicialDe } from '../src/engine/state.js';
 import { reduzir } from '../src/engine/machine.js';
 import { valorEsperado, ehCalculo } from '../src/engine/calculo.js';
 import { obterCenario } from '../src/scenarios/loader.js';
-import { DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, TURNOS_PADRAO } from '../src/engine/config.js';
+import { DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, REPUTACAO_INICIAL_MIN, REPUTACAO_INICIAL_MAX, TURNOS_PADRAO } from '../src/engine/config.js';
 import { CONFIANCA } from '../src/engine/scoring.js';
 import { viewJogo } from '../src/ui/views.js';
 
@@ -388,6 +388,23 @@ test('cooperativo: caixa da empresa, meta e faixas seguem o caixa inicial escolh
   // Save antigo, sem `dinheiroInicial`: vale o padrão.
   const { dinheiroInicial, ...antigo } = e;
   assert.equal(metaTrimestral(antigo), DINHEIRO_INICIAL);
+});
+
+test('reputação inicial vem do menu, vale para cada jogador (ou a empresa) e é limitada', () => {
+  const base = { jogadores: jogadores('iniciante', 'iniciante'), seed: 1 };
+  const e = novoJogo({ ...base, reputacaoInicial: 80 });
+  assert.equal(e.reputacaoInicial, 80);
+  assert.ok(e.jogadores.every((j) => j.reputacao === 80));
+  assert.equal(novoJogo({ ...base }).reputacaoInicial, REPUTACAO_INICIAL);
+  assert.equal(novoJogo({ ...base, reputacaoInicial: 1 }).reputacaoInicial, REPUTACAO_INICIAL_MIN);
+  assert.equal(novoJogo({ ...base, reputacaoInicial: 500 }).reputacaoInicial, REPUTACAO_INICIAL_MAX);
+  assert.equal(novoJogo({ ...base, reputacaoInicial: NaN }).reputacaoInicial, REPUTACAO_INICIAL);
+  const coop = novoJogo({ jogadores: jogadores('iniciante'), modo: 'cooperativo', seed: 5, reputacaoInicial: 30 });
+  assert.equal(coop.empresa.reputacao, 30);
+  assert.equal(coop.jogadores[0].reputacao, 30);
+  // Save antigo, sem `reputacaoInicial`: vale o padrão.
+  assert.equal(reputacaoInicialDe({ ...e, reputacaoInicial: undefined }), REPUTACAO_INICIAL);
+  assert.equal(reputacaoInicialDe(e), 80);
 });
 
 // ---------- falência (fisher.md 3.12) ----------

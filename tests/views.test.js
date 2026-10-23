@@ -153,6 +153,7 @@ test('o menu oferece rounds (1 a 64) e caixa inicial como campos numéricos', ()
   const html = viewMenu();
   assert.match(html, /<input type="number" name="turnos" min="1" max="64"/);
   assert.match(html, /<input type="number" name="dinheiro" min="10000" max="1000000"/);
+  assert.match(html, /<input type="number" name="reputacao" min="10" max="100" step="5" value="50"/);
 });
 
 test('o placar mostra a sequência de erros ou de sucessos em andamento (fisher.md 3.13)', () => {

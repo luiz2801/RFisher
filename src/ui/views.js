@@ -3,13 +3,13 @@ import { esc } from './html.js';
 import { grafico, calcularDominio } from './components/grafico.js';
 import { parDadosHtml } from './components/dado.js';
 import { CASAS, NUM_CASAS, ROTULO_CASA, coordenadas } from '../engine/board.js';
-import { jogadorAtual, carteira, classificacao, vencedores, ehCooperativo, ehBot, ehFalido, empresaFalida, julgarBalanco, classificarEmpresa, dinheiroInicialDe, sequenciaDe } from '../engine/state.js';
+import { jogadorAtual, carteira, classificacao, vencedores, ehCooperativo, ehBot, ehFalido, empresaFalida, julgarBalanco, classificarEmpresa, dinheiroInicialDe, reputacaoInicialDe, sequenciaDe } from '../engine/state.js';
 import { DIRETORIAS } from '../engine/papeis.js';
 import { metaTrimestral } from '../engine/machine.js';
 import { relatorioDesempenho } from '../engine/desempenho.js';
 import { CONFIANCA, ROTULO_CONFIANCA, NIVEL, confiancaEfetiva, multiplicadorSequencia } from '../engine/scoring.js';
 import { totalInvestido, ganhoComConsultoria, honorarioDaConsultoria } from '../engine/investimentos.js';
-import { MAX_JOGADORES, APORTES, CONSULTORIA_PENALIDADE, CONSULTORIA_HONORARIO_FRACASSO, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL_PASSO, PERFIS_BOT, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
+import { MAX_JOGADORES, APORTES, CONSULTORIA_PENALIDADE, CONSULTORIA_HONORARIO_FRACASSO, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL_PASSO, REPUTACAO_INICIAL, REPUTACAO_INICIAL_MIN, REPUTACAO_INICIAL_MAX, REPUTACAO_INICIAL_PASSO, PERFIS_BOT, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
 import { obterCenario, todosCenarios, preencher, valorDoMarcador } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
 import { PORTES, FALACIAS, obterEmpresa } from '../scenarios/content/investimentos.js';
@@ -151,6 +151,9 @@ export function viewMenu({ salvo } = {}) {
       <label>Caixa inicial (R$, de ${DINHEIRO_INICIAL_MIN.toLocaleString('pt-BR')} a ${DINHEIRO_INICIAL_MAX.toLocaleString('pt-BR')}; no cooperativo, o caixa da empresa)
         <input type="number" name="dinheiro" min="${DINHEIRO_INICIAL_MIN}" max="${DINHEIRO_INICIAL_MAX}" step="${DINHEIRO_INICIAL_PASSO}" value="${DINHEIRO_INICIAL}" required inputmode="numeric">
       </label>
+      <label>Reputação inicial (de ${REPUTACAO_INICIAL_MIN} a ${REPUTACAO_INICIAL_MAX}; no cooperativo, a da empresa)
+        <input type="number" name="reputacao" min="${REPUTACAO_INICIAL_MIN}" max="${REPUTACAO_INICIAL_MAX}" step="${REPUTACAO_INICIAL_PASSO}" value="${REPUTACAO_INICIAL}" required inputmode="numeric">
+      </label>
       <label>Semente de mercado (opcional, para repetir uma partida)
         <select name="seed"><option value="" selected>Aleatória</option>${Array.from({ length: QTD_SEMENTES }, (_, i) => `<option value="${i + 1}">Mercado ${i + 1}</option>`).join('')}</select>
       </label>
@@ -257,7 +260,7 @@ function contextoRapido(e) {
   return `<details class="contexto-rapido">
     <summary>🏛️ Contexto da Fisher S.A.</summary>
     <div class="cartao-contexto-interno">
-      <p><strong>A Missão:</strong> A antiga diretoria quase faliu a Fisher S.A. tomando decisões por mero "achismo". Vocês assumiram divisões estratégicas com ${brl(dinheiroInicialDe(e))} em caixa e 50 de reputação para provar quem lidera com dados reais.</p>
+      <p><strong>A Missão:</strong> A antiga diretoria quase faliu a Fisher S.A. tomando decisões por mero "achismo". Vocês assumiram divisões estratégicas com ${brl(dinheiroInicialDe(e))} em caixa e ${reputacaoInicialDe(e)} de reputação para provar quem lidera com dados reais.</p>
       ${
         ehCooperativo(e)
           ? '<p><strong>Objetivo:</strong> A diretoria responde por uma só empresa, com caixa e reputação compartilhados. Cumpram a meta de caixa em cada Balanço e levem a Fisher S.A. à melhor faixa ao fim dos trimestres.</p>'

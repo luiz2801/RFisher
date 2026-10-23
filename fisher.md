@@ -32,7 +32,7 @@
 | **Papel do jogador** | CEO de uma empresa; cada jogador escolhe no menu o setor (diretoria: Operações, Tecnologia ou Pessoas e Finanças) que representa, o mesmo nos dois modos |
 | **Modo** | Competitivo, cooperativo ou solo (competitivo contra o computador) |
 | **Objetivo** | Ter mais dinheiro ao fim de N turnos, sem quebrar: caixa negativo na jogada do Balanço é falência e derrota automática (3.12) |
-| **Configuração da partida** | No menu de nova partida, os jogadores escolhem a duração (N, de 1 a 64 rounds por jogador; padrão 10) e o caixa inicial (R$ 10.000 a R$ 1.000.000, em passos de R$ 10.000; padrão R$ 100.000). O caixa vale para cada jogador no competitivo e no solo, e para a empresa no cooperativo |
+| **Configuração da partida** | No menu de nova partida, os jogadores escolhem a duração (N, de 1 a 64 rounds por jogador; padrão 10) o caixa inicial (R$ 10.000 a R$ 1.000.000, em passos de R$ 10.000; padrão R$ 100.000) e a reputação inicial (10 a 100, em passos de 5; padrão 50). Caixa e reputação valem para cada jogador no competitivo e no solo, e para a empresa no cooperativo |
 | **Métricas** | Dinheiro e reputação |
 | **Juiz** | O computador (regras determinísticas, sem IA). No modo solo, o computador também joga como rival, sem IA: um perfil estatístico de acertos (3.11) |
 | **Duração alvo** | 30 a 40 minutos (10 a 12 turnos por jogador); a duração é escolhida no menu, de 1 a 64 |
@@ -79,6 +79,7 @@ Rola os dois dados (soma, 2 a 12) → cai numa casa → vê o cenário/gráfico 
 | 15 | **Dados iguais dão jogada extra** (implementado, 3.2): se os dois dados saem com a mesma face, o jogador resolve a casa normalmente e, ao continuar, joga de novo, sem gastar trimestre. Vale a todos os jogadores e modos, inclusive o rival do solo | Dá ao dado um lance de sorte visível sem tirar o peso do conhecimento (princípio 3): a jogada extra rende mais casas, não mais pontos por decisão. Sem limite de repetições (a chance de cada repetição é 1/6) e a jogada extra não conta como trimestre, então a partida mantém a duração escolhida. Quem faliu na jogada perde a vez e a partida que acabou não continua. Pode ser calibrado no playtest |
 | 16 | **Legendas do gráfico** (implementado, 5.9): o eixo X do histograma usa marcas redondas dentro do intervalo dos dados (passo 1, 2 ou 5 × 10^k), e um marcador de revelação só pode ser uma métrica que é **posição** na escala dos dados (média, mediana, moda, percentis, máximo etc.); métricas de dispersão (IQR, desvio padrão, amplitude, CV) não viram linha. O cenário 06 passou a marcar P25 e P75, as bordas da faixa central, como o 18 | O eixo antigo rotulava as pontas do intervalo com folga e mostrava valores que os dados não podem ter (salário negativo, nota 10,2), e o marcador "IQR: 5,8 min" desenhava uma linha na posição 5,8 min do eixo, o que não é onde o IQR está |
 | 17 | **Investimentos no Mercado** (implementado, 3.14): duas casas de Mercado oferecem aportar R$ 10 mil, 25 mil ou 50 mil numa empresa do porte da reputação. A pessoa **não vê a chance de sucesso**; a **consultoria** a revela, e libera também lucros e retornos, cobrando de quem investe depois 50% do retorno do sucesso, ou R$ 15.000 se der errado, e os mesmos R$ 15.000 na hora de quem a contrata e não investe. O argumento do fundador carrega (ou não) uma falácia estatística, que a pessoa pode diagnosticar (reputação ±). O resultado é sorteado no próximo Balanço (e no fim da partida, para o que sobrar) | Dá um destino à reputação (ela abre portes melhores de empresa) e leva ao jogo a ideia de risco × retorno, sem virar roleta: investir às cegas rende ≈ 0 em média e a análise rende ≈ +0,19 por real. Segue a proposta de investimentos, com as escolhas do autor: probabilidades ocultas e vendidas como consultoria (como a dica, 3.4), falácias nas fichas e casa própria, para as cartas de Evento continuarem só com lições. O aporte arriscado de um jogador pode pesar no caixa comum do cooperativo; a decisão é do grupo. Fora do modelo: o rival do solo não investe, e a chance de sucesso, os retornos e os aportes são pontos de partida a calibrar no playtest |
+| 18 | **Reputação inicial configurável** (implementado): de 10 a 100, em passos de 5 (padrão 50), escolhida no menu como o caixa inicial, igual para todos e, no cooperativo, a da empresa | Deixa o grupo escolher de onde a reputação começa. Reputação alta põe a pessoa no porte maior do Mercado (3.14) e aumenta os ganhos (3.6); reputação baixa aproxima a crise de imagem (zero dispara a multa). As faixas finais do cooperativo continuam absolutas (reputação 75 e 60) e não acompanham a inicial, então uma inicial alta facilita a faixa Líder. Saves antigos valem 50. A calibrar no playtest |
 
 ---
 
@@ -272,7 +273,7 @@ A variância é alta: em 10 turnos cada jogador decide cerca de 6 vezes, e a dif
 | 70 a 89 | Empresas consolidadas e indústrias nacionais | Sucesso de +25% a +35%; perda de 15% a 40% |
 | 90 a 100 | Blue chips, petrolíferas e big techs | Sucesso de +15% a +30%; perda de 20% a 40% |
 
-A oferta sai de um baralho por porte, sem repetir empresa dentro do ciclo. A reputação inicial (50) cai no porte das PMEs; reputações altas dão acesso a empresas mais estáveis, o que dá à reputação um uso além do multiplicador de ganhos (3.6).
+A oferta sai de um baralho por porte, sem repetir empresa dentro do ciclo. A reputação inicial padrão (50, ou a escolhida no menu, decisão nº 18) cai no porte das PMEs; reputações altas dão acesso a empresas mais estáveis, o que dá à reputação um uso além do multiplicador de ganhos (3.6).
 
 **A ficha.** Nome, setor, tempo de mercado, o que o fundador diz e o **lucro (ou prejuízo) dos 4 últimos trimestres, sempre visível**. Ficam ocultos a **chance de sucesso e de fracasso** e o **retorno provável de cada aporte** (em porcentagem e em reais): só aparecem no relatório da consultoria. A pessoa decide pelo texto do fundador e pelos lucros, como nas decisões de cenário.
 
@@ -534,6 +535,7 @@ Cada transição é uma função pura `(estado, ação) -> novoEstado`, o que fa
   turnoAtual: 3,
   turnosPorJogador: 10,
   dinheiroInicial: 100000,
+  reputacaoInicial: 50,
   jogadorAtual: 1,
   fase: "ESCOLHER_METRICA",
   jogadores: [

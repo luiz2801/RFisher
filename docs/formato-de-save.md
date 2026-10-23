@@ -40,6 +40,7 @@ Versão do formato: **`versao: 1`**.
 | `turnoAtual` | inteiro ≥ 1 | Trimestre atual. Aumenta quando todos os jogadores jogaram. |
 | `turnosPorJogador` | inteiro (1 a 64) | Duração da partida, escolhida no menu. |
 | `dinheiroInicial` | inteiro | Caixa inicial escolhido no menu (de cada jogador, ou da empresa no cooperativo). Base da meta trimestral e das faixas finais do cooperativo. Ausente em saves antigos (vale `100000`; `dinheiroInicialDe`). |
+| `reputacaoInicial` | inteiro | Reputação inicial escolhida no menu (de 10 a 100; de cada jogador, ou da empresa no cooperativo). Só informa a missão da tela, já que a reputação atual fica em `jogadores[].reputacao` e `empresa.reputacao`. Ausente em saves antigos (vale `50`; `reputacaoInicialDe`). |
 | `falencia` | booleano | Só no cooperativo: a empresa quebrou (caixa negativo ao fim de uma jogada que passou pelo Balanço) e a partida acabou (`fisher.md` 3.12). Ausente em saves antigos (vale `false`; `empresaFalida`). |
 | `jogadorAtual` | inteiro | Índice em `jogadores` de quem joga. |
 | `fase` | texto | Fase da máquina de estados (ver abaixo). |
@@ -167,6 +168,7 @@ Como o save referencia ids do conteúdo, alterar o conteúdo também pode quebra
 | 1 (sem incremento) | Acrescentado `soConceitual`, para jogar sem os cenários de cálculo. | Compatível: save sem `soConceitual` inclui todos os cenários |
 | 1 (sem incremento) | Acrescentado `jogadores[].sequencia`, e `resultado.multiplicadorSequencia` e `resultado.sequencia`, para as sequências de erros e acertos (`fisher.md` 3.13). | Compatível: save sem `sequencia` começa a contar do zero |
 | 1 (sem incremento) | Acrescentado `dinheiroInicial`, o caixa inicial escolhido no menu. | Compatível: save sem `dinheiroInicial` usa R$ 100.000 |
+| 1 (sem incremento) | Acrescentado `reputacaoInicial`, a reputação inicial escolhida no menu (`fisher.md` decisão nº 18). | Compatível: save sem `reputacaoInicial` usa 50 |
 | 1 (sem incremento) | Casa e fase de Mercado (`MOSTRAR_MERCADO`), com os investimentos (`fisher.md` 3.14): `mercadoAtual`, `apuracaoFinal`, `baralhoInvestimentos`, `jogadores[].investimentos` e `balanco.investimentos`. A trilha passou a ter 2 casas de Mercado no lugar de 2 de Evento (casas 10 e 24). | Compatível: os campos ausentes valem vazio e o save antigo nunca esteve na nova fase; o código trata a ausência como sem investimentos. Num save antigo em andamento, as casas 10 e 24 passam a ser de Mercado, e uma jogada que cairia ali em Evento vira oferta de investimento |
 
 Ao mudar o formato, acrescente uma linha aqui.
