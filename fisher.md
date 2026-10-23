@@ -370,7 +370,7 @@ Quem mantém joga uma aposta de variância, com leve custo de imagem, e passar �
 | 20 | Nota de clima e outliers comportamentais | Sino simétrico com notas 0 e 10 sem critério | **Média aparada** (5% de cada ponta) | Usar a média simples, ou a mediana, quando só as pontas devem ser descartadas |
 | 21 | O mistério da taxa de conversão | Taxas que sobem em cada dispositivo e caem no geral | **Paradoxo de Simpson** (mudança no peso dos grupos) | Esquecer que o total é uma média ponderada e desconfiar do painel |
 | 22 | Viés na contratação ou ilusão matemática? | Mulheres com taxa de aprovação maior em Engenharia e em Vendas, e menor no geral | **Paradoxo de Simpson** (volume de candidatos por departamento) | Ler a taxa geral como prova de viés sem olhar a composição dos grupos |
-| 23 | O aplicativo perfeito (para quem ficou) | Notas de usabilidade quase todas máximas, só de usuários antigos | **Viés de sobrevivência** (os insatisfeitos já foram embora) | Concluir pela base que sobrou e ignorar quem saiu |
+| 23 | O aplicativo perfeito | Notas de usabilidade quase todas máximas, só de usuários antigos | **Viés de sobrevivência** (os insatisfeitos já foram embora) | Concluir pela base que sobrou e ignorar quem saiu |
 | 24 | O alarme infalível de 99% | 1 fraude em 10.000 transações e um alarme com 1% de erro | **Falácia da taxa base** (falsos positivos) | Tratar a precisão do teste como a chance de o alarme estar certo, ignorando a raridade do evento |
 | 25 | A mágica dos anúncios e guarda-chuvas | Gasto com anúncios e vendas sobem e descem juntos | **Correlação não implica causalidade** (variável oculta: a chuva) | Dobrar a verba esperando dobrar as vendas |
 
