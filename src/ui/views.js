@@ -3,14 +3,16 @@ import { esc } from './html.js';
 import { grafico, calcularDominio } from './components/grafico.js';
 import { parDadosHtml } from './components/dado.js';
 import { CASAS, NUM_CASAS, ROTULO_CASA, coordenadas } from '../engine/board.js';
-import { jogadorAtual, classificacao, vencedores, ehCooperativo, ehBot, ehFalido, empresaFalida, julgarBalanco, classificarEmpresa, dinheiroInicialDe, sequenciaDe } from '../engine/state.js';
+import { jogadorAtual, carteira, classificacao, vencedores, ehCooperativo, ehBot, ehFalido, empresaFalida, julgarBalanco, classificarEmpresa, dinheiroInicialDe, sequenciaDe } from '../engine/state.js';
 import { DIRETORIAS } from '../engine/papeis.js';
 import { metaTrimestral } from '../engine/machine.js';
 import { relatorioDesempenho } from '../engine/desempenho.js';
 import { CONFIANCA, ROTULO_CONFIANCA, NIVEL, confiancaEfetiva, multiplicadorSequencia } from '../engine/scoring.js';
-import { MAX_JOGADORES, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL_PASSO, PERFIS_BOT, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
+import { totalInvestido, ganhoComConsultoria } from '../engine/investimentos.js';
+import { MAX_JOGADORES, APORTES, CONSULTORIA_PENALIDADE, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL_PASSO, PERFIS_BOT, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
 import { obterCenario, todosCenarios, preencher, valorDoMarcador } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
+import { PORTES, FALACIAS, obterEmpresa } from '../scenarios/content/investimentos.js';
 import { brl, brlSinal, formatar, unidade } from '../stats/format.js';
 import { contagens } from '../stats/metrics.js';
 import { ehCalculo, notaDeMetodo, OPERACOES_CALCULADORA } from '../engine/calculo.js';
@@ -18,7 +20,7 @@ import { ehCalculo, notaDeMetodo, OPERACOES_CALCULADORA } from '../engine/calcul
 // Sementes fixas oferecidas no menu (1 a QTD_SEMENTES); vazio = sorteada.
 export const QTD_SEMENTES = 20;
 const NOME_NIVEL = { iniciante: 'Iniciante', avancado: 'Avançado' };
-const FIGURA_CASA = { decisao: '📊', evento: '🎲', balanco: '🏦' };
+const FIGURA_CASA = { decisao: '📊', evento: '🎲', balanco: '🏦', mercado: '💼' };
 const ROTULO_BOT = { facil: 'fácil', medio: 'médio', dificil: 'difícil' };
 const TITULO_RESULTADO = {
   sucesso: '✔ Sucesso absoluto',
@@ -174,6 +176,7 @@ export function viewMenu({ salvo } = {}) {
             <option value="">Normal (pelo tabuleiro)</option>
             <option value="decisao">Sempre Decisão</option>
             <option value="evento">Sempre Evento</option>
+            <option value="mercado">Sempre Mercado</option>
             <option value="balanco">Sempre Balanço</option>
           </select>
         </label>
@@ -264,13 +267,19 @@ function contextoRapido(e) {
   </details>`;
 }
 
+// Dinheiro em custódia, à espera do Balanço (fisher.md 3.14).
+const investidoEmpresa = (e) => {
+  const total = e.jogadores.reduce((soma, j) => soma + totalInvestido(j), 0);
+  return total ? ` · ${brl(total)} investidos` : '';
+};
+
 function painelEmpresa(e) {
   const { dinheiro, reputacao } = e.empresa;
   return `<div class="cartao empresa">
     <strong>Fisher S.A. · caixa e reputação compartilhados</strong>
     <span class="din">${brl(dinheiro)}</span>
     <span class="rep" title="Reputação">Rep. ${reputacao}<progress max="100" value="${reputacao}"></progress></span>
-    <small>Meta do próximo Balanço: ${brl(metaTrimestral(e))}</small>
+    <small>Meta do próximo Balanço: ${brl(metaTrimestral(e))}${investidoEmpresa(e)}</small>
   </div>`;
 }
 
@@ -290,7 +299,7 @@ function placar(e) {
     .map(
       (j) => `<li class="${j.id === e.jogadorAtual && e.fase !== 'FIM_DE_JOGO' ? 'ativo' : ''}${ehFalido(j) ? ' falido' : ''}">
         <span class="peao p${j.id}">${esc(j.nome.trim().charAt(0).toUpperCase() || '?')}</span>
-        <span class="nome">${esc(j.nome)} <small>${esc(cargoDe(e, j))} · ${NOME_NIVEL[j.nivel]}${ehFalido(j) ? ' · Falido' : ''}${rotuloSequencia(j)}</small></span>
+        <span class="nome">${esc(j.nome)} <small>${esc(cargoDe(e, j))} · ${NOME_NIVEL[j.nivel]}${ehFalido(j) ? ' · Falido' : ''}${rotuloSequencia(j)}${!ehCooperativo(e) && totalInvestido(j) ? ` · ${brl(totalInvestido(j))} investidos` : ''}</small></span>
         ${
           coop
             ? ''
@@ -313,6 +322,8 @@ function placar(e) {
       return avisoFalencia(e) + viewResultado(e);
       case 'MOSTRAR_EVENTO':
       return avisoFalencia(e) + viewEvento(e);
+      case 'MOSTRAR_MERCADO':
+      return avisoFalencia(e) + viewMercado(e);
       case 'MOSTRAR_BALANCO':
       return avisoFalencia(e) + viewBalanco(e);
       case 'FIM_DE_JOGO':
@@ -349,9 +360,15 @@ const metaTexto = (b) =>
     ? ` Meta de ${brl(b.meta.valor)} ${b.meta.cumprida ? `cumprida: bônus de investidor ${brlSinal(b.meta.dinheiro)}` : `não cumprida: corte de orçamento ${brlSinal(b.meta.dinheiro)}`}.`
     : '';
 
+// Retorno dos aportes apurados (no Balanço ou no encerramento): o desfecho sorteado e o que ele rendeu ou custou.
+const linhaInvestimento = (r) => `<li><strong>${esc(r.nome)}</strong> (aporte de ${brl(r.valor)}${r.consultoria ? ', com consultoria' : ''}):
+  <span class="${r.desfecho === 'sucesso' ? 'ganho' : 'perda'}">${r.desfecho === 'sucesso' ? '▲ deu certo' : '▼ deu errado'}, ${brlSinal(r.liquido)}</span>. ${esc(r.texto)}</li>`;
+const listaInvestimentos = (itens = []) =>
+  itens.length ? `<div class="aviso"><strong>Retorno dos investimentos</strong><ul class="investimentos">${itens.map(linhaInvestimento).join('')}</ul></div>` : '';
+
 const bannerBalanco = (e) =>
       e.balanco && e.fase !== 'MOSTRAR_BALANCO'
-      ? `<p class="aviso">${ehCooperativo(e) ? 'A empresa passou' : autor(e).passou} pelo Balanço: ${brlSinal(e.balanco.liquido)} (receita ${brl(e.balanco.receita)}, custos ${brl(e.balanco.custos)}).${metaTexto(e.balanco)}</p>`
+      ? `<p class="aviso">${ehCooperativo(e) ? 'A empresa passou' : autor(e).passou} pelo Balanço: ${brlSinal(e.balanco.liquido)} (receita ${brl(e.balanco.receita)}, custos ${brl(e.balanco.custos)}).${metaTexto(e.balanco)}</p>${listaInvestimentos(e.balanco.investimentos)}`
       : '';
 
       const botaoContinuar = '<button class="primario" data-acao="CONTINUAR">Próximo jogador</button>';
@@ -642,6 +659,78 @@ function blocoCalculo(def, r, escolhida, certa, c0, quem) {
     </div>${botaoContinuar}`;
 }
 
+// ---------- mercado (investimentos, fisher.md 3.14) ----------
+
+const pctMercado = (v) => `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(v * 100)}%`;
+
+function historicoEmpresa(def) {
+  const rotulos = ['4 trimestres atrás', '3 atrás', '2 atrás', 'Último trimestre'];
+  return `<table class="tabela-dados"><caption>Lucro (prejuízo) por trimestre, em R$ mil</caption>
+    <thead><tr>${rotulos.map((r) => `<th scope="col">${r}</th>`).join('')}</tr></thead>
+    <tbody><tr>${def.historico.map((v) => `<td>${esc(formatar('decimal', v))}</td>`).join('')}</tr></tbody></table>`;
+}
+
+function viewMercado(e) {
+  const m = e.mercadoAtual;
+  if (!m.empresaId) {
+    return `${bannerBalanco(e)}<h2>Mercado</h2><p>O rival passou pelo Mercado e não fez nenhum aporte.</p>${botaoContinuar}`;
+  }
+  const def = obterEmpresa(m.empresaId);
+  const porte = PORTES[m.porte];
+  const caixa = carteira(e).dinheiro;
+  const aberta = !m.decisao;
+  const ganho = m.consultoria ? ganhoComConsultoria(m.ganho) : m.ganho;
+
+  const ficha = `<article class="ficha">
+    <h3>${esc(def.nome)}</h3>
+    <p class="ajuda">${esc(def.setor)} · ${esc(def.tempo)} de mercado</p>
+    <p><strong>O fundador diz:</strong> ${esc(def.fundador)}</p>
+    ${historicoEmpresa(def)}
+    <p>Se der certo: <strong>+${pctMercado(ganho)}</strong> sobre o aporte${m.consultoria ? ' (já descontada a consultoria)' : ''}. Se der errado: <strong>−${pctMercado(m.perda)}</strong> do aporte.</p>
+  </article>`;
+
+  const consultoria = m.consultoria
+    ? `<p class="dica"><strong>Consultoria:</strong> chance de sucesso de <strong>${pctMercado(m.prob)}</strong> e de fracasso de ${pctMercado(1 - m.prob)}. Quem investe depois de ver isso fica com ${pctMercado(1 - CONSULTORIA_PENALIDADE)} do retorno do sucesso.</p>`
+    : aberta
+      ? `<button class="discreto" data-acao="ABRIR_CONSULTORIA">Contratar consultoria (mostra a chance exata de sucesso, mas reduz em ${pctMercado(CONSULTORIA_PENALIDADE)} o retorno do sucesso se você investir)</button>`
+      : '';
+
+  let diagnostico = '';
+  if (aberta && !m.diagnostico) {
+    diagnostico = `<h3>Diagnóstico do argumento (opcional)</h3>
+      <p class="ajuda">O argumento do fundador tem alguma falha estatística? Acertar rende +${ANALISE_BONUS_REPUTACAO} de reputação e errar custa ${ANALISE_PENALIDADE_REPUTACAO}. A resposta aparece depois da sua decisão.</p>
+      <div class="opcoes">${Object.entries(FALACIAS).map(([id, f]) => `<button class="opcao" data-acao="DIAGNOSTICAR" data-valor="${id}">${esc(f.nome)}</button>`).join('')}</div>`;
+  } else if (aberta) {
+    diagnostico = `<p class="ajuda">Seu diagnóstico: <strong>${esc(FALACIAS[m.diagnostico].nome)}</strong>. Ele será conferido quando você decidir.</p>`;
+  }
+
+  let decisao;
+  if (aberta) {
+    decisao = `<h3>Quanto investir?</h3>
+      <p class="ajuda">O dinheiro fica em custódia até você passar pelo Balanço, quando o resultado é sorteado. Caixa disponível: ${brl(caixa)}.</p>
+      <div class="opcoes">${APORTES.map((a) => `<button class="opcao" data-acao="INVESTIR" data-valor="${a}"${a > caixa ? ' disabled' : ''}>
+        <strong>Investir ${brl(a)}</strong>
+        <span>Se der certo: ${brlSinal(a * ganho)} · Se der errado: ${brlSinal(-a * m.perda)}</span>
+      </button>`).join('')}</div>
+      <button class="discreto" data-acao="RECUSAR">Não investir</button>`;
+  } else {
+    const a = m.analise;
+    const feito = m.decisao === 'investiu'
+      ? `<h3>Você investiu ${brl(m.aporte)} na ${esc(def.nome)}</h3><p>O resultado sai quando você passar pelo Balanço. Até lá o dinheiro fica em custódia.</p>`
+      : '<h3>Você não investiu</h3>';
+    const falha = def.falha ? esc(FALACIAS[def.falha].nome) : 'nenhuma, o argumento se sustenta';
+    const veredito = a
+      ? `<p><strong>Seu diagnóstico:</strong> ${esc(FALACIAS[m.diagnostico].nome)}. ${a.correta ? '✔ Acertou' : '✖ Errou'} (reputação ${a.deltaReputacao > 0 ? '+' : '−'}${Math.abs(a.deltaReputacao)}).</p>${a.crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}`
+      : '';
+    decisao = `<div class="resultado">${feito}${veredito}
+      <p class="licao"><strong>O argumento do fundador:</strong> falha — ${falha}. ${esc(def.explicacao)}</p></div>${botaoContinuar}`;
+  }
+
+  return `${bannerBalanco(e)}<h2>Mercado: oportunidade de investimento</h2>
+    <p class="ajuda">Empresas do porte: ${esc(porte.nome)} (reputação ${porte.reputacao}).</p>
+    ${ficha}${consultoria}${diagnostico}${decisao}`;
+}
+
     function viewBalanco(e) {
   const b = e.balanco;
     return `<h2>Balanço da empresa</h2>
@@ -655,7 +744,7 @@ function blocoCalculo(def, r, escolhida, certa, c0, quem) {
       <tr><td>Pessoas e Finanças: treinamento da equipe</td><td>Rep. +${b.bonusRh}</td></tr>`
           : ''
       }
-    </table>${b.meta?.crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}${botaoContinuar}`;
+    </table>${listaInvestimentos(b.investimentos)}${b.meta?.crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}${botaoContinuar}`;
 }
 
     function viewFimCooperativo(e) {
@@ -669,7 +758,7 @@ function blocoCalculo(def, r, escolhida, certa, c0, quem) {
         return `<li><strong>${esc(j.nome)}</strong> (${esc(nomesPapeis(j))}): ${acertos} de ${j.historico.length} decisões com sucesso absoluto</li>`;
       })
       .join('')}</ol>
-    ${relatorios(e)}
+    ${apuracaoFinal(e)}${relatorios(e)}
     <button class="primario" data-acao="NOVA">Jogar de novo</button>`;
 }
 
@@ -689,8 +778,16 @@ function viewFim(e) {
         return `<li><strong>${esc(j.nome)}</strong>: ${ehFalido(j) ? 'FALIDO · ' : ''}${brl(j.dinheiro)} · Rep. ${j.reputacao} · ${acertos} de ${j.historico.length} decisões com sucesso absoluto</li>`;
       })
       .join('')}</ol>
-    ${relatorios(e)}
+    ${apuracaoFinal(e)}${relatorios(e)}
     <button class="primario" data-acao="NOVA">Jogar de novo</button>`;
+}
+
+// Aportes que ainda esperavam um Balanço quando os trimestres acabaram (fisher.md 3.14).
+function apuracaoFinal(e) {
+  if (!e.apuracaoFinal) return '';
+  return `<section class="relatorios"><h3>Apuração final dos investimentos</h3>
+    <p class="ajuda">No encerramento do exercício, os aportes que ainda esperavam um Balanço foram apurados e já constam no caixa final.</p>
+    ${e.apuracaoFinal.map((a) => `<h4>${esc(a.nome)}</h4>${listaInvestimentos(a.investimentos)}`).join('')}</section>`;
 }
 
 // ---------- relatório de desempenho (fim de jogo) ----------

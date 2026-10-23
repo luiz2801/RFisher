@@ -258,6 +258,7 @@ const CAMINHOS = {
   ESCOLHER_CONFIANCA: { teste: { casa: 'decisao', cenarios: null } },
   MOSTRAR_RESULTADO: { teste: { casa: 'decisao', cenarios: null } },
   MOSTRAR_EVENTO: { teste: { casa: 'evento' } },
+  MOSTRAR_MERCADO: { teste: { casa: 'mercado' } },
   MOSTRAR_BALANCO: { teste: { casa: 'balanco' } },
 };
 

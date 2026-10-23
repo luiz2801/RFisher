@@ -1,13 +1,14 @@
 // Trilha expandida de 28 casas no perímetro de uma grade 9x7 (ou 7x9 em tela em pé).
+// 1 Balanço, 18 Decisões, 7 Eventos e 2 Mercados (as casas 10 e 24, uma em cada metade da volta).
 export const CASAS = [
   'balanco', 'decisao', 'decisao', 'evento', 'decisao', 'decisao', 'evento',
-  'decisao', 'decisao', 'evento', 'decisao', 'decisao', 'evento', 'decisao',
+  'decisao', 'decisao', 'mercado', 'decisao', 'decisao', 'evento', 'decisao',
   'evento', 'decisao', 'decisao', 'evento', 'decisao', 'decisao', 'evento',
-  'decisao', 'decisao', 'evento', 'decisao', 'decisao', 'evento', 'decisao',
+  'decisao', 'decisao', 'mercado', 'decisao', 'decisao', 'evento', 'decisao',
 ];
 export const NUM_CASAS = CASAS.length;
 
-export const ROTULO_CASA = { balanco: 'Balanço', decisao: 'Decisão', evento: 'Evento' };
+export const ROTULO_CASA = { balanco: 'Balanço', decisao: 'Decisão', evento: 'Evento', mercado: 'Mercado' };
 
 export function avancar(posicao, passos) {
   const total = posicao + passos;
