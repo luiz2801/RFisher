@@ -66,7 +66,10 @@ const lerInteiro = (valor) => (String(valor ?? '').trim() === '' ? NaN : Number(
 function iniciar(form) {
   const erro = form.querySelector('[data-erro-setor]');
   erro.hidden = !setoresRepetidos(form);
-  if (!erro.hidden) return;
+  if (!erro.hidden) {
+    mostrarEtapa(etapasVisiveis(form).indexOf(form.querySelector('[data-jogador="0"]')));
+    return;
+  }
   const dados = new FormData(form);
   const solo = dados.get('modo') === 'solo';
   const n = solo ? 1 : Math.min(MAX_JOGADORES, Math.max(1, Number(dados.get('n'))));
@@ -211,12 +214,7 @@ app.addEventListener('click', (ev) => {
     estado = null;
     render();
   } else if (acao === 'ABRIR_CONFIG') {
-    const form = document.getElementById('form-menu');
-    form.hidden = false;
-    botao.hidden = true;
-    botao.setAttribute('aria-expanded', 'true');
-    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    form.querySelector('input')?.focus({ preventScroll: true });
+    abrirAssistente();
   } else if (acao === 'COPIAR_TABELA') {
     copiarTabela(botao);
   } else if (acao === 'IMPRIMIR') {
@@ -229,10 +227,58 @@ app.addEventListener('click', (ev) => {
   }
 });
 
+// Assistente da tela inicial: história, contexto e configuração, uma etapa por vez (Anterior / Próximo).
+let etapaMenu = 0;
+
+// As etapas dos jogadores que não existem na partida (data-pula) ficam fora da sequência.
+const etapasVisiveis = (form) => [...form.querySelectorAll('[data-etapa]')].filter((el) => !('pula' in el.dataset));
+
+function mostrarEtapa(n) {
+  const form = document.getElementById('form-menu');
+  form.querySelectorAll('[data-etapa]').forEach((el) => { el.hidden = true; });
+  const etapas = etapasVisiveis(form);
+  etapaMenu = Math.max(0, Math.min(n, etapas.length - 1));
+  etapas[etapaMenu].hidden = false;
+  const ultima = etapaMenu === etapas.length - 1;
+  form.querySelector('[data-nav="anterior"]').hidden = etapaMenu === 0;
+  form.querySelector('[data-nav="proximo"]').hidden = ultima;
+  form.querySelector('[data-nav="iniciar"]').hidden = !ultima;
+  form.querySelector('[data-passo]').textContent = `${etapaMenu + 1} de ${etapas.length}`;
+  form.scrollTop = 0;
+  form.querySelector('.etapas').scrollTop = 0;
+}
+
+function abrirAssistente() {
+  document.getElementById('modal-menu').hidden = false;
+  ajustarCamposSetor(document.getElementById('form-menu'));
+  mostrarEtapa(0);
+  document.getElementById('form-menu').focus({ preventScroll: true });
+}
+
+function avancarEtapa(form) {
+  const etapa = etapasVisiveis(form)[etapaMenu];
+  const campos = [...etapa.querySelectorAll('input, select')].filter((c) => !c.closest('[hidden]'));
+  const invalido = campos.find((c) => !c.checkValidity());
+  if (invalido) return invalido.reportValidity();
+  mostrarEtapa(etapaMenu + 1);
+}
+
+app.addEventListener('click', (ev) => {
+  const nav = ev.target.closest('[data-nav]')?.dataset.nav;
+  if (nav === 'anterior') mostrarEtapa(etapaMenu - 1);
+  else if (nav === 'proximo') avancarEtapa(document.getElementById('form-menu'));
+});
+
+app.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && !document.getElementById('modal-menu')?.hidden) document.getElementById('modal-menu').hidden = true;
+});
+
 app.addEventListener('submit', (ev) => {
   if (ev.target.id === 'form-menu') {
     ev.preventDefault();
-    iniciar(ev.target);
+    const form = ev.target;
+    if (etapaMenu < etapasVisiveis(form).length - 1) avancarEtapa(form);
+    else iniciar(form);
   } else if (ev.target.dataset.form === 'calculadora') {
     ev.preventDefault();
     calcularNaCalculadora(ev.target);
@@ -287,7 +333,7 @@ function ajustarCamposSetor(form) {
   const coop = modo === 'cooperativo';
   form.querySelectorAll('fieldset[data-jogador]').forEach((f) => {
     const i = Number(f.dataset.jogador);
-    f.hidden = i >= n;
+    if (i >= n) f.dataset.pula = ''; else delete f.dataset.pula;
     f.querySelector('[data-campo="diretoria"]').hidden = !coop || n === 1 || (n === 2 && i === 1);
     f.querySelector('[data-campo="diretoria-resto"]').hidden = !coop || n !== 2 || i !== 1;
   });
@@ -302,6 +348,11 @@ app.addEventListener('change', (ev) => {
     form.querySelector('[data-resultado]').textContent = '';
     return;
   }
+  const alvo = ev.target.dataset.alvo;
+  if (alvo) {
+    ev.target.form.elements[alvo].value = ev.target.value;
+    return;
+  }
   const nome = ev.target.name;
   if (nome?.startsWith('diretoria_')) {
     ev.target.form.querySelector('[data-erro-setor]').hidden = true;
@@ -313,6 +364,13 @@ app.addEventListener('change', (ev) => {
   form.querySelector('[data-campo="n"]').hidden = solo;
   form.querySelector('[data-campo="bot"]').hidden = !solo;
   ajustarCamposSetor(form);
+});
+
+// Digitar um valor próprio marca o cartão de mesmo valor (ou nenhum).
+app.addEventListener('input', (ev) => {
+  const campo = ev.target;
+  if (campo.type !== 'number' || !campo.form?.querySelector(`[data-alvo="${campo.name}"]`)) return;
+  campo.form.querySelectorAll(`[data-alvo="${campo.name}"]`).forEach((r) => { r.checked = r.value === campo.value; });
 });
 
 render();

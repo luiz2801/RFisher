@@ -1419,3 +1419,172 @@ html {
     font-size: .8rem;
   }
 }
+
+/* Tela inicial: assistente em janela, uma etapa por vez */
+.modal[hidden] { display: none; }
+
+.hero {
+  min-height: 100dvh;
+  align-items: center;
+  text-align: center;
+}
+.hero .sub { max-width: 40ch; }
+.hero .cartao { margin-top: 1.5rem; }
+.hero .cta-grande { margin-top: 1.5rem; }
+
+#form-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
+  overflow: hidden;
+  height: min(640px, calc(100dvh - 32px));
+}
+
+#form-menu .etapas { flex: 1; min-height: 0; overflow-y: auto; padding-right: .25rem; }
+#form-menu .nav-menu button { margin-top: 0; }
+#form-menu .lista-divisoes { margin-bottom: 0; }
+.etapa-menu[hidden] { display: none; }
+
+.etapa-menu {
+  line-height: 1.6;
+}
+
+fieldset.secao-config {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.secao-config > legend {
+  font-size: 1.3rem;
+  font-weight: 700;
+  padding: 0;
+  margin-bottom: .5rem;
+}
+
+.passo-menu {
+  margin: 0;
+  text-align: center;
+  font-size: .85rem;
+  opacity: .75;
+}
+
+.nav-menu {
+  display: flex;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.nav-menu [data-nav="anterior"] { margin-right: auto; }
+.nav-menu [data-nav="proximo"],
+.nav-menu [data-nav="iniciar"] { margin-left: auto; }
+.nav-menu [hidden] { display: none; }
+
+/* Opções em cartões (modo, participantes, perfil, setor, mercado) */
+.opcoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: .6rem;
+  margin: .5rem 0 1rem;
+}
+.opcoes.coluna { grid-template-columns: 1fr; }
+.opcoes.grade { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+
+.opcao {
+  position: relative;
+  display: block;
+  margin: 0;
+  cursor: pointer;
+}
+.opcao input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.opcao-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  height: 100%;
+  box-sizing: border-box;
+  padding: .75rem .9rem;
+  border: 2px solid var(--borda);
+  border-radius: 10px;
+  background: var(--bg);
+  transition: border-color .15s, background .15s;
+}
+.opcoes.coluna .opcao-corpo { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: .75rem; }
+.opcoes.coluna .opcao-corpo small { flex-basis: 100%; padding-left: 2.2rem; }
+.opcao-icone { font-size: 1.5rem; line-height: 1; }
+.opcao-corpo small { color: var(--suave); }
+.opcao:hover .opcao-corpo { border-color: var(--primaria); }
+.opcao input:checked + .opcao-corpo {
+  border-color: var(--primaria);
+  background: color-mix(in srgb, var(--primaria) 12%, var(--surface));
+}
+.opcao input:focus-visible + .opcao-corpo { outline: 3px solid var(--primaria); outline-offset: 2px; }
+
+.rotulo-grupo { display: block; font-weight: 600; margin-top: .5rem; }
+.campo-nome { display: block; }
+.campo-nome input { display: block; width: 100%; box-sizing: border-box; margin-top: .25rem; }
+[data-campo][hidden], .grupo-opcoes[hidden] { display: none; }
+
+/* Cartões compactos: valores prontos de duração, capital e semente */
+.opcoes.compacto { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); margin: .4rem 0 .6rem; }
+.opcoes.compacto .opcao-corpo { align-items: center; text-align: center; padding: .5rem .6rem; }
+.opcoes.compacto .opcao-icone { font-size: 1.2rem; }
+.opcoes.grade.compacto { grid-template-columns: repeat(10, 1fr); gap: .4rem; }
+.opcoes.grade .opcao:first-child { grid-column: 1 / -1; }
+.campo-outro { display: block; font-size: .9rem; color: var(--suave); margin-bottom: .75rem; }
+.campo-outro input { display: block; margin-top: .25rem; width: 10rem; }
+@media (max-width: 520px) {
+  .opcoes.grade.compacto { grid-template-columns: repeat(5, 1fr); }
+}
+
+/* Memorando inicial em fonte maior */
+#form-menu .prologo-texto p { font-size: 1.2rem; line-height: 1.7; }
+#form-menu .historia-topo h2 { font-size: 1.6rem; }
+#form-menu .subtitulo-memorando { font-size: .9rem; }
+@media (max-width: 520px) {
+  #form-menu .prologo-texto p { font-size: 1.05rem; line-height: 1.6; }
+  #form-menu .historia-topo h2 { font-size: 1.3rem; }
+}
+
+/* Assistente da tela inicial: fontes maiores em todas as etapas */
+#form-menu { font-size: 1.15rem; }
+#form-menu h2 { font-size: 1.6rem; }
+#form-menu .secao-config > legend { font-size: 1.7rem; }
+#form-menu p, #form-menu li, #form-menu label { font-size: 1.15rem; line-height: 1.6; }
+#form-menu .ajuda, #form-menu .rotulo-grupo { font-size: 1.15rem; }
+#form-menu .opcao-corpo strong { font-size: 1.2rem; }
+#form-menu .opcao-corpo small { font-size: 1rem; }
+#form-menu .opcoes.compacto .opcao-corpo strong { font-size: 1.15rem; }
+#form-menu .opcao-icone { font-size: 1.8rem; }
+#form-menu input[type="number"], #form-menu input:not([type]), #form-menu select { font-size: 1.1rem; padding: .6rem; }
+#form-menu .campo-outro { font-size: 1rem; }
+#form-menu .indicadores strong { font-size: 1.5rem; }
+#form-menu .indicadores span, #form-menu .divisao-foco { font-size: 1rem; }
+#form-menu .divisao-nome, #form-menu .passos strong { font-size: 1.2rem; }
+#form-menu .passos p { font-size: 1.05rem; }
+#form-menu .frase-efeito { font-size: 1.1rem; }
+#form-menu .passo-menu { font-size: 1rem; }
+#form-menu .nav-menu button { font-size: 1.1rem; padding: .6rem 1.1rem; }
+@media (max-width: 520px) {
+  #form-menu, #form-menu p, #form-menu li, #form-menu label, #form-menu .ajuda, #form-menu .rotulo-grupo { font-size: 1.05rem; }
+  #form-menu h2 { font-size: 1.35rem; }
+  #form-menu .secao-config > legend { font-size: 1.45rem; }
+  #form-menu .opcao-corpo strong { font-size: 1.1rem; }
+  #form-menu .opcao-corpo small { font-size: .9rem; }
+}
+
+/* Janela maior e listas em colunas para caber sem rolagem */
+#form-menu { width: min(1000px, 100%); height: min(780px, calc(100dvh - 32px)); }
+.modal > #form-menu.painel { width: min(1000px, 100%); max-height: none; }
+@media (min-width: 760px) {
+  #form-menu .lista-divisoes, #form-menu .passos { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; padding: 0; list-style: none; }
+  #form-menu .lista-divisoes li, #form-menu .passos li { align-items: flex-start; margin: 0; height: 100%; box-sizing: border-box; }
+}

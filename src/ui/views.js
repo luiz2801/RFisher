@@ -42,24 +42,32 @@ const MSG_JUSTIFICATIVA = {
 
 // ---------- menu ----------
 
+// Grupo de opções em cartões (radio): a pessoa vê todas as alternativas e toca numa.
+function opcoes(nome, itens, padrao, classe = '', attrs = '') {
+  return `<div class="opcoes ${classe}" role="radiogroup">${itens
+    .map(([valor, titulo, desc, icone]) => `<label class="opcao"><input type="radio" name="${nome}" value="${esc(String(valor))}" ${attrs} ${String(valor) === String(padrao) ? 'checked' : ''}>
+      <span class="opcao-corpo">${icone ? `<span class="opcao-icone" aria-hidden="true">${icone}</span>` : ''}<strong>${esc(titulo)}</strong>${desc ? `<small>${esc(desc)}</small>` : ''}</span></label>`)
+    .join('')}</div>`;
+}
+
 export function viewMenu({ salvo } = {}) {
   const linhas = Array.from({ length: MAX_JOGADORES }, (_, i) => {
-    const opcoes = Object.entries(DIRETORIAS)
-      .map(([id, d], k) => `<option value="${id}" ${k === i % 3 ? 'selected' : ''}>${d.icone} ${esc(d.nome)}</option>`)
-      .join('');
-    return `<fieldset data-jogador="${i}" ${i >= 2 ? 'hidden' : ''} class="card-jogador-config">
-      <legend class="legend-jogador">Jogador ${i + 1}</legend>
-      <label data-campo="diretoria">Setor que representa
-        <select name="diretoria_${i}">${opcoes}</select>
-      </label>
+    const setores = Object.entries(DIRETORIAS).map(([id, d]) => [id, d.nome, d.foco, d.icone]);
+    return `<fieldset data-jogador="${i}" data-etapa ${i >= 2 ? 'data-pula' : ''} class="etapa-menu secao-config">
+      <legend>Jogador ${i + 1}</legend>
+      <label class="campo-nome">Nome do(a) CEO <input name="nome_${i}" value="Jogador ${i + 1}" maxlength="20" required></label>
+      <div class="grupo-opcoes">
+        <span class="rotulo-grupo">Perfil Executivo</span>
+        ${opcoes(`nivel_${i}`, [
+          ['iniciante', 'Iniciante', 'Com consultoria pedagógica e dicas', '🌱'],
+          ['avancado', 'Avançado', 'Alto risco: casas valem ×1,5, sem dicas', '🔥'],
+        ], 'iniciante')}
+      </div>
+      <div class="grupo-opcoes" data-campo="diretoria">
+        <span class="rotulo-grupo">Setor que representa</span>
+        ${opcoes(`diretoria_${i}`, setores, setores[i % 3][0])}
+      </div>
       <p class="ajuda" data-campo="diretoria-resto" hidden>Fica com os setores que sobrarem.</p>
-      <label>Nome do(a) CEO <input name="nome_${i}" value="Jogador ${i + 1}" maxlength="20" required></label>
-      <label>Perfil Executivo
-        <select name="nivel_${i}">
-          <option value="iniciante">Iniciante (com consultoria pedagógica e dicas)</option>
-          <option value="avancado">Avançado (alto risco: casas valem ×1,5, sem dicas)</option>
-        </select>
-      </label>
     </fieldset>`;
   }).join('');
 
@@ -78,10 +86,19 @@ export function viewMenu({ salvo } = {}) {
       <span class="tag-contexto">Fisher S.A. · Simulação Executiva</span>
       <h1>Tabuleiro do CEO</h1>
       <p class="sub">Decisões corporativas orientadas a dados contra a armadilha dos "achismos".</p>
-      <a class="rolar-dica" href="#historia">Role para conhecer a história <span aria-hidden="true">↓</span></a>
+      ${
+        salvo
+          ? `<div class="cartao"><p>Há uma partida salva: ${salvo.jogadores.length} jogador(es), turno ${Math.min(salvo.turnoAtual, salvo.turnosPorJogador)} de ${salvo.turnosPorJogador}.</p>
+             <button class="primario" data-acao="CONTINUAR_SALVA">Continuar partida salva</button></div>`
+          : ''
+      }
+      <button class="primario cta-grande" id="btn-comecar" data-acao="ABRIR_CONFIG" aria-haspopup="dialog">Iniciar →</button>
     </section>
 
-    <section class="secao-scroll" id="historia">
+    <div class="modal" id="modal-menu" hidden>
+    <form id="form-menu" class="painel" role="dialog" aria-modal="true" aria-label="Nova partida" tabindex="-1">
+      <div class="etapas">
+      <section class="etapa-menu" data-etapa>
       <header class="historia-topo">
         <span class="icone-alerta" aria-hidden="true">🏛️</span>
         <div>
@@ -93,9 +110,9 @@ export function viewMenu({ salvo } = {}) {
         <p>A centenária <strong>Fisher S.A.</strong> esteve à beira do colapso financeiro. Durante anos, a antiga diretoria tomou decisões estratégicas com base em <em>"puro feeling"</em>, apresentações com gráficos de eixos distorcidos e médias salariais maquiadas que mascaravam graves insatisfações internas. Linhas de produção pararam por desvios de precisão ignorados, e investimentos milionários evaporaram sem nenhuma validação estatística.</p>
         <p>Farto de ver fortunas queimadas em palpites vazios, o Conselho de Acionistas dissolveu a cúpula anterior e convocou os profissionais mais promissores do mercado: <strong>vocês</strong>.</p>
       </div>
-    </section>
+      </section>
 
-    <section class="secao-scroll">
+      <section class="etapa-menu" data-etapa>
       <h2>A disputa pelo controle acionário</h2>
       <p>Cada jogador comanda uma divisão estratégica, com aporte inicial em caixa à sua escolha (<strong>R$ 100.000</strong> por padrão) e <strong>50 pontos de reputação</strong> perante o mercado.</p>
       <div class="indicadores">
@@ -104,88 +121,102 @@ export function viewMenu({ salvo } = {}) {
         <div><strong>1–3</strong><span>CEOs</span></div>
       </div>
       <ul class="lista-divisoes">${cartoesDivisoes}</ul>
-    </section>
+      </section>
 
-    <section class="secao-scroll">
+      <section class="etapa-menu" data-etapa>
       <h2>Como prosperar perante o Conselho</h2>
       <p>A cada trimestre fiscal (as casas do tabuleiro), uma decisão bate à sua porta:</p>
       <ol class="passos">${passos
         .map(([ic, t, d], i) => `<li><span class="passo-num" aria-hidden="true">${ic}</span><div><strong>${i + 1}. ${t}</strong><p>${d}</p></div></li>`)
         .join('')}</ol>
-    </section>
-
-    <section class="secao-scroll fim-scroll">
       <blockquote class="frase-efeito">
         <em>"Nesta empresa, opinião sem dados é apenas boato, mas dados mal interpretados custam o seu cargo. No encerramento do exercício, o CEO com maior patrimônio e reputação assumirá a Presidência Definitiva do Conselho!"</em>
       </blockquote>
-      ${
-        salvo
-          ? `<div class="cartao"><p>Há uma partida salva: ${salvo.jogadores.length} jogador(es), turno ${Math.min(salvo.turnoAtual, salvo.turnosPorJogador)} de ${salvo.turnosPorJogador}.</p>
-             <button class="primario" data-acao="CONTINUAR_SALVA">Continuar partida salva</button></div>`
-          : ''
-      }
-      <button class="primario cta-grande" id="btn-comecar" data-acao="ABRIR_CONFIG" aria-controls="form-menu" aria-expanded="false">Assumir a presidência →</button>
-    </section>
+      </section>
 
-    <form id="form-menu" class="cartao" hidden>
-      <h2>Nova partida</h2>
-      <label>Modo de jogo
-        <select name="modo">
-          <option value="competitivo">Competitivo (cada CEO com o seu caixa)</option>
-          <option value="cooperativo">Cooperativo (diretoria de uma só empresa, caixa compartilhado)</option>
-          <option value="solo">Solo (você contra um rival controlado pelo computador)</option>
-        </select>
-      </label>
-      <label data-campo="n">Quantidade de CEOs concorrentes
-        <select name="n">${[1, 2, 3].map((n) => `<option value="${n}" ${n === 2 ? 'selected' : ''}>${n}</option>`).join('')}</select>
-      </label>
-      <label data-campo="bot" hidden>Rival
-        <select name="bot">${Object.entries(PERFIS_BOT)
-          .map(([id, p]) => `<option value="${id}" ${id === 'medio' ? 'selected' : ''}>${esc(p.nome)} (${ROTULO_BOT[id]})</option>`)
-          .join('')}</select>
-      </label>
+      <fieldset class="etapa-menu secao-config" data-etapa>
+        <legend>Modo de jogo</legend>
+        <p class="ajuda">Como a disputa vai funcionar?</p>
+        ${opcoes('modo', [
+          ['competitivo', 'Competitivo', 'Cada CEO com o seu caixa', '⚔️'],
+          ['cooperativo', 'Cooperativo', 'Diretoria de uma só empresa, caixa compartilhado', '🤝'],
+          ['solo', 'Solo', 'Você contra um rival controlado pelo computador', '🧑‍💻'],
+        ], 'competitivo', 'coluna')}
+      </fieldset>
+      <fieldset class="etapa-menu secao-config" data-etapa>
+        <legend>Participantes</legend>
+        <div data-campo="n">
+          <p class="ajuda">Quantos CEOs concorrentes?</p>
+          ${opcoes('n', [[1, '1 CEO', '', '👤'], [2, '2 CEOs', '', '👥'], [3, '3 CEOs', '', '👪']], 2)}
+        </div>
+        <div data-campo="bot" hidden>
+          <p class="ajuda">Qual rival você quer enfrentar?</p>
+          ${opcoes('bot', Object.entries(PERFIS_BOT).map(([id, p]) => [id, p.nome, `Nível ${ROTULO_BOT[id]}`, { facil: '🙂', medio: '🤔', dificil: '😎' }[id]]), 'medio')}
+        </div>
+      </fieldset>
       ${linhas}
-      <label>Trimestres fiscais (rounds por jogador, de ${TURNOS_MIN} a ${TURNOS_MAX})
-        <input type="number" name="turnos" min="${TURNOS_MIN}" max="${TURNOS_MAX}" step="1" value="${TURNOS_PADRAO}" required inputmode="numeric">
-      </label>
-      <label>Caixa inicial (R$, de ${DINHEIRO_INICIAL_MIN.toLocaleString('pt-BR')} a ${DINHEIRO_INICIAL_MAX.toLocaleString('pt-BR')}; no cooperativo, o caixa da empresa)
-        <input type="number" name="dinheiro" min="${DINHEIRO_INICIAL_MIN}" max="${DINHEIRO_INICIAL_MAX}" step="${DINHEIRO_INICIAL_PASSO}" value="${DINHEIRO_INICIAL}" required inputmode="numeric">
-      </label>
-      <label>Reputação inicial (de ${REPUTACAO_INICIAL_MIN} a ${REPUTACAO_INICIAL_MAX}; no cooperativo, a da empresa)
-        <input type="number" name="reputacao" min="${REPUTACAO_INICIAL_MIN}" max="${REPUTACAO_INICIAL_MAX}" step="${REPUTACAO_INICIAL_PASSO}" value="${REPUTACAO_INICIAL}" required inputmode="numeric">
-      </label>
-      <label>Semente de mercado (opcional, para repetir uma partida)
-        <select name="seed"><option value="" selected>Aleatória</option>${Array.from({ length: QTD_SEMENTES }, (_, i) => `<option value="${i + 1}">Mercado ${i + 1}</option>`).join('')}</select>
-      </label>
-      <fieldset class="apoio">
+      <fieldset class="etapa-menu secao-config" data-etapa>
+        <legend>Duração</legend>
+        <p class="ajuda">Quantos trimestres fiscais (rounds por jogador) vai durar a partida?</p>
+        ${opcoes('preset_turnos', [[5, '5', 'trimestres', '⚡'], [10, '10', 'trimestres', '📅'], [20, '20', 'trimestres', '📆'], [40, '40', 'trimestres', '🏁']], TURNOS_PADRAO, 'compacto', 'data-alvo="turnos"')}
+        <label class="campo-outro">Outro valor (de ${TURNOS_MIN} a ${TURNOS_MAX})
+          <input type="number" name="turnos" min="${TURNOS_MIN}" max="${TURNOS_MAX}" step="1" value="${TURNOS_PADRAO}" required inputmode="numeric">
+        </label>
+      </fieldset>
+      <fieldset class="etapa-menu secao-config" data-etapa>
+        <legend>Capital inicial</legend>
+        <span class="rotulo-grupo">Caixa inicial <small class="ajuda">(no cooperativo, o caixa da empresa)</small></span>
+        ${opcoes('preset_dinheiro', [[50000, 'R$ 50 mil'], [100000, 'R$ 100 mil'], [250000, 'R$ 250 mil'], [500000, 'R$ 500 mil']], DINHEIRO_INICIAL, 'compacto', 'data-alvo="dinheiro"')}
+        <label class="campo-outro">Outro valor (R$, de ${DINHEIRO_INICIAL_MIN.toLocaleString('pt-BR')} a ${DINHEIRO_INICIAL_MAX.toLocaleString('pt-BR')})
+          <input type="number" name="dinheiro" min="${DINHEIRO_INICIAL_MIN}" max="${DINHEIRO_INICIAL_MAX}" step="${DINHEIRO_INICIAL_PASSO}" value="${DINHEIRO_INICIAL}" required inputmode="numeric">
+        </label>
+        <span class="rotulo-grupo">Reputação inicial <small class="ajuda">(no cooperativo, a da empresa)</small></span>
+        ${opcoes('preset_reputacao', [[30, '30'], [50, '50'], [70, '70'], [90, '90']], REPUTACAO_INICIAL, 'compacto', 'data-alvo="reputacao"')}
+        <label class="campo-outro">Outro valor (de ${REPUTACAO_INICIAL_MIN} a ${REPUTACAO_INICIAL_MAX})
+          <input type="number" name="reputacao" min="${REPUTACAO_INICIAL_MIN}" max="${REPUTACAO_INICIAL_MAX}" step="${REPUTACAO_INICIAL_PASSO}" value="${REPUTACAO_INICIAL}" required inputmode="numeric">
+        </label>
+      </fieldset>
+      <fieldset class="etapa-menu secao-config" data-etapa>
+        <legend>Mercado</legend>
+        <p class="ajuda">Semente de mercado: escolha um número para repetir uma partida, ou deixe aleatória.</p>
+        ${opcoes('seed', [['', 'Aleatória'], ...Array.from({ length: QTD_SEMENTES }, (_, i) => [i + 1, String(i + 1)])], '', 'grade compacto')}
+      </fieldset>
+      <fieldset class="etapa-menu secao-config" data-etapa>
         <legend>Material de apoio</legend>
         <p>Alguns cenários trazem uma tabela de dados e pedem que você faça a conta (mediana, percentil, desvio padrão, quartis). Para esses, o jogo oferece uma <strong>calculadora de estatísticas</strong> embutida (média, mediana, moda, quartis, IQR, percentil, desvio padrão), disponível na etapa do valor.</p>
+        <details class="atalhos-teste">
+          <summary>Atalhos de teste</summary>
+          <label>Casa em que o peão cai
+            <select name="teste_casa">
+              <option value="">Normal (pelo tabuleiro)</option>
+              <option value="decisao">Sempre Decisão</option>
+              <option value="evento">Sempre Evento</option>
+              <option value="mercado">Sempre Mercado</option>
+              <option value="balanco">Sempre Balanço</option>
+            </select>
+          </label>
+          <label>Cenários sorteados
+            <select name="teste_cenarios">
+              <option value="">Todos</option>
+              <option value="calculo">Só os de cálculo</option>
+              <option value="comuns">Só os sem cálculo</option>
+              <optgroup label="Um cenário só">${todosCenarios()
+                .map((c) => `<option value="${esc(c.id)}">${esc(c.titulo)}${ehCalculo(c) ? ' (cálculo)' : ''}</option>`)
+                .join('')}</optgroup>
+            </select>
+          </label>
+        </details>
       </fieldset>
-      <details class="atalhos-teste">
-        <summary>Atalhos de teste</summary>
-        <label>Casa em que o peão cai
-          <select name="teste_casa">
-            <option value="">Normal (pelo tabuleiro)</option>
-            <option value="decisao">Sempre Decisão</option>
-            <option value="evento">Sempre Evento</option>
-            <option value="mercado">Sempre Mercado</option>
-            <option value="balanco">Sempre Balanço</option>
-          </select>
-        </label>
-        <label>Cenários sorteados
-          <select name="teste_cenarios">
-            <option value="">Todos</option>
-            <option value="calculo">Só os de cálculo</option>
-            <option value="comuns">Só os sem cálculo</option>
-            <optgroup label="Um cenário só">${todosCenarios()
-              .map((c) => `<option value="${esc(c.id)}">${esc(c.titulo)}${ehCalculo(c) ? ' (cálculo)' : ''}</option>`)
-              .join('')}</optgroup>
-          </select>
-        </label>
-      </details>
+      </div>
       <p class="erro-campo" data-erro-setor role="alert" hidden>Dois jogadores escolheram o mesmo setor. Cada um precisa de um setor diferente.</p>
-      <button class="primario" type="submit">Iniciar Disputa Corporativa</button>
+      <p class="passo-menu" data-passo aria-live="polite"></p>
+      <div class="nav-menu">
+        <button type="button" class="discreto" data-nav="anterior">← Anterior</button>
+        <button type="button" class="primario" data-nav="proximo">Próximo →</button>
+        <button class="primario" type="submit" data-nav="iniciar" hidden>Iniciar Disputa Corporativa</button>
+      </div>
     </form>
+    </div>
   </main>`;
 }
 
