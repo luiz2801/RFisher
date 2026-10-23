@@ -56,8 +56,62 @@ test('a partida termina após N turnos por jogador, sem eliminar ninguém', () =
   const e = jogar({ jogadores: jogadores('iniciante', 'iniciante', 'avancado'), turnos: 5, seed: 9 }, chutador(1));
   assert.equal(e.fase, 'FIM_DE_JOGO');
   assert.equal(e.jogadores.length, 3);
-  const jogadas = e.jogadores.map((j) => j.historico.length);
-  assert.ok(jogadas.every((n) => n <= 5));
+  // Dados iguais dão jogada extra sem gastar trimestre: são sempre 5 trimestres, com 5 ou mais jogadas por jogador.
+  assert.equal(e.turnoAtual, 6);
+});
+
+// Rola até sair uma jogada com dados iguais (ou diferentes), conforme `iguais`, e devolve o estado logo após o ROLAR.
+function rolarAte(iguais, config = {}) {
+  for (let seed = 1; seed < 500; seed++) {
+    const e = reduzir(novoJogo({ jogadores: jogadores('iniciante', 'iniciante'), seed, teste: { casa: 'evento' }, ...config }), { tipo: 'ROLAR' });
+    if ((e.dados[0] === e.dados[1]) === iguais) return e;
+  }
+  throw new Error('nenhuma seed serviu');
+}
+
+test('dados iguais: o mesmo jogador joga de novo, sem avançar a vez nem o trimestre', () => {
+  const e = reduzir(rolarAte(true), { tipo: 'CONTINUAR' });
+  assert.equal(e.fase, 'ROLAR_DADO');
+  assert.equal(e.jogadorAtual, 0);
+  assert.equal(e.turnoAtual, 1);
+  assert.equal(e.jogadaExtra, true);
+  assert.equal(e.dados, null);
+  assert.match(viewJogo(e), /Dados iguais/);
+});
+
+test('dados diferentes: a vez passa ao próximo jogador, sem jogada extra', () => {
+  const e = reduzir(rolarAte(false), { tipo: 'CONTINUAR' });
+  assert.equal(e.jogadorAtual, 1);
+  assert.equal(e.jogadaExtra, false);
+  assert.doesNotMatch(viewJogo(e), /Dados iguais/);
+});
+
+test('a jogada extra acaba na rolagem seguinte: o aviso some e a vez passa se os dados forem diferentes', () => {
+  let e = reduzir(rolarAte(true), { tipo: 'CONTINUAR' });
+  for (let i = 0; i < 50 && e.jogadorAtual === 0; i++) {
+    e = reduzir(reduzir(e, { tipo: 'ROLAR' }), { tipo: 'CONTINUAR' });
+  }
+  assert.equal(e.jogadorAtual, 1);
+  assert.equal(e.jogadaExtra, false);
+});
+
+test('dados iguais não dão jogada extra a quem faliu na jogada, nem depois do último trimestre', () => {
+  // Uma partida de 1 trimestre e 1 jogador: dados iguais ainda dão mais uma rolagem; só ao fim da vez sem igualdade a partida acaba.
+  let e = reduzir(rolarAte(true, { turnos: 1 }), { tipo: 'CONTINUAR' });
+  assert.equal(e.fase, 'ROLAR_DADO');
+  for (let i = 0; i < 50 && e.fase !== 'FIM_DE_JOGO'; i++) {
+    e = reduzir(e, { tipo: e.fase === 'ROLAR_DADO' ? 'ROLAR' : 'CONTINUAR' });
+  }
+  assert.equal(e.fase, 'FIM_DE_JOGO');
+
+  // Falido na jogada que tirou dados iguais: perde a vez, sem jogada extra.
+  const f = rolarAte(true, { teste: { casa: 'balanco' } });
+  f.jogadores[0].dinheiro = -1;
+  f.jogadores[0].falido = false;
+  f.balanco = { receita: 0, custos: 0, liquido: 0 };
+  const depois = reduzir(f, { tipo: 'CONTINUAR' });
+  assert.ok(depois.jogadores[0].falido || depois.fase === 'FIM_DE_JOGO' || depois.jogadorAtual === 1);
+  assert.notEqual(depois.jogadaExtra, true);
 });
 
 test('ações inválidas para a fase são ignoradas', () => {

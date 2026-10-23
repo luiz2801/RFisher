@@ -43,7 +43,9 @@ Versão do formato: **`versao: 1`**.
 | `falencia` | booleano | Só no cooperativo: a empresa quebrou (caixa negativo ao fim de uma jogada que passou pelo Balanço) e a partida acabou (`fisher.md` 3.12). Ausente em saves antigos (vale `false`; `empresaFalida`). |
 | `jogadorAtual` | inteiro | Índice em `jogadores` de quem joga. |
 | `fase` | texto | Fase da máquina de estados (ver abaixo). |
-| `dado` | 1–6 \| `null` | Último dado rolado na vez. |
+| `dado` | 2–12 \| `null` | Soma dos dois dados da última rolagem. |
+| `dados` | `[d1, d2]` \| `null` | Faces dos dois dados da última rolagem; `dado` é a soma. Se forem iguais, o `CONTINUAR` seguinte mantém o jogador da vez (`fisher.md` 3.2). |
+| `jogadaExtra` | booleano | O jogador da vez rola de novo por ter tirado dados iguais; só serve para mostrar o aviso. Ausente em saves antigos (vale `false`). |
 | `balanco` | objeto \| `null` | Resultado do Balanço se o jogador passou pela casa inicial na vez. |
 | `jogadores` | lista | Um objeto por jogador (ver abaixo). |
 | `baralhoCenarios` | lista de ids | Cenários ainda não sorteados no ciclo atual. A ordem não indica o próximo: o sorteio é ponderado pela dificuldade (ver `fisher.md` 4.5). |

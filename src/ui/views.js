@@ -363,10 +363,11 @@ function viewRolar(e) {
     e.turnoAtual === 1 && j.posicao === 0 && e.jogadores.every((x) => x.historico.length === 0)
       ? `<p class="briefing-inaugural"><strong>🏛️ Assembleia Inaugural do Conselho.</strong> Cada CEO assume sua divisão com <strong>R$ 50.000</strong> em caixa e <strong>50 pontos</strong> de reputação. Jogue os dados para liderar o primeiro trimestre!</p>`
       : '';
+  const extra = e.jogadaExtra ? '<p class="briefing-inaugural"><strong>🎲 Dados iguais!</strong> Jogue de novo: este lance não gasta um trimestre.</p>' : '';
   const botao = ehBot(j)
     ? '<button class="primario cta-jogar" data-acao="ROLAR">Ver a jogada do rival</button>'
     : '<button class="primario cta-jogar" data-acao="ROLAR">🎲 Jogar</button>';
-  return `${inaugural}<p class="ajuda">${esc(cargoDe(e, j))} · casa ${j.posicao + 1}${ehBot(j) ? ' · o rival decide sozinho e você acompanha' : ''}</p>${botao}`;
+  return `${inaugural}${extra}<p class="ajuda">${esc(cargoDe(e, j))} · casa ${j.posicao + 1}${ehBot(j) ? ' · o rival decide sozinho e você acompanha' : ''}</p>${botao}`;
 }
 
 // Texto para colar no Excel (colunas separadas por tabulação, números com vírgula decimal, sem unidade):

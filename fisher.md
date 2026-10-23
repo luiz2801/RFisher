@@ -76,6 +76,7 @@ Rola os dois dados (soma, 2 a 12) → cai numa casa → vê o cenário/gráfico 
 | 12 | **Rounds e caixa inicial configuráveis** (implementado): 1 a 64 rounds por jogador (padrão 10) e caixa inicial de R$ 10.000 a R$ 1.000.000 (padrão R$ 100.000), ambos escolhidos no menu e limitados também pelo motor | Deixa o grupo ajustar a duração e a folga financeira. O caixa inicial é igual para todos, então não muda quem vence no competitivo; as constantes de dinheiro (valor das casas, balanço, multas) continuam absolutas. No cooperativo, a meta trimestral parte do caixa inicial e as faixas finais são múltiplos dele (50%, 125% e 175%), mas o crescimento por trimestre é fixo: com caixa inicial muito alto, as faixas "Crescimento" e "Líder" ficam inalcançáveis, e com caixa baixo, a meta e as faixas ficam fáceis. A calibrar no playtest |
 | 13 | **Falência**: caixa negativo ao passar pelo Balanço elimina o jogador (competitivo e solo) ou encerra a partida (cooperativo) (implementado, 3.12) | Dá consequência real ao prejuízo e faz o chute pesar além do placar. **Diverge do princípio 4** ("ninguém é eliminado") e deixa a 3.9 (recuperação) ainda mais necessária; foi pedida expressamente. Leitura adotada: "balanço negativado" = caixa < 0. A calibrar no playtest: a regra pode quebrar quem só teve azar em eventos |
 | 14 | **Sequências de erros e acertos** (implementado, 3.13): cada sucesso absoluto seguido multiplica o fator da sequência por 1,1 (teto 2) e cada erro total seguido por 0,9 (piso 0,5); o fator multiplica o ganho do sucesso e, invertido, a perda do erro total. Evento e Balanço não mexem na sequência | Faz o histórico recente pesar na aposta: errar em série fica caro e acertar em série compensa, sem premiar o acerto parcial. Valores e a leitura de "acertar" e "errar" são pontos de partida a calibrar no playtest; a sequência é por jogador, também no cooperativo |
+| 15 | **Dados iguais dão jogada extra** (implementado, 3.2): se os dois dados saem com a mesma face, o jogador resolve a casa normalmente e, ao continuar, joga de novo, sem gastar trimestre. Vale a todos os jogadores e modos, inclusive o rival do solo | Dá ao dado um lance de sorte visível sem tirar o peso do conhecimento (princípio 3): a jogada extra rende mais casas, não mais pontos por decisão. Sem limite de repetições (a chance de cada repetição é 1/6) e a jogada extra não conta como trimestre, então a partida mantém a duração escolhida. Quem faliu na jogada perde a vez e a partida que acabou não continua. Pode ser calibrado no playtest |
 
 ---
 
@@ -99,7 +100,7 @@ Circuito de aproximadamente **20 casas**. Cada casa coloca pelo menos uma métri
 1. Rola os dois dados e avança a soma.
 2. Resolve a casa (decisão, evento, duelo, mercado, auditoria ou balanço).
 3. Em casas de decisão: **métrica → justificativa → confiança → resultado → explicação**. Nos cenários de cálculo (4.7), entre a métrica e a justificativa entra a etapa **valor calculado**.
-4. Atualiza o estado e passa a vez.
+4. Atualiza o estado e passa a vez. **Exceção (dados iguais):** se os dois dados saíram com a mesma face, o mesmo jogador joga de novo em vez de passar a vez. A jogada extra não gasta trimestre, repete-se enquanto saírem dados iguais e não vale para quem faliu na jogada nem depois do fim da partida (decisão nº 15).
 
 ### 3.3 Decisão em duas etapas
 

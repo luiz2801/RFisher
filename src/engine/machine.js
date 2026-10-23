@@ -257,12 +257,15 @@ function resolverEscolhas(e) {
 
 function continuar(e) {
   const passouPeloBalanco = Boolean(e.balanco);
+  // Dados iguais (fisher.md 3.2): quem tirou dois dados iguais joga de novo, na mesma vez e sem gastar trimestre.
+  const dadosIguais = Array.isArray(e.dados) && e.dados[0] === e.dados[1];
   e.cenarioAtual = null;
   e.eventoAtual = null;
   e.resultado = null;
   e.balanco = null;
   e.dado = null;
   e.dados = null;
+  e.jogadaExtra = false;
 
   // Falência (fisher.md 3.12): só na jogada em que passou pelo Balanço, com o caixa negativo ao fim dela.
   // Fora do Balanço o caixa pode ficar negativo sem eliminar. A pessoa viu o que causou antes de continuar.
@@ -285,6 +288,13 @@ function continuar(e) {
   const ativos = jogadoresAtivos(e).length;
   if (e.falencia || ativos === 0 || (e.jogadores.length > 1 && ativos === 1)) {
     e.fase = 'FIM_DE_JOGO';
+    return e;
+  }
+
+  // Jogada extra: o mesmo jogador rola outra vez, desde que siga no jogo (os testes acima já encerraram a partida).
+  if (dadosIguais && !ehFalido(jogadorAtual(e))) {
+    e.jogadaExtra = true;
+    e.fase = 'ROLAR_DADO';
     return e;
   }
 
