@@ -325,7 +325,7 @@ Como o save é apagado em `FIM_DE_JOGO`, o relatório não sobrevive a recarrega
 
 **Fluxo.** Métrica → **valor calculado** → justificativa → confiança. Nas opções de métrica não aparece valor algum (nos cenários comuns aparece, para comparação). Cada opção aponta (`chave`) para a métrica calculável, então a pessoa pode calcular o valor de qualquer opção que escolher.
 
-**Margem.** O valor é aceito se `|informado − exato| ≤ máx(exato × margem%, 0,005)`. A margem é relativa ao valor exato da **métrica escolhida**, definida por cenário (`calculo.margem_pct`, de 1% a 3% hoje; o validador limita a 10%) e pode ser sobreposta numa opção. O piso absoluto trata o valor exato zero (por exemplo, uma moda 0). A margem aparece na tela do valor ("margem de erro de ±N%") e a faixa aceita no resultado. Ela absorve arredondamentos, mas não erros de método.
+**Margem.** O valor é aceito se `|informado − exato| ≤ máx(|exato| × margem%, 0,005)`. A margem é relativa ao valor exato da **métrica escolhida** e depende só da grandeza desse valor: **5%** se `|exato| < 100` (valores em unidades) e **2%** se `|exato| ≥ 100` (valores na centena ou mais). Não é configurada por cenário nem por opção, para que a mesma regra valha em todos os cálculos. O piso absoluto trata o valor exato zero (por exemplo, uma moda 0). A tela do valor mostra a regra ("±5% abaixo de 100 e ±2% a partir de 100", sem revelar o valor) e o resultado mostra a margem aplicada e a faixa aceita. Ela absorve arredondamentos, mas não erros de método. Como a margem cai de 5% para 2% em 100, um valor exato pouco abaixo de 100 tem faixa proporcionalmente mais larga que um pouco acima.
 
 **Convenções avisadas na tela do valor,** porque mudam o resultado: percentis e quartis pelo método linear (`PERCENTIL.INC` e `QUARTIL.INC` das planilhas, posição `p × (n − 1) + 1`) e desvio padrão amostral (divisor `n − 1`).
 
@@ -508,7 +508,7 @@ O schema original foi atualizado para refletir o pool único, os equívocos e a 
 }
 ```
 
-**Cenário de cálculo (4.7).** Acrescenta ao schema acima: `tipo: "calculo"`; `calculo: { margem_pct }`; em `dados`, `exibir` (`["tabela"]` ou `["tabela", "grafico"]`) e `tabela` (`"valores"` ou `"frequencias"`); em cada opção, `chave` (métrica calculável) e, opcionalmente, `margem_pct`; em `feedback`, `como_calcular`. O texto das opções não pode ter placeholders. O validador confere tudo isso.
+**Cenário de cálculo (4.7).** Acrescenta ao schema acima: `tipo: "calculo"`; em `dados`, `exibir` (`["tabela"]` ou `["tabela", "grafico"]`) e `tabela` (`"valores"` ou `"frequencias"`); em cada opção, `chave` (métrica calculável); em `feedback`, `como_calcular`. A margem não é campo do cenário (ver 4.7). O texto das opções não pode ter placeholders. O validador confere tudo isso.
 
 ### 5.6 Geração de dados por seed
 

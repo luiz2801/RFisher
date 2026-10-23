@@ -8,12 +8,12 @@ import { DIRETORIAS } from '../engine/papeis.js';
 import { metaTrimestral } from '../engine/machine.js';
 import { relatorioDesempenho } from '../engine/desempenho.js';
 import { CONFIANCA, ROTULO_CONFIANCA, NIVEL, confiancaEfetiva } from '../engine/scoring.js';
-import { MAX_JOGADORES, TURNOS_PADRAO, PERFIS_BOT } from '../engine/config.js';
+import { MAX_JOGADORES, TURNOS_PADRAO, PERFIS_BOT, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
 import { obterCenario, todosCenarios, preencher, valorDoMarcador } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
 import { brl, brlSinal, formatar, unidade } from '../stats/format.js';
 import { contagens } from '../stats/metrics.js';
-import { ehCalculo, margemPct, notaDeMetodo, OPERACOES_CALCULADORA } from '../engine/calculo.js';
+import { ehCalculo, notaDeMetodo, OPERACOES_CALCULADORA } from '../engine/calculo.js';
 
 // Sementes fixas oferecidas no menu (1 a QTD_SEMENTES); vazio = sorteada.
 export const QTD_SEMENTES = 20;
@@ -478,7 +478,7 @@ function tabelaSeries(def, c, revelar) {
     passo = `<h3>2. Qual valor você calculou?</h3>
       ${calculadoraHtml()}
       <p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong></p>
-      <p class="ajuda">Calcule com os dados da tabela. Aceitamos uma <strong>margem de erro de ±${String(margemPct(def, escolhida)).replace('.', ',')}%</strong> sobre o valor correto, então arredondamentos pequenos não são problema.${nota ? ` ${esc(nota)}` : ''}</p>
+      <p class="ajuda">Calcule com os dados da tabela. Aceitamos uma <strong>margem de erro de ±${MARGEM_CALCULO_UNIDADES_PCT}%</strong> para valores abaixo de ${MARGEM_CALCULO_LIMITE} e de <strong>±${MARGEM_CALCULO_CENTENAS_PCT}%</strong> a partir de ${MARGEM_CALCULO_LIMITE}, sobre o valor correto, então arredondamentos pequenos não são problema.${nota ? ` ${esc(nota)}` : ''}</p>
       <form class="form-valor" data-form="valor" novalidate>
         <label>Valor calculado${un ? ` (em ${esc(un)})` : ''}
           <input name="valor" type="text" inputmode="decimal" autocomplete="off" required aria-describedby="erro-valor" placeholder="ex.: 1234,5">

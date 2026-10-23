@@ -1657,9 +1657,6 @@
     "contexto": "Uma imobiliária vai divulgar o aluguel típico dos apartamentos do bairro. A tabela traz o valor de {{n}} aluguéis anunciados. Escolha a métrica, calcule-a com os dados da tabela e informe o valor que deve aparecer na divulgação.",
     "dica": "Veja se algum valor da tabela destoa muito dos demais e pense em qual métrica não é puxada por ele.",
     "valor_base": 20000,
-    "calculo": {
-      "margem_pct": 1
-    },
     "dados": {
       "gerador": {
         "tipo": "assimetria_direita",
@@ -1800,9 +1797,6 @@
     "contexto": "Um pronto-atendimento quer afixar na recepção um tempo de espera que 9 em cada 10 pacientes consigam cumprir. A tabela traz a espera de {{n}} pacientes. Escolha a métrica, calcule-a e informe o valor.",
     "dica": "Você quer um número que cubra quase todo mundo, inclusive quem esperou muito. Para um percentil, ordene os dados e conte posições.",
     "valor_base": 20000,
-    "calculo": {
-      "margem_pct": 1
-    },
     "dados": {
       "gerador": {
         "tipo": "cauda_longa",
@@ -1942,9 +1936,6 @@
     "contexto": "O suporte de um aplicativo por assinatura vai dimensionar a equipe do mês seguinte, quando terá 2.000 clientes. A tabela mostra quantos chamados cada um de {{n}} clientes abriu neste mês. Qual métrica permite projetar o total de chamados da base inteira? Escolha-a, calcule o valor por cliente e informe.",
     "dica": "Para projetar um total, pense em qual métrica, multiplicada pelo número de clientes, devolve a soma real dos chamados.",
     "valor_base": 20000,
-    "calculo": {
-      "margem_pct": 3
-    },
     "dados": {
       "gerador": {
         "tipo": "contagens_assimetricas",
@@ -2083,9 +2074,6 @@
     "contexto": "A supervisora quer saber o quanto o tempo de ciclo de uma embaladora oscila de um ciclo para outro. A tabela traz o tempo de {{n}} ciclos. Escolha uma métrica de variabilidade que use todas as medições, calcule-a e informe o valor.",
     "dica": "Procure uma medida que considere a distância de cada ciclo até o tempo médio, e não apenas os extremos.",
     "valor_base": 20000,
-    "calculo": {
-      "margem_pct": 3
-    },
     "dados": {
       "gerador": {
         "tipo": "amostra_pequena",
@@ -2208,9 +2196,6 @@
     "contexto": "A equipe de dados monitora quanto tempo a carga noturna leva para rodar. A tabela traz a duração de {{n}} execuções, e uma delas travou. Você quer um indicador de variação que não seja distorcido por essa execução fora do padrão. Escolha a métrica, calcule-a e informe o valor.",
     "dica": "Pense em qual medida de variação olha só para os valores do meio da lista ordenada.",
     "valor_base": 20000,
-    "calculo": {
-      "margem_pct": 2
-    },
     "dados": {
       "gerador": {
         "tipo": "dispersao_outliers",

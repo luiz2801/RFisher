@@ -80,7 +80,6 @@ classDiagram
     class Opcao {
         +string id
         +string chave
-        +number margem_pct
         +string texto
         +boolean correta
         +string equivoco
@@ -119,8 +118,8 @@ classDiagram
 
     class CalculoService {
         +ehCalculo(def) boolean
-        +margemPct(def, opcao) number
-        +avaliarCalculo(def, opcao, num, informado) AvaliacaoCalculo
+        +margemPct(esperado) number
+        +avaliarCalculo(opcao, num, informado) AvaliacaoCalculo
         +valorEsperado(def, cenarioAtual) number
         +notaDeMetodo(chave) string
         +calcularOperacao(valores, id, p) number
@@ -389,7 +388,7 @@ graph TD
 | **`src/engine/dificuldade.js`** | Dificuldade-alvo a partir do progresso do jogador e sorteio ponderado de cenários do baralho. |
 | **`src/engine/rng.js`** | Gerador pseudo-aleatório determinístico baseado no algoritmo `mulberry32` com estado serializável em 32-bits. |
 | **`src/engine/desempenho.js`** | Perfil de desempenho do jogador a partir do histórico: domínio e diagnóstico por conceito, pontos fortes, deficiências, equívocos recorrentes e calibração da certeza; e o relatório de fim de jogo (`relatorioDesempenho`): acertos e erros, assuntos que mais e menos domina e sugestões de estudo com os materiais de `content/materiais.js` (`fisher.md` 4.6). |
-| **`src/engine/calculo.js`** | Cenários de cálculo (`fisher.md` 4.7): reconhece o tipo, avalia o valor informado contra o valor exato da métrica escolhida dentro de uma margem relativa e fornece as notas de método (percentil linear, desvio padrão amostral) e as operações da calculadora embutida na etapa do valor (`calcularOperacao`, que não altera o estado). |
+| **`src/engine/calculo.js`** | Cenários de cálculo (`fisher.md` 4.7): reconhece o tipo, avalia o valor informado contra o valor exato da métrica escolhida dentro de uma margem relativa (5% abaixo de 100, 2% a partir de 100) e fornece as notas de método (percentil linear, desvio padrão amostral) e as operações da calculadora embutida na etapa do valor (`calcularOperacao`, que não altera o estado). |
 | **`src/engine/scoring.js`** | Algoritmos de pontuação, multiplicadores de reputação, regras de aposta e crise de imagem. |
 | **`src/scenarios/generators.js`** | Síntese de dados estatísticos com validação de invariantes conceituais. |
 | **`src/scenarios/loader.js`** | Instanciação de cenários, cálculo de resumo estatístico e substituição de variáveis nos enunciados. |

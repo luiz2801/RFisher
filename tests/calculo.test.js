@@ -4,7 +4,7 @@ import { criarRng } from '../src/engine/rng.js';
 import { novoJogo } from '../src/engine/state.js';
 import { reduzir } from '../src/engine/machine.js';
 import { decidirBot } from '../src/engine/bot.js';
-import { ehCalculo, avaliarCalculo, valorEsperado, notaDeMetodo, calcularOperacao, formatarResultadoCalculadora } from '../src/engine/calculo.js';
+import { ehCalculo, avaliarCalculo, margemPct, valorEsperado, notaDeMetodo, calcularOperacao, formatarResultadoCalculadora } from '../src/engine/calculo.js';
 import { MARGEM_CALCULO_PISO } from '../src/engine/config.js';
 import { instanciar, obterCenario, todosCenarios, validarCenario } from '../src/scenarios/loader.js';
 import { lerNumero, formatar } from '../src/stats/format.js';
@@ -40,12 +40,11 @@ function decidir(e, { metrica, valor, justificativa, confianca = 'provavel' }) {
   return reduzir(e, { tipo: 'CONFIANCA', valor: confianca });
 }
 
-test('há cenários de cálculo e todos têm métricas calculáveis, margem e explicação do cálculo', () => {
+test('há cenários de cálculo e todos têm métricas calculáveis e explicação do cálculo', () => {
   assert.ok(calculos().length >= 5);
   for (const def of calculos()) {
     for (const seed of [1, 7, 99, 2024]) assert.deepEqual(validarCenario(def, criarRng(seed)), [], def.id);
     assert.ok(def.dados.exibir.includes('tabela'), def.id);
-    assert.ok(def.calculo.margem_pct > 0, def.id);
   }
 });
 
@@ -64,10 +63,6 @@ test('o validador recusa cenário de cálculo que revela o valor, sem chave ou s
   const semExplicacao = clone();
   delete semExplicacao.feedback.como_calcular;
   assert.ok(validarCenario(semExplicacao, criarRng(1)).some((m) => m.includes('como_calcular')));
-
-  const semMargem = clone();
-  semMargem.calculo.margem_pct = 0;
-  assert.ok(validarCenario(semMargem, criarRng(1)).some((m) => m.includes('margem_pct')));
 
   const semTabela = clone();
   semTabela.dados.exibir = ['grafico'];
@@ -90,27 +85,33 @@ test('lerNumero entende números digitados em pt-BR', () => {
   }
 });
 
-test('a margem é relativa ao valor correto, com piso quando ele é zero', () => {
-  const def = { calculo: { margem_pct: 2 } };
-  const num = { media: 200, moda: 0 };
-  const opMedia = { chave: 'media' };
-  const dentro = (v) => avaliarCalculo(def, opMedia, num, v).dentro;
-  assert.ok(dentro(200) && dentro(204) && dentro(196), 'os limites de ±2% valem');
-  assert.ok(!dentro(204.1) && !dentro(195.9));
-  assert.ok(!avaliarCalculo(def, opMedia, num, NaN).dentro);
+test('a margem é 5% para valores abaixo de 100 e 2% a partir de 100, com piso quando o valor é zero', () => {
+  assert.equal(margemPct(99.9), 5);
+  assert.equal(margemPct(100), 2);
+  assert.equal(margemPct(-150), 2, 'vale a grandeza, não o sinal');
+  assert.equal(margemPct(-20), 5);
 
-  const a = avaliarCalculo(def, opMedia, num, 200);
+  const num = { media: 80, mediana: 200, negativo: -150, moda: 0 };
+  const dentro = (chave, v) => avaliarCalculo({ chave }, num, v).dentro;
+  // 80 está abaixo de 100: ±5% são ±4
+  assert.ok(dentro('media', 84) && dentro('media', 76), 'os limites de ±5% valem');
+  assert.ok(!dentro('media', 84.1) && !dentro('media', 75.9));
+  // 200 é da centena: ±2% são ±4
+  assert.ok(dentro('mediana', 204) && dentro('mediana', 196), 'os limites de ±2% valem');
+  assert.ok(!dentro('mediana', 204.1) && !dentro('mediana', 195.9));
+  // negativo: a margem usa a grandeza, ±2% de 150 são ±3
+  assert.ok(dentro('negativo', -153) && !dentro('negativo', -153.1));
+  assert.ok(!avaliarCalculo({ chave: 'media' }, num, NaN).dentro);
+
+  const a = avaliarCalculo({ chave: 'mediana' }, num, 200);
   assert.equal(a.margemPct, 2);
   assert.equal(a.minimo, 196);
   assert.equal(a.maximo, 204);
+  assert.equal(avaliarCalculo({ chave: 'media' }, num, 80).margemPct, 5);
 
-  const zero = { chave: 'moda' };
-  assert.ok(avaliarCalculo(def, zero, num, 0).dentro);
-  assert.ok(avaliarCalculo(def, zero, num, MARGEM_CALCULO_PISO).dentro);
-  assert.ok(!avaliarCalculo(def, zero, num, 0.1).dentro);
-
-  // a margem de uma opção sobrepõe a do cenário
-  assert.ok(avaliarCalculo(def, { chave: 'media', margem_pct: 10 }, num, 218).dentro);
+  // valor exato zero: piso absoluto
+  assert.ok(dentro('moda', 0) && dentro('moda', MARGEM_CALCULO_PISO));
+  assert.ok(!dentro('moda', 0.1));
 });
 
 test('o valor exato de cada métrica das opções vem dos dados sorteados', () => {
@@ -119,7 +120,7 @@ test('o valor exato de cada métrica das opções vem dos dados sorteados', () =
     for (const o of def.opcoes) {
       const c = { ...e.cenarioAtual, metricaId: o.id };
       assert.equal(valorEsperado(def, c), e.cenarioAtual.num[o.chave], `${def.id} ${o.id}`);
-      assert.ok(avaliarCalculo(def, o, c.num, valorEsperado(def, c)).dentro);
+      assert.ok(avaliarCalculo(o, c.num, valorEsperado(def, c)).dentro);
     }
   }
 });
@@ -171,10 +172,11 @@ test('um valor dentro da margem vale, mesmo arredondado; fora dela a métrica de
   const exato = e0.cenarioAtual.num.mediana;
   const jogada = (valor) => decidir(e0, { metrica: 'mediana', valor, justificativa: justCerta(def).id });
 
-  assert.equal(jogada(exato * 1.009).resultado.categoria, 'sucesso', '+0,9% está na margem de 1%');
-  assert.equal(jogada(exato * 0.991).resultado.categoria, 'sucesso');
+  const m = margemPct(exato) / 100;
+  assert.equal(jogada(exato * (1 + m * 0.9)).resultado.categoria, 'sucesso', 'um pouco abaixo do limite da margem');
+  assert.equal(jogada(exato * (1 - m * 0.9)).resultado.categoria, 'sucesso');
 
-  const fora = jogada(exato * 1.02);
+  const fora = jogada(exato * (1 + m * 1.1));
   assert.equal(fora.resultado.valorCorreto, false);
   assert.equal(fora.resultado.metricaCorreta, true, 'a escolha da métrica em si estava certa');
   assert.equal(fora.resultado.categoria, 'incoerencia', 'com a justificativa certa, o cálculo errado zera o ganho');
@@ -233,7 +235,7 @@ test('a tela de valor mostra a tabela, a margem aceita e o campo, sem revelar a 
   const { series } = e.cenarioAtual;
   assert.match(html, /<table class="tabela-dados">/);
   assert.match(html, /2\. Qual valor você calculou\?/);
-  assert.match(html, /margem de erro de ±1%/);
+  assert.match(html, /margem de erro de ±5%<\/strong> para valores abaixo de 100 e de <strong>±2%/, 'a regra aparece sem revelar o valor');
   assert.match(html, /<form class="form-valor" data-form="valor"/);
   assert.match(html, /name="valor"/);
   assert.match(html, /em R\$/);
@@ -284,7 +286,7 @@ test('o resultado confronta o valor informado com o correto, a margem e o passo 
   const ok = viewJogo(decidir(e0, { metrica: 'mediana', valor: mediana, justificativa: justCerta(def).id }));
   assert.match(ok, /Sucesso absoluto/);
   assert.match(ok, /dentro da margem/);
-  assert.match(ok, /Margem aceita \(±1%\)/);
+  assert.match(ok, new RegExp(`Margem aceita \\(±${String(margemPct(mediana)).replace('.', ',')}%\\)`));
   assert.match(ok, /Como calcular:/);
 
   const fora = viewJogo(decidir(e0, { metrica: 'mediana', valor: mediana * 1.5, justificativa: justCerta(def).id }));
