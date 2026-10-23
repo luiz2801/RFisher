@@ -75,6 +75,7 @@ Rola os dois dados (soma, 2 a 12) → cai numa casa → vê o cenário/gráfico 
 | 11 | **Cenários de cálculo** (implementado, seção 4.7): a pessoa recebe os dados em tabela, escolhe a métrica, **calcula e informa o valor** (aceito dentro de uma margem), justifica e declara a confiança | Escolher a métrica certa não prova que se sabe calculá-la. O valor informado, com margem para arredondamentos, exige fazer a conta, sem mudar a matriz de pontuação (3.5) |
 | 12 | **Rounds e caixa inicial configuráveis** (implementado): 1 a 64 rounds por jogador (padrão 10) e caixa inicial de R$ 10.000 a R$ 1.000.000 (padrão R$ 100.000), ambos escolhidos no menu e limitados também pelo motor | Deixa o grupo ajustar a duração e a folga financeira. O caixa inicial é igual para todos, então não muda quem vence no competitivo; as constantes de dinheiro (valor das casas, balanço, multas) continuam absolutas. No cooperativo, a meta trimestral parte do caixa inicial e as faixas finais são múltiplos dele (50%, 125% e 175%), mas o crescimento por trimestre é fixo: com caixa inicial muito alto, as faixas "Crescimento" e "Líder" ficam inalcançáveis, e com caixa baixo, a meta e as faixas ficam fáceis. A calibrar no playtest |
 | 13 | **Falência**: caixa negativo ao passar pelo Balanço elimina o jogador (competitivo e solo) ou encerra a partida (cooperativo) (implementado, 3.12) | Dá consequência real ao prejuízo e faz o chute pesar além do placar. **Diverge do princípio 4** ("ninguém é eliminado") e deixa a 3.9 (recuperação) ainda mais necessária; foi pedida expressamente. Leitura adotada: "balanço negativado" = caixa < 0. A calibrar no playtest: a regra pode quebrar quem só teve azar em eventos |
+| 14 | **Sequências de erros e acertos** (implementado, 3.13): cada sucesso absoluto seguido multiplica o fator da sequência por 1,1 (teto 2) e cada erro total seguido por 0,9 (piso 0,5); o fator multiplica o ganho do sucesso e, invertido, a perda do erro total. Evento e Balanço não mexem na sequência | Faz o histórico recente pesar na aposta: errar em série fica caro e acertar em série compensa, sem premiar o acerto parcial. Valores e a leitura de "acertar" e "errar" são pontos de partida a calibrar no playtest; a sequência é por jogador, também no cooperativo |
 
 ---
 
@@ -224,6 +225,28 @@ A variância é alta: em 10 turnos cada jogador decide cerca de 6 vezes, e a dif
 - **Competitivo e solo:** o jogador marcado como `falido` sai da disputa, é pulado nos turnos seguintes e fica abaixo de todos no ranking, mesmo com mais dinheiro que alguém. Com mais de um jogador, a partida termina assim que sobra um só (ele vence); no solo, se a pessoa quebra o rival vence, e se o rival quebra a pessoa vence. Se não sobra ninguém (jogador único), a partida termina sem vencedor.
 - **Cooperativo:** o caixa é da empresa, então ela **vai à falência** e a partida termina na hora, com a faixa "Falência".
 - **Sem recuperação:** não há empréstimo nem investidor-anjo ainda (3.9). Por isso o chute sistemático agora pode eliminar, não só empobrecer (consequência da decisão nº 13).
+
+
+### 3.13 Sequências de erros e acertos
+
+**Implementado** (`fatorSequencia`, `multiplicadorSequencia` e `atualizarSequencia` em `src/engine/scoring.js`; `jogadores[].sequencia`; aplicação em `resolverEscolhas`, `src/engine/machine.js`). Cada jogador acumula uma **sequência**: decisões seguidas terminadas em sucesso absoluto, ou em erro total. A sequência multiplica o resultado em dinheiro da decisão seguinte, com a conta feita sobre a sequência que vinha **antes** dela (a primeira decisão de uma sequência sempre vale ×1).
+
+**Fator da sequência `F`:** cada sucesso seguido multiplica por 1,1, até o teto de 2 (`1,1^n`, atingido no 8º sucesso seguido); cada erro seguido multiplica por 0,9, até o piso de 0,5 (`0,9^n`, atingido no 7º erro seguido).
+
+| Resultado da decisão | Efeito na sequência | Multiplicador no dinheiro |
+| --- | --- | --- |
+| Sucesso absoluto | `acertos` +1, `erros` zera | Ganho × `F` (bônus com acertos seguidos; ônus, ×0,9ⁿ, se vinha de erros) |
+| Erro total | `erros` +1, `acertos` zera | Perda × `1/F` (agrava com erros seguidos, até ×2; alivia com acertos seguidos, até ×0,5) |
+| Sorte ou incoerência (acerto parcial) | Zera as duas | ×1 |
+
+- **O que conta como acerto e como erro.** Nos cenários conceituais, o **sucesso** exige métrica e justificativa certas, e o **erro** exige as duas erradas. Nos de cálculo, o sucesso exige métrica, valor (dentro da margem) e justificativa certos, e o erro exige métrica errada ou valor fora da margem (4.7: valor fora da margem invalida a métrica) e justificativa errada. Na prática são as categorias `sucesso` e `erro_total` da matriz 3.5. A sorte (+0,2V) e a incoerência (0) não recebem o fator.
+- **Resposta parcial interrompe.** Quem acerta só a metade não está errando em série nem acertando em série, então a sequência recomeça. Isso evita premiar com bônus quem alterna acertos parciais e dá um custo ao parcial: perde-se a sequência.
+- **Evento e Balanço não afetam a sequência.** Só as decisões de cenário (casa de Decisão) a movem; cair numa casa de Evento ou de Balanço a deixa como estava.
+- **Acumula com os demais fatores.** O multiplicador de sequência entra na mesma conta da confiança, do nível e da reputação: `delta = V × nível × confiança (efetiva) × reputação (só ganhos) × sequência`, arredondado a centenas. Não altera a variação de reputação.
+- **Valores (ponto de partida):** `SEQUENCIA_FATOR_ACERTO` 1,1, `SEQUENCIA_TETO` 2, `SEQUENCIA_FATOR_ERRO` 0,9 e `SEQUENCIA_PISO` 0,5, em `src/engine/config.js`.
+- **Por jogador, em todos os modos.** A sequência é do jogador que decide, inclusive no cooperativo, onde o dinheiro é da empresa. O rival do modo solo segue a mesma regra. A calibração do rival (3.11) foi reconferida com `scripts/simular-bot.mjs` (1.000 partidas): 70,1%, 48,5% e 29,3% de vitória da referência, contra os alvos de 70%, 50% e 30%. A regra aumenta a variância (desvio padrão da diferença final de R$ 49 a 62 mil, antes R$ 47 a 57 mil).
+- **Na tela:** o placar mostra a sequência em andamento e os multiplicadores que a próxima decisão terá (por exemplo, "2 erros seguidos (ganhos ×0,81, perdas ×1,23)"), para a pessoa decidir a confiança sabendo o que está em jogo. A tela de resultado mostra o bônus ou ônus aplicado.
+- **Efeito na verificação anti-chute (3.5).** A esperança de um chutador deixa de ser constante: o erro total é o resultado mais provável do chute, então a perda média cresce com a sequência de erros (e os poucos sucessos seguintes rendem menos). O −0,27 × V × confiança vale só para quem não vem de uma sequência.
 
 ---
 

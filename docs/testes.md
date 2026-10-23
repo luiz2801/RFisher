@@ -29,6 +29,7 @@ Funções puras do motor, testadas com valores calculados à mão a partir de `f
 
 - **Pontuação** (`scoring.js`): as quatro categorias (`sucesso`, `sorte`, `incoerencia`, `erro_total`), os cinco níveis de confiança, os dois níveis de jogador, arredondamento a centenas e ausência de `-0`.
 - **Multiplicador de reputação**: pontos de controle 0 → ×0,8, 50 → ×1,0, 100 → ×1,3; valores fora de 0–100 são limitados; multiplica só ganhos, nunca perdas.
+- **Sequências** (`fisher.md` 3.13): fator ×1,1 por acerto (teto 2) e ×0,9 por erro (piso 0,5); sucesso rende o fator e erro total custa o inverso; sem fator no acerto parcial; soma-se à reputação e ao nível; `atualizarSequencia` estende, troca ou zera; na máquina, a sequência é por jogador, a resposta parcial interrompe, Evento e Balanço não a alteram e save sem `sequencia` conta do zero; o placar mostra a sequência (`tests/scoring.test.js`, `tests/machine.test.js`, `tests/views.test.js`).
 - **Variação de reputação** por categoria, vinda de `impacto` do cenário.
 - **`justificativaConta`**: `parcial` conta como errada enquanto `PARCIAL_CONTA_COMO_CORRETA` for `false`. Deve existir um teste para cada valor da constante (decisão em aberto no README).
 - **`receitaBalanco`**: receita nos três pontos de reputação.
