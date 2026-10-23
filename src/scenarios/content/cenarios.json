@@ -3184,5 +3184,660 @@
       "reputacao_acerto": 5,
       "reputacao_erro": -10
     }
+  },
+  {
+    "id": "cenario_26_bonus_vendas",
+    "tipo": "calculo",
+    "setor": "rh",
+    "conceito": "percentil",
+    "versao": 1,
+    "idioma": "pt-BR",
+    "nivel": "iniciante",
+    "valor_base": 20000,
+    "dificuldade": 2,
+    "titulo": "Corte do bônus de vendas",
+    "contexto": "O bônus de desempenho vai para as 25% pessoas de vendas com maior comissão no ano. A tabela traz a comissão de {{n}} pessoas. Escolha a métrica que define a comissão mínima para receber o bônus, calcule-a e informe o valor.",
+    "dica": "Quem recebe o bônus são os 25% do topo: o corte deixa 75% da equipe abaixo dele. Ordene os dados e conte posições.",
+    "dados": {
+      "gerador": {
+        "tipo": "assimetria_direita",
+        "parametros": {
+          "n": 21,
+          "base": 4000,
+          "ruido": 0.15,
+          "outliers": [
+            {
+              "valor": 70000,
+              "qtd": 1
+            }
+          ]
+        }
+      },
+      "formato": "brl",
+      "exibir": [
+        "tabela"
+      ],
+      "tabela": "valores",
+      "rotulo_x": "Comissão (R$)",
+      "rotulo_y": "Pessoas",
+      "tipo_grafico": "histograma",
+      "descricao_acessivel": "A maioria das comissões está na faixa de quatro mil reais, e uma comissão muito alta aparece isolada."
+    },
+    "opcoes": [
+      {
+        "id": "p75",
+        "chave": "p75",
+        "texto": "Percentil 75 (P75, o 3º quartil)",
+        "correta": true
+      },
+      {
+        "id": "media",
+        "chave": "media",
+        "texto": "Média",
+        "correta": false,
+        "equivoco": "media_puxada"
+      },
+      {
+        "id": "mediana",
+        "chave": "mediana",
+        "texto": "Mediana",
+        "correta": false,
+        "equivoco": "mediana_e_metade"
+      },
+      {
+        "id": "p90",
+        "chave": "p90",
+        "texto": "Percentil 90 (P90)",
+        "correta": false,
+        "equivoco": "percentil_errado"
+      },
+      {
+        "id": "maximo",
+        "chave": "maximo",
+        "texto": "Maior comissão do ano",
+        "correta": false,
+        "equivoco": "extremo_como_tipico"
+      }
+    ],
+    "justificativas": [
+      {
+        "id": "j1",
+        "texto": "O P75 é o valor abaixo do qual ficam 75% das pessoas; quem o alcança está no quarto superior, que é o grupo do bônus.",
+        "tipo": "correta"
+      },
+      {
+        "id": "j2",
+        "texto": "O corte precisa ficar acima da maioria da equipe, e não no meio dela.",
+        "tipo": "parcial"
+      },
+      {
+        "id": "j3",
+        "texto": "O P75 é a média dos 75% menores valores.",
+        "tipo": "erro_conceitual",
+        "equivoco": "confunde_percentil_media"
+      },
+      {
+        "id": "j4",
+        "texto": "Para premiar 25%, basta pegar o valor que fica a 25% do caminho entre o menor e o maior.",
+        "tipo": "erro_conceitual",
+        "equivoco": "confunde_amplitude"
+      },
+      {
+        "id": "j5",
+        "texto": "Bônus costumam ser pagos junto com o 13º salário.",
+        "tipo": "irrelevante"
+      },
+      {
+        "id": "j6",
+        "texto": "A mediana separa a equipe em 25% e 75%.",
+        "tipo": "afirmacao_falsa",
+        "equivoco": "mediana_e_metade"
+      }
+    ],
+    "feedback": {
+      "por_equivoco": {
+        "media_puxada": "A média ({{media}}) foi puxada pela comissão de {{maximo}}. Com esse corte, quase ninguém da equipe seria premiado, bem menos que 25%.",
+        "mediana_e_metade": "A mediana ({{mediana}}) separa a equipe ao meio: usá-la como corte premiaria cerca de 50%, o dobro do planejado.",
+        "percentil_errado": "O P90 ({{p90}}) deixa só os 10% do topo de fora do corte para baixo: premiaria cerca de 10% da equipe, e não 25%.",
+        "extremo_como_tipico": "A maior comissão ({{maximo}}) é a de uma pessoa só. Ninguém mais alcançaria o bônus.",
+        "confunde_percentil_media": "O percentil é um ponto de corte, não uma média: o P75 é o valor abaixo do qual ficam 75% dos dados.",
+        "confunde_amplitude": "Esse ponto depende só dos dois extremos e ignora onde está a maioria da equipe."
+      },
+      "explicacao_correta": "O corte é o P75 ({{p75}}): 75% da equipe fica abaixo dele e 25% o alcança. A média ({{media}}) foi puxada pela comissão de {{maximo}} e não representa o quarto superior.",
+      "como_calcular": "Ordene as {{n}} comissões do menor para o maior e pegue a posição 0,75 × (n − 1) + 1 = 16 da lista ordenada: {{p75}}.",
+      "revelacao": {
+        "marcadores": []
+      }
+    },
+    "impacto": {
+      "reputacao_acerto": 5,
+      "reputacao_erro": -10
+    }
+  },
+  {
+    "id": "cenario_27_notas_fornecedor",
+    "tipo": "calculo",
+    "setor": "financeiro",
+    "conceito": "media_aparada",
+    "versao": 1,
+    "idioma": "pt-BR",
+    "nivel": "iniciante",
+    "valor_base": 20000,
+    "dificuldade": 2,
+    "titulo": "Nota de risco do fornecedor",
+    "contexto": "Vinte analistas deram uma nota de 0 a 10 ao risco de um fornecedor. Duas notas, um 0 e um 10, foram dadas sem ler o dossiê, e a política da área manda descartar a menor e a maior nota antes de resumir. A tabela traz as {{n}} notas. Escolha a métrica, calcule-a e informe o valor.",
+    "dica": "Se as pontas sem critério devem sair, a conta é feita só com o miolo das notas.",
+    "dados": {
+      "gerador": {
+        "tipo": "distribuicao_normal_simetrica",
+        "parametros": {
+          "n": 20,
+          "media": 8,
+          "dp": 1,
+          "outliers": [
+            {
+              "valor": 0,
+              "qtd": 1
+            },
+            {
+              "valor": 10,
+              "qtd": 1
+            }
+          ]
+        }
+      },
+      "formato": "decimal",
+      "exibir": [
+        "tabela"
+      ],
+      "tabela": "valores",
+      "rotulo_x": "Nota (0 a 10)",
+      "rotulo_y": "Analistas",
+      "tipo_grafico": "histograma",
+      "descricao_acessivel": "As notas se concentram ao redor de 8, com uma nota 0 e uma nota 10 nas pontas."
+    },
+    "opcoes": [
+      {
+        "id": "aparada",
+        "chave": "media_aparada",
+        "texto": "Média aparada (sem a menor e a maior nota)",
+        "correta": true
+      },
+      {
+        "id": "media",
+        "chave": "media",
+        "texto": "Média simples de todas as notas",
+        "correta": false,
+        "equivoco": "media_simples"
+      },
+      {
+        "id": "mediana",
+        "chave": "mediana",
+        "texto": "Mediana",
+        "correta": false,
+        "equivoco": "mediana_descarta_demais"
+      },
+      {
+        "id": "ponto_medio",
+        "chave": "ponto_medio",
+        "texto": "Ponto médio entre a menor e a maior nota",
+        "correta": false,
+        "equivoco": "confunde_amplitude"
+      },
+      {
+        "id": "maximo",
+        "chave": "maximo",
+        "texto": "Maior nota",
+        "correta": false,
+        "equivoco": "extremo_como_tipico"
+      }
+    ],
+    "justificativas": [
+      {
+        "id": "j1",
+        "texto": "A média aparada descarta só as pontas sem critério e mantém todas as outras notas na conta.",
+        "tipo": "correta"
+      },
+      {
+        "id": "j2",
+        "texto": "O resumo precisa ignorar as notas dadas sem critério.",
+        "tipo": "parcial"
+      },
+      {
+        "id": "j3",
+        "texto": "Média aparada é a média das notas arredondadas.",
+        "tipo": "erro_conceitual",
+        "equivoco": "confunde_aparada_arredondada"
+      },
+      {
+        "id": "j4",
+        "texto": "A média simples é melhor porque usa todos os dados, até os que não foram avaliados com critério.",
+        "tipo": "erro_conceitual",
+        "equivoco": "media_simples"
+      },
+      {
+        "id": "j5",
+        "texto": "Dossiês de fornecedores costumam ter muitas páginas.",
+        "tipo": "irrelevante"
+      },
+      {
+        "id": "j6",
+        "texto": "A mediana é sempre igual à média aparada.",
+        "tipo": "afirmacao_falsa",
+        "equivoco": "mediana_descarta_demais"
+      }
+    ],
+    "feedback": {
+      "por_equivoco": {
+        "media_simples": "A média simples ({{media}}) conta o 0 e o 10 sem critério. A política manda descartá-los antes de resumir.",
+        "mediana_descarta_demais": "A mediana ({{mediana}}) ignora quase todas as notas e fica só com a do meio. A política pede descartar só as pontas.",
+        "confunde_amplitude": "O ponto médio entre a menor e a maior nota ({{ponto_medio}}) usa justamente as duas notas que deveriam ser descartadas.",
+        "extremo_como_tipico": "A maior nota ({{maximo}}) é uma das que a política manda descartar.",
+        "confunde_aparada_arredondada": "Aparar é cortar as pontas, não arredondar: descarta-se uma fração das menores e das maiores notas."
+      },
+      "explicacao_correta": "Sem a menor e a maior nota, a média das notas restantes ({{media_aparada}}) descreve o risco avaliado com critério. A média simples ({{media}}) é distorcida pelas duas notas aleatórias.",
+      "como_calcular": "Ordene as {{n}} notas, descarte a menor e a maior (5% de cada ponta) e calcule a média das 18 notas restantes: some todas e divida por 18: {{media_aparada}}.",
+      "revelacao": {
+        "marcadores": []
+      }
+    },
+    "impacto": {
+      "reputacao_acerto": 5,
+      "reputacao_erro": -10
+    }
+  },
+  {
+    "id": "cenario_28_treinamento_equipes",
+    "setor": "atendimento",
+    "conceito": "regressao_media",
+    "versao": 1,
+    "idioma": "pt-BR",
+    "nivel": "iniciante",
+    "valor_base": 20000,
+    "dificuldade": 2,
+    "titulo": "O treinamento que salvou as piores equipes?",
+    "contexto": "Um trimestre atrás, a rede de atendimento deu um treinamento intensivo às equipes com o pior índice de satisfação. No 2º trimestre, o índice dessas equipes subiu de {{minimo_a}} para {{minimo_b}}. A diretoria quer estender o treinamento a todas as outras. A tabela traz as médias do índice. O que explica essa melhora?",
+    "dica": "Olhe também o que aconteceu com o grupo que não foi treinado e pergunte o que costuma acontecer com quem está em um extremo.",
+    "dados": {
+      "gerador": {
+        "tipo": "regressao_a_media",
+        "parametros": {
+          "n": 30,
+          "k": 5,
+          "media": 100,
+          "dpReal": 6,
+          "dpSorte": 10
+        }
+      },
+      "formato": "numero",
+      "tipo_grafico": "tabela_series",
+      "descricao_acessivel": "Tabela com o índice de satisfação no 1º e no 2º trimestre para as piores equipes, as melhores e a rede toda: as piores subiram, as melhores caíram e a rede toda ficou quase igual.",
+      "rotulos_linhas": [
+        "5 piores equipes do 1º trimestre (receberam treinamento)",
+        "5 melhores equipes do 1º trimestre (sem treinamento)",
+        "Todas as 30 equipes"
+      ],
+      "formatos": [
+        "numero",
+        "numero"
+      ],
+      "legenda": "Índice médio de satisfação"
+    },
+    "opcoes": [
+      {
+        "id": "regressao",
+        "texto": "Regressão à média: equipes muito abaixo da média tendem a melhorar sozinhas",
+        "correta": true
+      },
+      {
+        "id": "treino",
+        "texto": "O treinamento funcionou: as equipes treinadas subiram",
+        "correta": false,
+        "equivoco": "atribui_ao_treino"
+      },
+      {
+        "id": "hawthorne",
+        "texto": "As equipes melhoraram só por se sentirem observadas",
+        "correta": false,
+        "equivoco": "hawthorne"
+      },
+      {
+        "id": "sazonal",
+        "texto": "O 2º trimestre costuma ser melhor para toda a rede",
+        "correta": false,
+        "equivoco": "sazonalidade_sem_dados"
+      },
+      {
+        "id": "ruido",
+        "texto": "Cinco equipes é pouco: nada pode ser concluído da tabela",
+        "correta": false,
+        "equivoco": "desiste"
+      }
+    ],
+    "justificativas": [
+      {
+        "id": "j1",
+        "texto": "Quem fica entre os piores num trimestre costuma ter tido azar além de desempenho baixo, e o acaso se normaliza no seguinte. As melhores, sem treino, também se aproximaram da média: o mesmo movimento, em sentido oposto.",
+        "tipo": "correta"
+      },
+      {
+        "id": "j2",
+        "texto": "Para saber o efeito do treinamento, faltaria comparar com um grupo de controle.",
+        "tipo": "parcial"
+      },
+      {
+        "id": "j3",
+        "texto": "Se subiram depois do treinamento, foi por causa dele: o que vem depois é sempre consequência.",
+        "tipo": "erro_conceitual",
+        "equivoco": "atribui_ao_treino"
+      },
+      {
+        "id": "j4",
+        "texto": "As melhores equipes caíram por acomodação, e isso não tem relação com a melhora das piores.",
+        "tipo": "erro_conceitual",
+        "equivoco": "inventa_causa"
+      },
+      {
+        "id": "j5",
+        "texto": "Treinamentos intensivos costumam ser caros.",
+        "tipo": "irrelevante"
+      },
+      {
+        "id": "j6",
+        "texto": "A média da rede toda quase não mudou, então nenhuma equipe individual mudou.",
+        "tipo": "afirmacao_falsa",
+        "equivoco": "media_global_esconde"
+      },
+      {
+        "id": "j7",
+        "texto": "Quem foi mal num trimestre vai mal no seguinte com certeza.",
+        "tipo": "afirmacao_falsa",
+        "equivoco": "persistencia_total"
+      }
+    ],
+    "feedback": {
+      "por_equivoco": {
+        "atribui_ao_treino": "Subir depois do treinamento não prova que foi por causa dele. As melhores equipes, sem treinamento nenhum, caíram de {{maximo_a}} para {{maximo_b}}.",
+        "hawthorne": "Esse efeito existe, mas não explica por que as equipes que ninguém observou, as melhores, caíram. Os dois movimentos juntos apontam para outra causa.",
+        "sazonalidade_sem_dados": "Se o trimestre fosse melhor para todos, a rede toda subiria. Ela ficou quase igual, e as melhores equipes caíram.",
+        "desiste": "A tabela diz bastante: as piores subiram, as melhores caíram e o total ficou parado. Esse padrão tem nome e é esperado.",
+        "inventa_causa": "Procurar uma causa para cada movimento é tentador, mas os dois são o mesmo fenômeno: valores extremos tendem a voltar para perto da média.",
+        "media_global_esconde": "A média da rede ficou parada justamente porque a subida das piores compensou a queda das melhores.",
+        "persistencia_total": "Se o desempenho se repetisse com certeza, as piores equipes não teriam melhorado. Parte do resultado de cada trimestre é sorte."
+      },
+      "explicacao_correta": "É regressão à média. Os extremos de um trimestre misturam desempenho real e sorte, e a sorte não se repete: as piores equipes subiram (de {{minimo_a}} para {{minimo_b}}), as melhores caíram (de {{maximo_a}} para {{maximo_b}}) e a rede toda ficou quase igual. Sem um grupo de controle, não dá para atribuir a subida ao treinamento.",
+      "revelacao": {
+        "marcadores": []
+      }
+    },
+    "impacto": {
+      "reputacao_acerto": 5,
+      "reputacao_erro": -10
+    }
+  },
+  {
+    "id": "cenario_29_vinte_testes",
+    "setor": "produto",
+    "conceito": "comparacoes_multiplas",
+    "versao": 1,
+    "idioma": "pt-BR",
+    "nivel": "iniciante",
+    "valor_base": 20000,
+    "dificuldade": 3,
+    "titulo": "Vinte testes e uma descoberta",
+    "contexto": "O time de produto testou {{n}} variações de tela do aplicativo contra a versão atual, cada uma com um teste ao nível de 5%. O valor-p mede a chance de ver uma diferença assim por puro acaso se a variação não tivesse efeito algum. Só uma variação ficou abaixo de 0,05, com valor-p de {{minimo}}, e a gerente de produto quer lançá-la para todos os usuários. O que você responde?",
+    "dica": "Pense no que se espera ver quando se faz muitos testes, mesmo que nenhuma variação tenha efeito algum.",
+    "dados": {
+      "gerador": {
+        "tipo": "testes_multiplos",
+        "parametros": {
+          "n": 20,
+          "alfa": 0.05
+        }
+      },
+      "formato": "decimal",
+      "tipo_grafico": "tabela_series",
+      "descricao_acessivel": "Tabela com o valor-p de vinte variações de tela. Dezenove ficam acima de 0,05 e uma fica abaixo.",
+      "rotulos_linhas": [
+        "Cor do botão",
+        "Ícone do carrinho",
+        "Texto do botão",
+        "Posição do preço",
+        "Banner no topo",
+        "Fonte dos títulos",
+        "Tamanho das fotos",
+        "Ordem do menu",
+        "Selo de frete grátis",
+        "Barra de busca",
+        "Cor do fundo",
+        "Rodapé",
+        "Avaliações em destaque",
+        "Cronômetro de oferta",
+        "Passo a passo do pagamento",
+        "Mensagem de boas-vindas",
+        "Atalho de recompra",
+        "Animação de carregamento",
+        "Aviso de estoque",
+        "Campo de cupom"
+      ],
+      "formatos": [
+        "decimal"
+      ],
+      "legenda": "Valor-p de cada variação contra a versão atual"
+    },
+    "opcoes": [
+      {
+        "id": "multiplas",
+        "texto": "Desconfiar: com {{n}} testes a 5%, um positivo por acaso é esperado (comparações múltiplas)",
+        "correta": true
+      },
+      {
+        "id": "lancar",
+        "texto": "Lançar: o valor-p de {{minimo}} está abaixo de 0,05, então o efeito é real",
+        "correta": false,
+        "equivoco": "p_basta"
+      },
+      {
+        "id": "prob_real",
+        "texto": "O valor-p de {{minimo}} mostra a chance de o efeito ser real",
+        "correta": false,
+        "equivoco": "confunde_valor_p"
+      },
+      {
+        "id": "media_p",
+        "texto": "Tirar a média dos {{n}} valores-p ({{media}}) e decidir por ela",
+        "correta": false,
+        "equivoco": "media_de_p"
+      },
+      {
+        "id": "descartar",
+        "texto": "Descartar tudo: valor-p não serve para decisão de produto",
+        "correta": false,
+        "equivoco": "rejeita_ferramenta"
+      }
+    ],
+    "justificativas": [
+      {
+        "id": "j1",
+        "texto": "Cada teste a 5% tem 1 chance em 20 de dar positivo por acaso. Com 20 testes, esperar cerca de um falso positivo é normal. É preciso corrigir o limite (por exemplo, dividir 0,05 pelo número de testes) ou repetir o teste só com a variação vencedora.",
+        "tipo": "correta"
+      },
+      {
+        "id": "j2",
+        "texto": "O resultado é suspeito porque só uma variação em vinte deu positivo.",
+        "tipo": "parcial"
+      },
+      {
+        "id": "j3",
+        "texto": "Valor-p abaixo de 0,05 significa 95% de certeza de que o efeito existe.",
+        "tipo": "erro_conceitual",
+        "equivoco": "confunde_valor_p"
+      },
+      {
+        "id": "j4",
+        "texto": "Quanto mais testes se faz, mais confiável fica o conjunto de resultados.",
+        "tipo": "erro_conceitual",
+        "equivoco": "mais_testes_mais_confianca"
+      },
+      {
+        "id": "j5",
+        "texto": "Testes A/B são comuns em empresas de tecnologia.",
+        "tipo": "irrelevante"
+      },
+      {
+        "id": "j6",
+        "texto": "Em vinte testes sem efeito real, a chance de nenhum dar positivo a 5% é de 95%.",
+        "tipo": "afirmacao_falsa",
+        "equivoco": "subestima_acumulo"
+      },
+      {
+        "id": "j7",
+        "texto": "O valor-p mede o tamanho do efeito: {{minimo}} indica um efeito grande.",
+        "tipo": "afirmacao_falsa",
+        "equivoco": "p_e_tamanho_efeito"
+      }
+    ],
+    "feedback": {
+      "por_equivoco": {
+        "p_basta": "Vale para um teste isolado. Com {{n}} testes, a chance de ao menos um passar de 0,05 por puro acaso é de cerca de 64%.",
+        "confunde_valor_p": "O valor-p não é a chance de o efeito ser real. Ele diz a chance de ver uma diferença assim se a variação não tivesse efeito algum.",
+        "media_de_p": "Os valores-p são de testes diferentes. Tirar a média deles ({{media}}) não responde a nenhuma pergunta.",
+        "rejeita_ferramenta": "O valor-p serve, desde que se leve em conta quantos testes foram feitos. O erro está em ignorar essa conta.",
+        "mais_testes_mais_confianca": "É o contrário: cada teste a mais é mais uma chance de positivo por acaso.",
+        "subestima_acumulo": "A chance de nenhum positivo é 0,95 elevado a 20, cerca de 36%. A de ao menos um positivo por acaso é de cerca de 64%.",
+        "p_e_tamanho_efeito": "O valor-p não mede tamanho de efeito: um efeito minúsculo pode ter valor-p baixo com muitos usuários."
+      },
+      "explicacao_correta": "Com {{n}} testes a 5%, espera-se cerca de um positivo por acaso, e o menor valor-p foi {{minimo}}. Corrigindo o limite (0,05 dividido por {{n}} dá 0,0025), nenhuma variação passa. Antes de lançar, repita o teste só com essa variação.",
+      "revelacao": {
+        "marcadores": []
+      }
+    },
+    "impacto": {
+      "reputacao_acerto": 5,
+      "reputacao_erro": -10
+    }
+  },
+  {
+    "id": "cenario_30_curso_seguranca",
+    "setor": "producao",
+    "conceito": "risco_relativo_absoluto",
+    "versao": 1,
+    "idioma": "pt-BR",
+    "nivel": "iniciante",
+    "valor_base": 20000,
+    "dificuldade": 2,
+    "titulo": "O curso que reduz acidentes em 50%",
+    "contexto": "O fornecedor de um curso de segurança do trabalho garante que ele \"reduz os acidentes em 50%\". Para testar, a fábrica comparou, durante um ano, duas turmas de {{maximo_b}} funcionários, uma com o curso e outra sem; a tabela mostra os acidentes. O curso custa R$ 1.200 por funcionário. Como você interpreta esse 50% antes de decidir?",
+    "dica": "Compare o que o percentual diz com o que a tabela mostra em número de pessoas.",
+    "dados": {
+      "gerador": {
+        "tipo": "risco_relativo_absoluto",
+        "parametros": {
+          "pessoas": 2000,
+          "casos_sem": 8,
+          "casos_com": 4
+        }
+      },
+      "formato": "inteiro",
+      "tipo_grafico": "tabela_series",
+      "descricao_acessivel": "Tabela com duas turmas de 2.000 funcionários: a turma sem o curso teve 8 acidentes no ano e a turma com o curso, 4.",
+      "rotulos_linhas": [
+        "Turma sem o curso",
+        "Turma com o curso"
+      ],
+      "formatos": [
+        "inteiro",
+        "inteiro"
+      ],
+      "legenda": "Acidentes por turma em um ano"
+    },
+    "opcoes": [
+      {
+        "id": "absoluto",
+        "texto": "Olhar o ganho absoluto: {{amplitude}} acidentes a menos em {{maximo_b}} pessoas, e comparar com o custo do curso",
+        "correta": true
+      },
+      {
+        "id": "aprovar",
+        "texto": "Aprovar: cortar o risco pela metade é um ganho enorme",
+        "correta": false,
+        "equivoco": "percentual_impressiona"
+      },
+      {
+        "id": "metade",
+        "texto": "Concluir que metade dos funcionários passa a ficar protegida de acidentes",
+        "correta": false,
+        "equivoco": "relativo_como_absoluto"
+      },
+      {
+        "id": "descartar",
+        "texto": "Descartar o curso: 50% é só número de propaganda",
+        "correta": false,
+        "equivoco": "descarta_relativo"
+      },
+      {
+        "id": "media",
+        "texto": "Usar a média de acidentes das duas turmas ({{media}}) como o resultado do curso",
+        "correta": false,
+        "equivoco": "media_sem_sentido"
+      }
+    ],
+    "justificativas": [
+      {
+        "id": "j1",
+        "texto": "A redução relativa compara os dois riscos; a absoluta diz quantas pessoas deixam de se acidentar. Com o risco inicial baixo, cortar pela metade evita poucos casos, então a decisão pesa o custo por acidente evitado.",
+        "tipo": "correta"
+      },
+      {
+        "id": "j2",
+        "texto": "O percentual é verdadeiro, mas sozinho não diz quantos acidentes o curso evita.",
+        "tipo": "parcial"
+      },
+      {
+        "id": "j3",
+        "texto": "Reduzir o risco em 50% quer dizer que metade dos funcionários deixa de se acidentar.",
+        "tipo": "erro_conceitual",
+        "equivoco": "relativo_como_absoluto"
+      },
+      {
+        "id": "j4",
+        "texto": "Quanto maior o percentual de redução, maior o benefício, sempre.",
+        "tipo": "erro_conceitual",
+        "equivoco": "percentual_impressiona"
+      },
+      {
+        "id": "j5",
+        "texto": "Fornecedores de treinamento costumam fazer propaganda dos cursos.",
+        "tipo": "irrelevante"
+      },
+      {
+        "id": "j6",
+        "texto": "Se a redução relativa é de 50%, a redução absoluta também é de 50 pontos percentuais.",
+        "tipo": "afirmacao_falsa",
+        "equivoco": "relativo_como_absoluto"
+      },
+      {
+        "id": "j7",
+        "texto": "Quando o risco inicial é pequeno, qualquer redução relativa é irrelevante.",
+        "tipo": "afirmacao_falsa",
+        "equivoco": "descarta_relativo"
+      }
+    ],
+    "feedback": {
+      "por_equivoco": {
+        "percentual_impressiona": "O percentual impressiona porque o risco inicial é minúsculo. Na tabela, a diferença é de {{amplitude}} acidentes em {{maximo_b}} pessoas.",
+        "relativo_como_absoluto": "Os 50% comparam os riscos das turmas, não contam pessoas protegidas. Quem se acidentou nas turmas foi uma fração mínima das {{maximo_b}}.",
+        "descarta_relativo": "O percentual não é falso: o risco caiu pela metade. O erro é parar nele sem olhar quantos casos isso representa.",
+        "media_sem_sentido": "A média das duas turmas ({{media}}) mistura quem fez o curso com quem não fez, e não mede o efeito dele."
+      },
+      "explicacao_correta": "A redução relativa é de 50% ({{maximo}} acidentes caem para {{minimo}}), mas a absoluta é de {{amplitude}} acidentes em {{maximo_b}} pessoas, uma fração pequena do total. É esse número, comparado com o custo do curso, que sustenta a decisão.",
+      "revelacao": {
+        "marcadores": []
+      }
+    },
+    "impacto": {
+      "reputacao_acerto": 5,
+      "reputacao_erro": -10
+    }
   }
 ]

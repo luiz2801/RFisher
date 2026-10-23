@@ -74,4 +74,16 @@ export const MATERIAIS = {
     revisar: 'Antes de concluir que A causa B, procure uma terceira variável que mova as duas (variável de confusão) e lembre que correlação alta não prova causa.',
     links: [wiki('Correlação não implica causalidade', 'Correlação_não_implica_causalidade'), wiki('Correlação', 'Correlação'), wiki('Variável de confusão', 'Variável_de_confusão')],
   },
+  regressao_media: {
+    revisar: 'Desconfie de melhoras em quem estava no pior (ou piora em quem estava no melhor): parte do extremo era sorte e volta ao normal sozinha. Só um grupo de controle separa isso do efeito da ação.',
+    links: [wiki('Regressão à média', 'Regressão_à_média'), wiki('Grupo de controle', 'Grupo_de_controle')],
+  },
+  comparacoes_multiplas: {
+    revisar: 'Ao fazer muitos testes, alguns dão positivo por acaso (a 5%, cerca de 1 em 20). Corrija o limite pelo número de testes ou confirme o achado com dados novos.',
+    links: [wiki('Valor-p', 'Valor-p'), wiki('Correção de Bonferroni', 'Correção_de_Bonferroni'), wiki('Teste de hipótese', 'Teste_de_hipótese')],
+  },
+  risco_relativo_absoluto: {
+    revisar: 'Um corte de 50% no risco pode evitar muito ou quase nada: olhe também a diferença em casos reais (risco absoluto) e compare com o custo.',
+    links: [wiki('Risco relativo', 'Risco_relativo'), wiki('Risco absoluto', 'Risco_absoluto')],
+  },
 };

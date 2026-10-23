@@ -17,4 +17,7 @@ export const CONCEITOS = {
   vies_sobrevivencia: 'Viés de sobrevivência',
   falacia_taxa_base: 'Falácia da taxa base (falsos positivos)',
   correlacao_causalidade: 'Correlação não implica causalidade',
+  regressao_media: 'Regressão à média',
+  comparacoes_multiplas: 'Comparações múltiplas (falsos positivos)',
+  risco_relativo_absoluto: 'Risco relativo × risco absoluto',
 };

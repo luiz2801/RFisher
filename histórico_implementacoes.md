@@ -47,6 +47,7 @@ Linha do tempo do que foi desenvolvido, reconstruída a partir do histórico do 
 
 ### Cenários e conteúdo
 - **Cenários 22 a 25**: Simpson no RH, sobrevivência, taxa base e correlação.
+- **Cenários 26 a 30**: dois de cálculo (P75 no corte de bônus e média aparada em notas com pontas sem critério) e três conceituais com tabela de séries (regressão à média, comparações múltiplas e risco relativo × absoluto). Três geradores e três conceitos novos (19 no catálogo), com materiais de estudo.
 - Correção da margem dos cenários de cálculo, agora pela grandeza do valor exato.
 - Correção das legendas erradas nos gráficos (decisão nº 16).
 
@@ -69,6 +70,6 @@ Linha do tempo do que foi desenvolvido, reconstruída a partir do histórico do 
 
 ## Estado atual (resumo)
 
-- 3 modos (competitivo, cooperativo, solo), trilha de 28 casas, 25 cenários e 41 cartas de eventos.
+- 3 modos (competitivo, cooperativo, solo), trilha de 28 casas, 30 cenários e 41 cartas de eventos.
 - Quatro tipos de casa: Decisão, Evento, Mercado e Balanço. Duelo e Auditoria ficam para a Fase 2.
 - Pontos a calibrar no playtest: dificuldade dos cenários, margem de cálculo, fatores das sequências, valores do Mercado e das cartas, e balanceamento com caixas fora do padrão.
