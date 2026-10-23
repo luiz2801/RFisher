@@ -146,3 +146,9 @@ test('cenários de tabela de séries escondem as colunas que explicam a resposta
     assert.ok(!antes.includes('undefined') && !depois.includes('undefined') && !antes.includes('{{'), id);
   }
 });
+
+test('o menu oferece rounds (1 a 64) e caixa inicial como campos numéricos', () => {
+  const html = viewMenu();
+  assert.match(html, /<input type="number" name="turnos" min="1" max="64"/);
+  assert.match(html, /<input type="number" name="dinheiro" min="10000" max="1000000"/);
+});

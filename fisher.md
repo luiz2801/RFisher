@@ -31,10 +31,11 @@
 | **Jogadores** | 1 a 3 simultâneos, revezando turnos; ou 1 contra um rival controlado pelo computador (modo solo, 3.11) |
 | **Papel do jogador** | CEO de uma empresa; cada jogador escolhe no menu o setor (diretoria: Operações, Tecnologia ou Pessoas e Finanças) que representa, o mesmo nos dois modos |
 | **Modo** | Competitivo, cooperativo ou solo (competitivo contra o computador) |
-| **Objetivo** | Ter mais dinheiro ao fim de N turnos |
+| **Objetivo** | Ter mais dinheiro ao fim de N turnos, sem quebrar: caixa negativo na jogada do Balanço é falência e derrota automática (3.12) |
+| **Configuração da partida** | No menu de nova partida, os jogadores escolhem a duração (N, de 1 a 64 rounds por jogador; padrão 10) e o caixa inicial (R$ 10.000 a R$ 1.000.000, em passos de R$ 10.000; padrão R$ 100.000). O caixa vale para cada jogador no competitivo e no solo, e para a empresa no cooperativo |
 | **Métricas** | Dinheiro e reputação |
 | **Juiz** | O computador (regras determinísticas, sem IA). No modo solo, o computador também joga como rival, sem IA: um perfil estatístico de acertos (3.11) |
-| **Duração alvo** | 30 a 40 minutos (10 a 12 turnos por jogador) |
+| **Duração alvo** | 30 a 40 minutos (10 a 12 turnos por jogador); a duração é escolhida no menu, de 1 a 64 |
 | **Níveis** | Iniciante (sem base de matemática) e Avançado (já conhece média, mediana, Paradoxo de Simpson etc.) |
 | **Custo** | Zero (site estático, sem servidor) |
 | **Inspiração** | Jogo da Vida (trilha circular de casas de evento) |
@@ -52,7 +53,7 @@ Rola os dois dados (soma, 2 a 12) → cai numa casa → vê o cenário/gráfico 
 1. **Errar custa dinheiro e ensina.** Toda decisão termina com a explicação correta, para quem errou e para quem acertou.
 2. **Acertar por sorte não pode compensar.** Aposta de confiança e justificativa obrigatória tornam o chute um mau negócio.
 3. **O conhecimento pesa mais que o dado.** Os dois dados só decidem onde o jogador cai.
-4. **Ninguém é eliminado.** O jogo é educativo, então todos jogam até o fim, com mecanismos de recuperação.
+4. **Ninguém é eliminado por errar pouco.** O jogo é educativo, então todos jogam até o fim, com mecanismos de recuperação. A única eliminação é a **falência**: caixa negativo ao passar pelo Balanço (3.12, decisão nº 13).
 5. **Tudo é determinístico e testável.** Sem IA e sem rede, o comportamento é reproduzível.
 
 ---
@@ -72,6 +73,8 @@ Rola os dois dados (soma, 2 a 12) → cai numa casa → vê o cenário/gráfico 
 | 9 | **Modo cooperativo** com diretorias, ao lado do competitivo (fase 1 implementada) | Caixa compartilhado resolve a recuperação de quem está atrás e mantém a discussão entre papéis. Ver [docs/modo-cooperativo.md](docs/modo-cooperativo.md) |
 | 10 | **Modo solo**: competitivo contra um rival do computador, que acerta com a frequência de um perfil, calibrado por simulação (implementado) | Uma pessoa sozinha não tinha contra quem competir. Um rival estocástico usa as mesmas regras e é balanceado pela taxa de vitória, sem IA nem rubber-banding (3.11) |
 | 11 | **Cenários de cálculo** (implementado, seção 4.7): a pessoa recebe os dados em tabela, escolhe a métrica, **calcula e informa o valor** (aceito dentro de uma margem), justifica e declara a confiança | Escolher a métrica certa não prova que se sabe calculá-la. O valor informado, com margem para arredondamentos, exige fazer a conta, sem mudar a matriz de pontuação (3.5) |
+| 12 | **Rounds e caixa inicial configuráveis** (implementado): 1 a 64 rounds por jogador (padrão 10) e caixa inicial de R$ 10.000 a R$ 1.000.000 (padrão R$ 100.000), ambos escolhidos no menu e limitados também pelo motor | Deixa o grupo ajustar a duração e a folga financeira. O caixa inicial é igual para todos, então não muda quem vence no competitivo; as constantes de dinheiro (valor das casas, balanço, multas) continuam absolutas. No cooperativo, a meta trimestral parte do caixa inicial e as faixas finais são múltiplos dele (50%, 125% e 175%), mas o crescimento por trimestre é fixo: com caixa inicial muito alto, as faixas "Crescimento" e "Líder" ficam inalcançáveis, e com caixa baixo, a meta e as faixas ficam fáceis. A calibrar no playtest |
+| 13 | **Falência**: caixa negativo ao passar pelo Balanço elimina o jogador (competitivo e solo) ou encerra a partida (cooperativo) (implementado, 3.12) | Dá consequência real ao prejuízo e faz o chute pesar além do placar. **Diverge do princípio 4** ("ninguém é eliminado") e deixa a 3.9 (recuperação) ainda mais necessária; foi pedida expressamente. Leitura adotada: "balanço negativado" = caixa < 0. A calibrar no playtest: a regra pode quebrar quem só teve azar em eventos |
 
 ---
 
@@ -211,6 +214,16 @@ A punição é ajustável. O ponto de partida é perda de dinheiro e reputação
 A variância é alta: em 10 turnos cada jogador decide cerca de 6 vezes, e a diferença final de dinheiro entre os dois tem desvio padrão de R$ 49 a 58 mil, contra uma diferença média de até R$ 31 mil. O rival difícil perde partidas, e o fácil ganha algumas, o que é saudável. Os números são pontos de partida. Depois do playtest, o acerto de referência deve ser trocado pelo acerto real medido no `historico`, e a calibração refeita.
 
 **Fora do modelo, de propósito:** *rubber-banding* (o rival errar quando está à frente), porque desfaz a relação entre aprender e ganhar; rival que conhece a resposta e a embaralha; correlação entre métrica e justificativa, e pontos fortes por conceito, que ficam para uma fase posterior.
+
+### 3.12 Falência
+
+**Implementado** (`continuar` em `src/engine/machine.js`; `ehFalido`, `empresaFalida` e `vencedores` em `src/engine/state.js`). Quem chega ao **balanço negativado** (dinheiro abaixo de zero) perde automaticamente. "Balanço negativado" foi lido como caixa negativo, e não como o resultado líquido de um Balanço (a casa) negativo.
+
+- **Quando:** só na jogada em que o peão **passa pela casa do Balanço** (ou cai nela). A checagem é feita ao **continuar**, com o caixa já final da jogada (inclusive o efeito da casa em que o peão parou depois do Balanço). Em qualquer outra jogada o caixa pode ficar negativo sem eliminar: o jogador ganha a chance de se recuperar até o próximo Balanço. A pessoa vê na tela o que causou o prejuízo, com um aviso de falência, antes de ser eliminada. Caixa **zero** não quebra; só abaixo de zero.
+- **Quem tem o pior saldo perde (competitivo e solo):** quem passa pelo Balanço negativado fica marcado como `negativado`. Se há outro jogador **negativado com saldo pior que ainda não passou pelo Balanço**, o veredito **espera**: ninguém perde por ora, e o aviso na tela diz quem é esperado. Quando não há mais ninguém assim, perde o de **menor saldo** entre os negativados que passaram pelo Balanço (a reputação desempata). Pode ser quem passou antes: se o rival passa com saldo melhor, ou se recupera para zero ou mais, perde quem esperava. O saldo comparado é o atual, no momento do veredito. Depois de um veredito, as marcas de todos são limpas. Um veredito só elimina uma pessoa por vez, e quem sobreviveu precisa passar negativado de novo para voltar a concorrer.
+- **Competitivo e solo:** o jogador marcado como `falido` sai da disputa, é pulado nos turnos seguintes e fica abaixo de todos no ranking, mesmo com mais dinheiro que alguém. Com mais de um jogador, a partida termina assim que sobra um só (ele vence); no solo, se a pessoa quebra o rival vence, e se o rival quebra a pessoa vence. Se não sobra ninguém (jogador único), a partida termina sem vencedor.
+- **Cooperativo:** o caixa é da empresa, então ela **vai à falência** e a partida termina na hora, com a faixa "Falência".
+- **Sem recuperação:** não há empréstimo nem investidor-anjo ainda (3.9). Por isso o chute sistemático agora pode eliminar, não só empobrecer (consequência da decisão nº 13).
 
 ---
 
@@ -425,6 +438,7 @@ Cada transição é uma função pura `(estado, ação) -> novoEstado`, o que fa
   seed: 123456,
   turnoAtual: 3,
   turnosPorJogador: 10,
+  dinheiroInicial: 100000,
   jogadorAtual: 1,
   fase: "ESCOLHER_METRICA",
   jogadores: [
@@ -619,7 +633,7 @@ A ideia original era validar justificativas escritas com IA no navegador. Ficou 
 
 1. **Nível por jogador ou por partida?** Recomendação: por jogador.
 2. **Tema e tom:** uma só empresa (startup, indústria, e-commerce) ou um conglomerado em que cada casa é uma área? Os 4 cenários atuais sugerem empresas diferentes.
-3. **Número de turnos:** fixo em 10, 12 ou configurável?
+3. ~~**Número de turnos:** fixo em 10, 12 ou configurável?~~ Resolvida: configurável no menu, de 1 a 64 (decisão nº 12). Falta calibrar o balanceamento nos extremos (ver decisão nº 12).
 4. **Justificativa `parcial`:** conta como certa, errada ou meio-termo?
 5. **Escolha da justificativa:** uma só afirmação ou seleção de 2 entre 6? (Selecionar 2 reduz o chute e permite crédito parcial.)
 6. **Mecanismo de recuperação:** empréstimo, investidor-anjo ou crise com efeito atrasado?

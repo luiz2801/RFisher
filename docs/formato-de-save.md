@@ -38,7 +38,9 @@ Versão do formato: **`versao: 1`**.
 | `seed` | inteiro (32 bits) | Semente informada ou sorteada no início. |
 | `rng` | inteiro (32 bits) | Estado atual do gerador de números aleatórios (mulberry32). |
 | `turnoAtual` | inteiro ≥ 1 | Trimestre atual. Aumenta quando todos os jogadores jogaram. |
-| `turnosPorJogador` | inteiro | Duração da partida. |
+| `turnosPorJogador` | inteiro (1 a 64) | Duração da partida, escolhida no menu. |
+| `dinheiroInicial` | inteiro | Caixa inicial escolhido no menu (de cada jogador, ou da empresa no cooperativo). Base da meta trimestral e das faixas finais do cooperativo. Ausente em saves antigos (vale `100000`; `dinheiroInicialDe`). |
+| `falencia` | booleano | Só no cooperativo: a empresa quebrou (caixa negativo ao fim de uma jogada que passou pelo Balanço) e a partida acabou (`fisher.md` 3.12). Ausente em saves antigos (vale `false`; `empresaFalida`). |
 | `jogadorAtual` | inteiro | Índice em `jogadores` de quem joga. |
 | `fase` | texto | Fase da máquina de estados (ver abaixo). |
 | `dado` | 1–6 \| `null` | Último dado rolado na vez. |
@@ -66,6 +68,8 @@ Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `INFORMAR_VALOR`, `ESCOLHER
 | `posicao` | 0–27 | Casa no tabuleiro. |
 | `distancia` | inteiro ≥ 0 | Casas percorridas no total, contando as voltas (soma dos dados). Define a dificuldade dos cenários sorteados. Ausente em saves antigos (vale `posicao`). |
 | `historico` | lista | Decisões tomadas: `{ cenario, conceito, metrica, justificativa, confianca, resultado, delta, equivocos }`, mais `valor` (o número informado) e `valorCorreto` (dentro da margem) nas decisões de cenários de cálculo (`fisher.md` 4.7). `conceito` e `equivocos` (ids dos equívocos da opção e da justificativa escolhidas) alimentam o perfil de desempenho (`fisher.md` 4.6); ausentes em saves antigos, são recalculados a partir do conteúdo. |
+| `falido` | booleano | Caixa negativo ao fim de uma jogada que passou pelo Balanço: o jogador saiu da disputa, é pulado nos turnos e perde (competitivo e solo, `fisher.md` 3.12). Ausente em saves antigos (vale `false`; `ehFalido`). |
+| `negativado` | booleano | Passou pelo Balanço com o caixa negativo e aguarda o veredito, porque há rival negativado com saldo pior que ainda não passou pelo Balanço (competitivo e solo, `fisher.md` 3.12). Limpo após o veredito. Ausente em saves antigos (vale `false`). |
 | `bot` | `'facil'` \| `'medio'` \| `'dificil'` \| `null` | Perfil do rival controlado pelo computador (modo solo, `fisher.md` 3.11); `null` para uma pessoa. Ausente em saves antigos (vale pessoa). |
 | `papeis` | lista de ids de diretoria | Só no cooperativo; vazio no competitivo. |
 | `merito`, `habilidadeUsos` | inteiros | Reservados para o cooperativo; **ainda não usados** pelo motor. |
@@ -153,5 +157,6 @@ Como o save referencia ids do conteúdo, alterar o conteúdo também pode quebra
 | 1 (sem incremento) | Nova fase `INFORMAR_VALOR`; `cenarioAtual.valorInformado`; `resultado.valorCorreto` e `resultado.calculo`; `historico[].valor` e `historico[].valorCorreto`, para os cenários de cálculo (`fisher.md` 4.7). | Compatível: saves antigos não têm esses campos e nunca estiveram na nova fase; o código trata a ausência como cenário comum |
 | 1 (sem incremento) | Acrescentado `teste`, com os atalhos de teste do menu (casa forçada e baralho restrito). | Compatível: save sem `teste` é uma partida normal |
 | 1 (sem incremento) | Acrescentado `soConceitual`, para jogar sem os cenários de cálculo. | Compatível: save sem `soConceitual` inclui todos os cenários |
+| 1 (sem incremento) | Acrescentado `dinheiroInicial`, o caixa inicial escolhido no menu. | Compatível: save sem `dinheiroInicial` usa R$ 100.000 |
 
 Ao mudar o formato, acrescente uma linha aqui.

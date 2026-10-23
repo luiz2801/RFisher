@@ -5,7 +5,7 @@ import { novoJogo, vencedores } from '../src/engine/state.js';
 import { reduzir } from '../src/engine/machine.js';
 import { valorEsperado, ehCalculo } from '../src/engine/calculo.js';
 import { obterCenario } from '../src/scenarios/loader.js';
-import { DINHEIRO_INICIAL } from '../src/engine/config.js';
+import { DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, TURNOS_PADRAO } from '../src/engine/config.js';
 import { CONFIANCA } from '../src/engine/scoring.js';
 import { viewJogo } from '../src/ui/views.js';
 
@@ -309,4 +309,167 @@ test('sem material de apoio, o baralho exclui os cenários de cálculo', () => {
   const alvo = 'cenario_14_alugueis';
   const t = reduzir(novoJogo({ ...base, soConceitual: true, teste: { casa: 'decisao', cenarios: [alvo] } }), { tipo: 'ROLAR' });
   assert.equal(t.cenarioAtual.id, alvo);
+});
+
+test('rounds e caixa inicial vêm do menu e são limitados', () => {
+  const base = { jogadores: jogadores('iniciante', 'iniciante'), seed: 1 };
+  const e = novoJogo({ ...base, turnos: 64, dinheiroInicial: 250000 });
+  assert.equal(e.turnosPorJogador, 64);
+  assert.equal(e.dinheiroInicial, 250000);
+  assert.ok(e.jogadores.every((j) => j.dinheiro === 250000));
+  assert.equal(novoJogo({ ...base, turnos: 500 }).turnosPorJogador, 64);
+  assert.equal(novoJogo({ ...base, turnos: 0 }).turnosPorJogador, 1);
+  assert.equal(novoJogo({ ...base, turnos: NaN }).turnosPorJogador, TURNOS_PADRAO);
+  assert.equal(novoJogo({ ...base, dinheiroInicial: 1 }).dinheiroInicial, DINHEIRO_INICIAL_MIN);
+  assert.equal(novoJogo({ ...base, dinheiroInicial: 1e9 }).dinheiroInicial, DINHEIRO_INICIAL_MAX);
+  assert.equal(novoJogo({ ...base, dinheiroInicial: NaN }).dinheiroInicial, DINHEIRO_INICIAL);
+});
+
+test('cooperativo: caixa da empresa, meta e faixas seguem o caixa inicial escolhido', () => {
+  const e = novoJogo({ jogadores: jogadores('iniciante'), modo: 'cooperativo', seed: 5, dinheiroInicial: 400000 });
+  assert.equal(e.empresa.dinheiro, 400000);
+  assert.equal(metaTrimestral(e), 400000);
+  assert.equal(classificarEmpresa({ dinheiro: 500000, reputacao: 80 }, 400000).id, 'crescimento');
+  assert.equal(classificarEmpresa({ dinheiro: 500000, reputacao: 80 }).id, 'lider'); // padrão: R$ 100.000
+  // Save antigo, sem `dinheiroInicial`: vale o padrão.
+  const { dinheiroInicial, ...antigo } = e;
+  assert.equal(metaTrimestral(antigo), DINHEIRO_INICIAL);
+});
+
+// ---------- falência (fisher.md 3.12) ----------
+
+import { ehFalido, empresaFalida } from '../src/engine/state.js';
+
+// Estado parado na tela de resultado, com o caixa da carteira da vez já no valor dado.
+// `balanco: true` simula uma jogada que passou pela casa do Balanço.
+function emResultado(config, dinheiro, { balanco = true } = {}) {
+  const e = novoJogo({ turnos: 5, seed: 1, ...config });
+  e.fase = 'MOSTRAR_RESULTADO';
+  carteira(e).dinheiro = dinheiro;
+  e.balanco = balanco ? { receita: 0, custos: 0, liquido: 0 } : null;
+  return e;
+}
+
+test('falência: caixa negativo ao continuar tira o jogador da disputa e a partida segue com os demais', () => {
+  let e = emResultado({ jogadores: jogadores('iniciante', 'iniciante', 'iniciante') }, -1);
+  e = reduzir(e, { tipo: 'CONTINUAR' });
+  assert.equal(ehFalido(e.jogadores[0]), true);
+  assert.equal(e.jogadorAtual, 1);
+  assert.equal(e.fase, 'ROLAR_DADO');
+  // Na volta seguinte, o falido é pulado.
+  e.jogadorAtual = 2;
+  e.fase = 'MOSTRAR_EVENTO';
+  e = reduzir(e, { tipo: 'CONTINUAR' });
+  assert.equal(e.jogadorAtual, 1);
+  assert.equal(e.turnoAtual, 2);
+});
+
+test('falência: caixa negativo fora do Balanço não elimina ninguém', () => {
+  for (const modo of ['competitivo', 'cooperativo']) {
+    const e = reduzir(emResultado({ jogadores: jogadores('iniciante', 'iniciante'), modo }, -5000, { balanco: false }), { tipo: 'CONTINUAR' });
+    assert.equal(e.fase, 'ROLAR_DADO');
+    assert.equal(ehFalido(e.jogadores[0]), false);
+    assert.equal(empresaFalida(e), false);
+  }
+});
+
+test('falência: caixa zero não quebra, só negativo', () => {
+  const e = reduzir(emResultado({ jogadores: jogadores('iniciante', 'iniciante') }, 0), { tipo: 'CONTINUAR' });
+  assert.equal(ehFalido(e.jogadores[0]), false);
+  assert.equal(e.jogadorAtual, 1);
+});
+
+test('falência: com dois jogadores, quem quebra perde e o outro vence na hora', () => {
+  const e = reduzir(emResultado({ jogadores: jogadores('iniciante', 'iniciante') }, -500), { tipo: 'CONTINUAR' });
+  assert.equal(e.fase, 'FIM_DE_JOGO');
+  assert.deepEqual(vencedores(e).map((j) => j.id), [1]);
+});
+
+// Jogada de Balanço do jogador `quem`, com os caixas dados para cada jogador.
+function balancoDe(quem, caixas, extra = {}) {
+  const e = novoJogo({ jogadores: jogadores(...caixas.map(() => 'iniciante')), turnos: 5, seed: 1 });
+  caixas.forEach((c, i) => { e.jogadores[i].dinheiro = c; });
+  Object.assign(e, { jogadorAtual: quem, fase: 'MOSTRAR_BALANCO', balanco: { receita: 0, custos: 0, liquido: 0 } }, extra);
+  return e;
+}
+
+test('falência: quem passa negativado espera o rival negativado, com saldo pior, passar pelo Balanço', () => {
+  // J1 passa com -1.000; J2 está com -9.000 e ainda não passou: ninguém perde por enquanto.
+  let e = reduzir(balancoDe(0, [-1000, -9000, 50000]), { tipo: 'CONTINUAR' });
+  assert.equal(e.jogadores[0].falido, false);
+  assert.equal(e.jogadores[0].negativado, true);
+  assert.equal(e.jogadorAtual, 1);
+  assert.equal(e.fase, 'ROLAR_DADO');
+  // J2 passa pelo Balanço: tem o menor saldo dos dois e perde.
+  e.fase = 'MOSTRAR_BALANCO';
+  e.balanco = { receita: 0, custos: 0, liquido: 0 };
+  e = reduzir(e, { tipo: 'CONTINUAR' });
+  assert.equal(e.jogadores[1].falido, true);
+  assert.equal(e.jogadores[0].falido, false);
+  assert.equal(e.jogadores[0].negativado, false);
+});
+
+test('falência: se o rival melhora e passa ainda negativado com saldo melhor, perde quem esperava', () => {
+  let e = reduzir(balancoDe(0, [-1000, -9000]), { tipo: 'CONTINUAR' });
+  assert.equal(e.jogadores[0].falido, false);
+  e.jogadores[1].dinheiro = -500;
+  Object.assign(e, { fase: 'MOSTRAR_BALANCO', balanco: { receita: 0, custos: 0, liquido: 0 } });
+  e = reduzir(e, { tipo: 'CONTINUAR' });
+  assert.equal(e.jogadores[0].falido, true);
+  assert.equal(e.jogadores[1].falido, false);
+  assert.equal(e.fase, 'FIM_DE_JOGO');
+});
+
+test('falência: se o rival se recupera ao passar, quem esperava perde', () => {
+  let e = reduzir(balancoDe(0, [-1000, -9000, 50000]), { tipo: 'CONTINUAR' });
+  e.jogadores[1].dinheiro = 3000;
+  Object.assign(e, { fase: 'MOSTRAR_BALANCO', balanco: { receita: 0, custos: 0, liquido: 0 } });
+  e = reduzir(e, { tipo: 'CONTINUAR' });
+  assert.equal(e.jogadores[0].falido, true);
+  assert.equal(e.jogadores[1].falido, false);
+});
+
+test('falência: rival negativado com saldo melhor não faz esperar', () => {
+  const e = reduzir(balancoDe(0, [-9000, -1000, 50000]), { tipo: 'CONTINUAR' });
+  assert.equal(e.jogadores[0].falido, true);
+});
+
+test('falência: o aviso na tela diz que o veredito espera o rival', () => {
+  const e = balancoDe(0, [-1000, -9000]);
+  e.eventoAtual = { id: 'eixo_truncado', crise: false, dinheiro: 0 };
+  e.fase = 'MOSTRAR_EVENTO';
+  assert.match(viewJogo(e), /veredito espera J2/);
+});
+
+test('falência: quem faliu perde mesmo com mais dinheiro que o outro', () => {
+  const e = novoJogo({ jogadores: jogadores('iniciante', 'iniciante'), seed: 1 });
+  e.jogadores[0].falido = true;
+  e.jogadores[0].dinheiro = 500000;
+  e.jogadores[1].dinheiro = 10;
+  assert.deepEqual(vencedores(e).map((j) => j.id), [1]);
+});
+
+test('falência: sozinho, quebrar encerra a partida sem vencedor', () => {
+  const e = reduzir(emResultado({ jogadores: jogadores('iniciante') }, -1), { tipo: 'CONTINUAR' });
+  assert.equal(e.fase, 'FIM_DE_JOGO');
+  assert.deepEqual(vencedores(e), []);
+});
+
+test('falência: no cooperativo, caixa negativo da empresa encerra a partida', () => {
+  const e = reduzir(emResultado({ jogadores: jogadores('iniciante', 'iniciante'), modo: 'cooperativo' }, -1), { tipo: 'CONTINUAR' });
+  assert.equal(empresaFalida(e), true);
+  assert.equal(e.fase, 'FIM_DE_JOGO');
+  assert.equal(classificarEmpresa(e.empresa).id, 'falencia');
+});
+
+test('falência: o aviso aparece na tela antes de continuar e o placar marca o falido', () => {
+  const e = emResultado({ jogadores: jogadores('iniciante', 'iniciante') }, -1);
+  e.fase = 'MOSTRAR_EVENTO';
+  e.eventoAtual = { id: 'eixo_truncado', crise: false, dinheiro: 0 };
+  assert.match(viewJogo(e), /vai à falência/);
+  e.balanco = null;
+  assert.doesNotMatch(viewJogo(e), /vai à falência/);
+  e.balanco = { receita: 0, custos: 0, liquido: 0 };
+  e.jogadores[0].falido = true;
+  assert.match(viewJogo(e), /Falido/);
 });

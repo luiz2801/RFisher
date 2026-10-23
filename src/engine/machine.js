@@ -3,10 +3,12 @@ import { CASAS, avancar } from './board.js';
 import {
   CUSTOS_BALANCO, MULTA_CRISE, REPUTACAO_POS_CRISE, META_CRESCIMENTO_POR_JOGADOR, BONUS_INVESTIDOR,
   BONUS_INVESTIDOR_REPUTACAO, CORTE_ORCAMENTO, CORTE_ORCAMENTO_REPUTACAO, REDUCAO_PREJUIZO_PASSIVA,
-  REPUTACAO_BALANCO_RH, DINHEIRO_INICIAL, PERFIS_BOT,
+  REPUTACAO_BALANCO_RH, PERFIS_BOT,
 } from './config.js';
 import { resolverDecisao, receitaBalanco, justificativaConta, CONFIANCA } from './scoring.js';
-import { jogadorAtual, carteira, ehCooperativo, ehBot, distanciaPercorrida, progressoDoJogador } from './state.js';
+import {
+  jogadorAtual, dinheiroInicialDe, carteira, ehCooperativo, ehBot, ehFalido, jogadoresAtivos, julgarBalanco, distanciaPercorrida, progressoDoJogador,
+} from './state.js';
 import { decidirBot } from './bot.js';
 import { ehCalculo, avaliarCalculo } from './calculo.js';
 import { lerNumero } from '../stats/format.js';
@@ -52,7 +54,7 @@ function mudarReputacao(j, delta) {
 
 // Caixa mínimo exigido pelo Conselho: cresce a cada trimestre e com o número de jogadores.
 export const metaTrimestral = (e) =>
-  DINHEIRO_INICIAL + META_CRESCIMENTO_POR_JOGADOR * e.jogadores.length * (e.turnoAtual - 1);
+  dinheiroInicialDe(e) + META_CRESCIMENTO_POR_JOGADOR * e.jogadores.length * (e.turnoAtual - 1);
 
 function aplicarBalanco(e) {
   const w = carteira(e);
@@ -250,6 +252,7 @@ function resolverEscolhas(e) {
 }
 
 function continuar(e) {
+  const passouPeloBalanco = Boolean(e.balanco);
   e.cenarioAtual = null;
   e.eventoAtual = null;
   e.resultado = null;
@@ -257,12 +260,38 @@ function continuar(e) {
   e.dado = null;
   e.dados = null;
 
-  if (e.jogadorAtual + 1 < e.jogadores.length) {
-    e.jogadorAtual += 1;
-  } else {
-    e.jogadorAtual = 0;
-    e.turnoAtual += 1;
+  // Falência (fisher.md 3.12): só na jogada em que passou pelo Balanço, com o caixa negativo ao fim dela.
+  // Fora do Balanço o caixa pode ficar negativo sem eliminar. A pessoa viu o que causou antes de continuar.
+  // No competitivo, quem passa negativado só é julgado quando não há ninguém negativo, com saldo pior, que
+  // ainda não passou pelo Balanço; aí perde o de menor saldo entre os que passaram negativados (`julgarBalanco`).
+  if (passouPeloBalanco) {
+    if (ehCooperativo(e)) {
+      if (e.empresa.dinheiro < 0) e.falencia = true;
+    } else {
+      const { perdedor } = julgarBalanco(e);
+      const j = jogadorAtual(e);
+      j.negativado = j.dinheiro < 0;
+      if (perdedor) {
+        perdedor.falido = true;
+        for (const x of e.jogadores) x.negativado = false;
+      }
+    }
   }
+  // A disputa acaba com a empresa falida, sem ninguém no jogo ou, com mais de um jogador, com um só sobrevivente.
+  const ativos = jogadoresAtivos(e).length;
+  if (e.falencia || ativos === 0 || (e.jogadores.length > 1 && ativos === 1)) {
+    e.fase = 'FIM_DE_JOGO';
+    return e;
+  }
+
+  // Próximo jogador que não faliu; ao dar a volta, começa o próximo trimestre.
+  do {
+    e.jogadorAtual += 1;
+    if (e.jogadorAtual >= e.jogadores.length) {
+      e.jogadorAtual = 0;
+      e.turnoAtual += 1;
+    }
+  } while (ehFalido(jogadorAtual(e)));
   e.fase = e.turnoAtual > e.turnosPorJogador ? 'FIM_DE_JOGO' : 'ROLAR_DADO';
   return e;
 }
