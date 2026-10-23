@@ -38,3 +38,7 @@ Antes de concluir, verifique:
 6. `npm test` passa?
 
 No resumo final ao usuário, diga quais documentos foram atualizados (ou por que nenhum precisou).
+
+## 2. Commits exigem `npm test`
+
+Antes de fazer qualquer commit, rode `npm test` e confirme que passa. Não faça commit com testes falhando ou sem tê-los rodado. Se não for possível rodar (por exemplo, Node indisponível no ambiente), não faça o commit: avise o usuário e peça que ele rode ou autorize explicitamente o commit sem os testes.
