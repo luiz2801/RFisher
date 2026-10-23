@@ -2700,5 +2700,503 @@
       "reputacao_acerto": 15,
       "reputacao_erro": -10
     }
+  },
+  {
+    "id": "cenario_22_simpson_rh",
+    "setor": "rh",
+    "conceito": "paradoxo_simpson",
+    "versao": 1,
+    "idioma": "pt-BR",
+    "nivel": "avancado",
+    "dificuldade": 3,
+    "titulo": "Viés na contratação ou ilusão matemática?",
+    "contexto": "A diretoria acusa o recrutamento de viés: a taxa geral de aprovação de homens é de 18,5%, e a de mulheres é de 9,7%. Porém, ao analisar os únicos dois departamentos da empresa (Engenharia e Vendas), as mulheres têm taxa de aprovação superior aos homens em ambos! Qual fenômeno explica essa aparente contradição?",
+    "dica": "A taxa geral é uma média ponderada. Pense no que acontece se a imensa maioria das mulheres se candidatar para o departamento mais difícil de entrar.",
+    "valor_base": 20000,
+    "dados": {
+      "gerador": {
+        "tipo": "paradoxo_simpson_rh",
+        "parametros": {
+          "taxasEngenharia": [
+            5,
+            8
+          ],
+          "taxasVendas": [
+            20,
+            25
+          ],
+          "volumeH_Eng": 100,
+          "volumeM_Eng": 900,
+          "volumeH_Ven": 900,
+          "volumeM_Ven": 100
+        }
+      },
+      "formato": "porcento",
+      "tipo_grafico": "tabela_series",
+      "descricao_acessivel": "Tabela com a taxa de aprovação de homens e mulheres em Engenharia, Vendas e no geral: as mulheres têm taxa maior nos dois departamentos e menor no geral. O número de candidatos de cada grupo aparece só no resultado.",
+      "rotulos_linhas": [
+        "Engenharia",
+        "Vendas",
+        "Geral"
+      ],
+      "formatos": [
+        "porcento",
+        "porcento",
+        "inteiro",
+        "inteiro"
+      ],
+      "ocultas_ate_resultado": [
+        2,
+        3
+      ],
+      "legenda": "Taxa de aprovação por departamento"
+    },
+    "opcoes": [
+      {
+        "id": "paradoxo_simpson",
+        "texto": "Paradoxo de Simpson (diferença no volume populacional entre os departamentos)",
+        "correta": true
+      },
+      {
+        "id": "erro_sistema",
+        "texto": "Erro no sistema de cálculo do RH",
+        "correta": false,
+        "equivoco": "desconfia_ferramenta"
+      },
+      {
+        "id": "vies_recrutadores",
+        "texto": "Viés inconsciente dos recrutadores nas entrevistas",
+        "correta": false,
+        "equivoco": "ignora_matematica"
+      },
+      {
+        "id": "sazonalidade",
+        "texto": "Efeito de sazonalidade das vagas abertas",
+        "correta": false,
+        "equivoco": "fator_irrelevante"
+      },
+      {
+        "id": "amostra_pequena",
+        "texto": "Ruído estatístico por amostra insuficiente",
+        "correta": false,
+        "equivoco": "ruido_amostral"
+      }
+    ],
+    "justificativas": [
+      {
+        "id": "j1",
+        "texto": "Isso é o Paradoxo de Simpson. As mulheres se candidataram em massa para Engenharia (onde a aprovação geral é muito baixa), puxando sua média global para baixo, mesmo tendo taxa maior em ambas as áreas.",
+        "tipo": "correta"
+      },
+      {
+        "id": "j2",
+        "texto": "O sistema não errou. É um efeito matemático real das médias ponderadas.",
+        "tipo": "erro_conceitual",
+        "equivoco": "desconfia_ferramenta"
+      },
+      {
+        "id": "j3",
+        "texto": "O viés pode existir, mas a matemática dos dados aponta que, isoladamente, as mulheres estão sendo mais aprovadas que os homens.",
+        "tipo": "erro_conceitual",
+        "equivoco": "ignora_matematica"
+      },
+      {
+        "id": "j4",
+        "texto": "Sazonalidade altera o volume ao longo do tempo, mas não explica a inversão matemática simultânea das taxas.",
+        "tipo": "irrelevante",
+        "equivoco": "fator_irrelevante"
+      },
+      {
+        "id": "j5",
+        "texto": "O cenário considera milhares de currículos, a diferença não é obra do acaso.",
+        "tipo": "afirmacao_falsa",
+        "equivoco": "ruido_amostral"
+      },
+      {
+        "id": "j6",
+        "texto": "As mulheres têm taxa maior em cada departamento, mas isso sozinho não explica por que a taxa geral delas é menor.",
+        "tipo": "parcial"
+      }
+    ],
+    "feedback": {
+      "por_equivoco": {
+        "desconfia_ferramenta": "Os dados estão corretos! Esse é um efeito contraintuitivo real das médias ponderadas quando há grupos de tamanhos muito diferentes.",
+        "ignora_matematica": "A resposta não está na psicologia, está nos números: a distribuição dos candidatos pelos departamentos inverteu a média.",
+        "fator_irrelevante": "Não estamos analisando o tempo, mas sim a composição das áreas.",
+        "ruido_amostral": "A lei dos grandes números já se aplica aqui. O paradoxo é estrutural, não ruído."
+      },
+      "explicacao_correta": "Paradoxo de Simpson! A aprovação em Engenharia é naturalmente difícil para todos. Como a maioria das mulheres aplicou para lá, a média delas foi arrastada para baixo. Já os homens aplicaram em massa para Vendas (aprovação fácil), inflacionando a média global deles.",
+      "revelacao": {
+        "marcadores": []
+      }
+    },
+    "impacto": {
+      "reputacao_acerto": 15,
+      "reputacao_erro": -10
+    }
+  },
+  {
+    "id": "cenario_23_sobrevivencia_produto",
+    "setor": "produto",
+    "conceito": "vies_sobrevivencia",
+    "versao": 1,
+    "idioma": "pt-BR",
+    "nivel": "intermediario",
+    "dificuldade": 2,
+    "titulo": "O aplicativo perfeito (para quem ficou)",
+    "contexto": "O aplicativo sofre com alta perda de clientes (churn). Para entender o problema, você envia uma pesquisa de satisfação para os usuários que abrem o app diariamente há mais de 6 meses. O resultado mostra nota máxima para usabilidade. A equipe conclui que a interface não precisa de mudanças. Qual o erro dessa conclusão?",
+    "dica": "Onde estão os usuários que desistiram de usar o aplicativo?",
+    "valor_base": 20000,
+    "dados": {
+      "gerador": {
+        "tipo": "vies_sobrevivencia",
+        "parametros": {
+          "amostra": 100,
+          "nota_ativos": 9.8
+        }
+      },
+      "formato": "decimal",
+      "rotulo_x": "Nota de Satisfação (1-10)",
+      "rotulo_y": "Usuários",
+      "tipo_grafico": "histograma",
+      "descricao_acessivel": "Gráfico de notas extremamente altas, referentes apenas a uma parcela muito específica e leal da base de usuários."
+    },
+    "opcoes": [
+      {
+        "id": "sobrevivencia",
+        "texto": "Viés de Sobrevivência (os insatisfeitos já foram embora)",
+        "correta": true
+      },
+      {
+        "id": "tamanho_amostra",
+        "texto": "Amostra muito pequena de usuários",
+        "correta": false,
+        "equivoco": "confunde_tamanho_qualidade"
+      },
+      {
+        "id": "mentira_pesquisa",
+        "texto": "Usuários leais tendem a mentir em pesquisas",
+        "correta": false,
+        "equivoco": "vies_resposta_falso"
+      },
+      {
+        "id": "sazonalidade",
+        "texto": "A pesquisa foi enviada em um mês bom",
+        "correta": false,
+        "equivoco": "fator_externo"
+      },
+      {
+        "id": "erro_mediana",
+        "texto": "Eles deveriam ter olhado a mediana, não a média",
+        "correta": false,
+        "equivoco": "falsa_mediana"
+      }
+    ],
+    "justificativas": [
+      {
+        "id": "j1",
+        "texto": "A equipe analisou apenas os 'sobreviventes'. Quem achou a interface confusa provavelmente já cancelou a conta e não recebeu a pesquisa.",
+        "tipo": "correta"
+      },
+      {
+        "id": "j2",
+        "texto": "O problema não é a quantidade de respostas, mas sim o perfil de quem foi selecionado para responder.",
+        "tipo": "erro_conceitual",
+        "equivoco": "confunde_tamanho_qualidade"
+      },
+      {
+        "id": "j3",
+        "texto": "Usuários leais não estão mentindo; eles realmente gostam da interface, por isso continuaram usando.",
+        "tipo": "afirmacao_falsa",
+        "equivoco": "vies_resposta_falso"
+      },
+      {
+        "id": "j4",
+        "texto": "O erro está na filtragem da base ('há mais de 6 meses'), não no momento do envio.",
+        "tipo": "irrelevante",
+        "equivoco": "fator_externo"
+      },
+      {
+        "id": "j5",
+        "texto": "Como a base inteira pesquisada deu notas altas, a média e a mediana seriam ambas elevadas. O erro é de amostragem.",
+        "tipo": "erro_conceitual",
+        "equivoco": "falsa_mediana"
+      },
+      {
+        "id": "j6",
+        "texto": "Perguntar só a quem ficou deixa de fora os insatisfeitos, mas o problema se resolve simplesmente pesquisando mais usuários ativos.",
+        "tipo": "parcial"
+      }
+    ],
+    "feedback": {
+      "por_equivoco": {
+        "confunde_tamanho_qualidade": "Você pode ter milhões de respostas, mas se todas vierem de usuários viciados no app, a pesquisa continuará cega para o problema.",
+        "vies_resposta_falso": "Não há motivo para achar que eles estão mentindo. Eles são apenas a parte da base que se adaptou bem ao app.",
+        "fator_externo": "A sazonalidade não tem relação com o fato de excluirmos os desertores da pesquisa.",
+        "falsa_mediana": "Mudar a métrica de centro não conserta uma base de dados que excluiu o público-alvo do problema."
+      },
+      "explicacao_correta": "O Viés de Sobrevivência enganou a equipe! Avaliar a usabilidade perguntando só para quem usa o app há 6 meses é como perguntar se o deserto é quente apenas para quem conseguiu atravessá-lo. Os insatisfeitos já foram embora.",
+      "revelacao": {
+        "marcadores": []
+      }
+    },
+    "impacto": {
+      "reputacao_acerto": 10,
+      "reputacao_erro": -5
+    }
+  },
+  {
+    "id": "cenario_24_taxa_base_fraude",
+    "setor": "financeiro",
+    "conceito": "falacia_taxa_base",
+    "versao": 1,
+    "idioma": "pt-BR",
+    "nivel": "avancado",
+    "dificuldade": 3,
+    "titulo": "O alarme infalível de 99%",
+    "contexto": "Um novo software de IA detecta anomalias com 99% de precisão. O alarme dispara para a transação de um grande cliente. Seu gestor manda bloquear a conta, afirmando: 'Se tocou, há 99% de chance de ser fraude!'. Sabendo que só ocorre 1 fraude a cada 10.000 transações na sua empresa, por que ele está errado?",
+    "dica": "Se o sistema analisa 10.000 transações e tem 1% de erro, quantas transações legítimas vão disparar o alarme indevidamente? Compare isso com a quantidade de fraudes reais.",
+    "valor_base": 20000,
+    "dados": {
+      "gerador": {
+        "tipo": "taxa_base_bayes",
+        "parametros": {
+          "total_transacoes": 10000,
+          "taxa_fraude": 0.0001,
+          "precisao_ia": 0.99
+        }
+      },
+      "formato": "inteiro",
+      "tipo_grafico": "tabela_series",
+      "descricao_acessivel": "Tabela com 10.000 transações: 1 fraude e 9.999 legítimas. Depois da resposta, mostra os alarmes: 1 verdadeiro e cerca de 100 falsos.",
+      "rotulos_linhas": [
+        "Fraudes",
+        "Legítimas",
+        "Total"
+      ],
+      "formatos": [
+        "inteiro",
+        "inteiro"
+      ],
+      "ocultas_ate_resultado": [
+        1
+      ],
+      "legenda": "Transações analisadas"
+    },
+    "opcoes": [
+      {
+        "id": "taxa_base",
+        "texto": "Falácia da Taxa Base (ignora a proporção de falsos positivos)",
+        "correta": true
+      },
+      {
+        "id": "confianca_cega",
+        "texto": "O gestor está correto, a matemática apoia a decisão",
+        "correta": false,
+        "equivoco": "nega_falacia"
+      },
+      {
+        "id": "erro_ia",
+        "texto": "A IA precisa ser treinada com mais dados reais",
+        "correta": false,
+        "equivoco": "solucao_tecnica"
+      },
+      {
+        "id": "falha_mediana",
+        "texto": "Os 99% representam a mediana, não a média de acertos",
+        "correta": false,
+        "equivoco": "confusao_medidas"
+      },
+      {
+        "id": "fraude_interna",
+        "texto": "A fraude provavelmente é interna, bypassando o sistema",
+        "correta": false,
+        "equivoco": "hipotese_sem_dados"
+      }
+    ],
+    "justificativas": [
+      {
+        "id": "j1",
+        "texto": "Em 10.000 transações, há apenas 1 fraude (detectada). Mas o 1% de erro da IA sobre as 9.999 transações boas gera ~100 alarmes falsos. Se o alarme toca, a chance real de fraude é inferior a 1%!",
+        "tipo": "correta"
+      },
+      {
+        "id": "j2",
+        "texto": "O gestor ignorou a estatística Bayesiana básica ao focar apenas na precisão da ferramenta e não na raridade do evento.",
+        "tipo": "erro_conceitual",
+        "equivoco": "nega_falacia"
+      },
+      {
+        "id": "j3",
+        "texto": "Mesmo a melhor IA sofre com o paradoxo de falsos positivos quando aplicada a eventos extremamente raros.",
+        "tipo": "parcial",
+        "equivoco": "solucao_tecnica"
+      },
+      {
+        "id": "j4",
+        "texto": "A precisão da IA (taxa de verdadeiros positivos e verdadeiros negativos) não tem relação com métricas de tendência central.",
+        "tipo": "erro_conceitual",
+        "equivoco": "confusao_medidas"
+      },
+      {
+        "id": "j5",
+        "texto": "Isso é uma especulação operacional, não explica o erro estatístico da afirmação do gestor.",
+        "tipo": "irrelevante",
+        "equivoco": "hipotese_sem_dados"
+      },
+      {
+        "id": "j6",
+        "texto": "Com 99% de precisão, quando o alarme toca a chance de ser fraude é de 99%, não importa quão rara seja a fraude.",
+        "tipo": "erro_conceitual",
+        "equivoco": "nega_falacia"
+      }
+    ],
+    "feedback": {
+      "por_equivoco": {
+        "nega_falacia": "Cuidado! Faça as contas: em 10.000 casos, o 1% de erro gera 100 alarmes falsos. Como só existe 1 fraude real ali no meio, quase todos os alarmes que tocam são enganos.",
+        "solucao_tecnica": "Melhorar a IA é bom, mas o erro do gestor no momento presente é estatístico: ele ignora o Teorema de Bayes e a taxa base do problema.",
+        "confusao_medidas": "Isso não é sobre média ou mediana, mas sobre probabilidade condicional.",
+        "hipotese_sem_dados": "A justificativa estatística (falsos positivos em larga escala) já desmonta a pressa do gestor sem precisarmos inventar teorias da conspiração."
+      },
+      "explicacao_correta": "A Falácia da Taxa Base é o terror dos diagnósticos! Como as fraudes são raríssimas (1 em 10.000), o 1% de margem de erro do sistema vai gritar 'Fraude!' indevidamente cerca de 100 vezes. Quando o alarme toca, a chance de ser a 1 fraude real escondida no meio de 100 alarmes falsos é mínima.",
+      "revelacao": {
+        "marcadores": []
+      }
+    },
+    "impacto": {
+      "reputacao_acerto": 15,
+      "reputacao_erro": -15
+    }
+  },
+  {
+    "id": "cenario_25_correlacao_espuria",
+    "setor": "dados",
+    "conceito": "correlacao_causalidade",
+    "versao": 1,
+    "idioma": "pt-BR",
+    "nivel": "iniciante",
+    "dificuldade": 1,
+    "titulo": "A mágica dos anúncios e guarda-chuvas",
+    "contexto": "O analista júnior de dados mostra um gráfico empolgante: os meses em que a empresa gastou mais em Google Ads coincidem perfeitamente com picos absurdos de vendas de guarda-chuvas. Ele sugere dobrar o orçamento de anúncios para dobrar o faturamento. O que ele está ignorando?",
+    "dica": "Lembre-se da regra de ouro: 'Correlação não implica...' Pense se não existe um terceiro fator escondido movimentando as duas coisas.",
+    "valor_base": 20000,
+    "dados": {
+      "gerador": {
+        "tipo": "correlacao_terceira_variavel",
+        "parametros": {
+          "meses": 12,
+          "r_pearson": 0.95
+        }
+      },
+      "formato": "brl",
+      "tipo_grafico": "tabela_series",
+      "descricao_acessivel": "Tabela de 12 meses com o gasto com Google Ads e as vendas de guarda-chuvas: os dois sobem e descem juntos. A chuva de cada mês aparece só no resultado.",
+      "rotulos_linhas": [
+        "Jan",
+        "Fev",
+        "Mar",
+        "Abr",
+        "Mai",
+        "Jun",
+        "Jul",
+        "Ago",
+        "Set",
+        "Out",
+        "Nov",
+        "Dez"
+      ],
+      "formatos": [
+        "brl",
+        "inteiro",
+        "inteiro"
+      ],
+      "ocultas_ate_resultado": [
+        2
+      ],
+      "legenda": "Gasto com anúncios e vendas por mês"
+    },
+    "opcoes": [
+      {
+        "id": "nao_causal",
+        "texto": "Correlação não implica causalidade (existe um fator oculto)",
+        "correta": true
+      },
+      {
+        "id": "cpc_caro",
+        "texto": "O custo por clique aumentou muito nesses meses",
+        "correta": false,
+        "equivoco": "fator_financeiro"
+      },
+      {
+        "id": "sem_concorrencia",
+        "texto": "A falta de concorrentes no setor",
+        "correta": false,
+        "equivoco": "cenario_competitivo"
+      },
+      {
+        "id": "teto_orcamento",
+        "texto": "O limite físico do orçamento da área",
+        "correta": false,
+        "equivoco": "restricao_operacional"
+      },
+      {
+        "id": "outliers",
+        "texto": "Os dados foram inflados por uma única venda em lote",
+        "correta": false,
+        "equivoco": "busca_outliers"
+      }
+    ],
+    "justificativas": [
+      {
+        "id": "j1",
+        "texto": "Variável de confusão! Em meses chuvosos, as pessoas navegam mais na internet (gastando sua verba de Ads) e, naturalmente, compram mais guarda-chuvas. Dobrar os Ads num mês de sol não fará chover.",
+        "tipo": "correta"
+      },
+      {
+        "id": "j2",
+        "texto": "Questões financeiras de custo de anúncio não explicam o aumento na demanda física do produto.",
+        "tipo": "erro_conceitual",
+        "equivoco": "fator_financeiro"
+      },
+      {
+        "id": "j3",
+        "texto": "O mercado competitivo não explica a oscilação alinhada das duas métricas no gráfico.",
+        "tipo": "irrelevante",
+        "equivoco": "cenario_competitivo"
+      },
+      {
+        "id": "j4",
+        "texto": "Um teto de orçamento impede a execução da ideia, mas não explica por que a análise dos dados está logicamente errada.",
+        "tipo": "irrelevante",
+        "equivoco": "restricao_operacional"
+      },
+      {
+        "id": "j5",
+        "texto": "O gráfico demonstra uma alta correlação ao longo de vários meses, não um caso isolado.",
+        "tipo": "afirmacao_falsa",
+        "equivoco": "busca_outliers"
+      },
+      {
+        "id": "j6",
+        "texto": "A correlação é alta, então os anúncios podem ajudar um pouco, mas dobrar a verba não garante dobrar o faturamento.",
+        "tipo": "parcial"
+      }
+    ],
+    "feedback": {
+      "por_equivoco": {
+        "fator_financeiro": "Olhe para fora dos dados! Não é o preço do clique que impulsionou o gráfico de vendas.",
+        "cenario_competitivo": "Não crie premissas mercadológicas complexas para um erro lógico simples de interpretação de dados.",
+        "restricao_operacional": "O analista errou na matemática e na causalidade, independentemente de haver dinheiro em caixa.",
+        "busca_outliers": "Mesmo que você exclua os picos, a correlação continua existindo. O erro é acreditar que a linha do gráfico indica causa e efeito."
+      },
+      "explicacao_correta": "A velha armadilha: 'Correlação não implica Causalidade'. A chuva é a variável oculta! Ela faz as pessoas ficarem mais em casa clicando em anúncios e as força a comprar guarda-chuvas. Os anúncios não estão gerando as vendas.",
+      "revelacao": {
+        "marcadores": []
+      }
+    },
+    "impacto": {
+      "reputacao_acerto": 5,
+      "reputacao_erro": -10
+    }
   }
 ]

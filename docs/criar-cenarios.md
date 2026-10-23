@@ -32,7 +32,7 @@ Consequência prática: **nunca escreva um número de dado à mão no texto**. U
 3. Escreva o objeto do cenário seguindo o [modelo](#modelo-de-cenário).
 4. Acrescente-o ao array de `cenarios.json`. O arquivo é JSON puro: aspas duplas em chaves e textos, sem comentários nem vírgula final. O loader o importa com `import ... with { type: 'json' }` (Node 20.10+ e navegadores recentes).
 5. Rode `npm test`. O validador e os testes de invariante rodam sobre todos os cenários automaticamente.
-6. Adicione um teste específico do invariante em `tests/generators.test.js` (como os dos cenários 1 e 4 a 21).
+6. Adicione um teste específico do invariante em `tests/generators.test.js` (como os dos cenários 1 e 4 a 25).
 
 Para um cenário em que a pessoa **calcula** o valor, siga o passo a passo acima e depois a seção [Cenários de cálculo](#cenários-de-cálculo).
 7. Atualize a documentação (ver [Checklist](#checklist-antes-de-concluir)).
@@ -81,7 +81,7 @@ Para um cenário em que a pessoa **calcula** o valor, siga o passo a passo acima
 | `valor_base` | V da matriz de pontuação (`fisher.md` 3.5). Hoje todos usam 20.000; o nível avançado multiplica por 1,5. |
 | `dados.formato` | Define a formatação de todos os placeholders numéricos. |
 | `tipo` | Opcional. `'calculo'` para um cenário em que a pessoa calcula e informa o valor (ver [Cenários de cálculo](#cenários-de-cálculo)). Ausente é um cenário comum. |
-| `dados.tipo_grafico` | `barras_discretas` para dados inteiros e poucos valores (numerações, notas); `segmentos` para a tabela de taxas por segmento do cenário 21; qualquer outro valor vira histograma. |
+| `dados.tipo_grafico` | `barras_discretas` para dados inteiros e poucos valores (numerações, notas); `segmentos` para a tabela de taxas por segmento do cenário 21; `tabela_series` para a tabela dos cenários 22, 24 e 25 (ver [Tabela de séries](#tabela-de-séries)); qualquer outro valor vira histograma. |
 | `dados.descricao_acessivel` | Obrigatória por convenção: é a descrição textual do gráfico (`fisher.md` 5.9). |
 | `impacto` | Variação de reputação por acerto e por erro. Todos os cenários usam `{ reputacao_acerto: 5, reputacao_erro: -10 }`, salvo motivo para variar. |
 
@@ -91,9 +91,9 @@ O jogo sorteia cenários com dificuldade crescente ao longo da partida (`fisher.
 
 | Valor | Critério | Cenários atuais |
 | --- | --- | --- |
-| 1 | A métrica correta é a mais direta (centro de um conjunto com ou sem um único valor atípico, a categoria mais frequente, ou o máximo quando todos precisam caber). | 01, 03, 07, 09, 14 |
-| 2 | Exige reconhecer o formato dos dados (cauda longa, bimodal, assimetria à esquerda), ler a definição de um percentil ou pensar em dispersão. | 02, 04, 05, 10, 11, 15, 17, 20 |
-| 3 | Exige comparar dispersão robusta com sensível a outliers, comparar amostras, pesar risco contra média, ou perceber que o objetivo (um total) muda a métrica. | 06, 08, 12, 13, 16, 18, 19, 21 |
+| 1 | A métrica correta é a mais direta (centro de um conjunto com ou sem um único valor atípico, a categoria mais frequente, ou o máximo quando todos precisam caber) ou o erro é o clássico "correlação não é causa". | 01, 03, 07, 09, 14, 25 |
+| 2 | Exige reconhecer o formato dos dados (cauda longa, bimodal, assimetria à esquerda), ler a definição de um percentil ou pensar em dispersão, ou perceber quem ficou de fora da amostra. | 02, 04, 05, 10, 11, 15, 17, 20, 23 |
+| 3 | Exige comparar dispersão robusta com sensível a outliers, comparar amostras, pesar risco contra média, perceber que o objetivo (um total) muda a métrica, que um total é uma média ponderada ou que um alarme sobre evento raro gera mais falsos positivos que acertos. | 06, 08, 12, 13, 16, 18, 19, 21, 22, 24 |
 
 Mantenha ao menos um cenário em cada nível, senão o início ou o fim da partida perde o efeito (há teste para isso). O peso de sorteio e o passo médio do dado estão em `src/engine/config.js`; a lógica, em `src/engine/dificuldade.js`.
 
@@ -207,6 +207,10 @@ Ajuste só os `parametros` e o texto do cenário.
 | `inflado_em_zero` | `n`, `proporcaoZero`, `valorMin`, `valorMax` | mediana = 0, ao menos 55 % de zeros e média > 10 % do máximo | 13 |
 | `amostra_pequena` | `n`, `media`, `dp`, `casas` (padrão 0) | valores positivos, dp dentro de 10 % do pedido e amplitude > 1,8 × dp | 17 |
 | `paradoxo_simpson` | `taxasAntes[2]`, `taxasDepois[2]` (Desktop, Mobile), `metadeAntesMin/Max`, `nonoDepoisMin/Max` (milhares de visitas) | taxas sobem nos dois segmentos, a geral cai e a fatia do Mobile cresce | 21 |
+| `paradoxo_simpson_rh` | `taxasEngenharia[2]`, `taxasVendas[2]` (Homens, Mulheres, em %), `volumeH_Eng`, `volumeM_Eng`, `volumeH_Ven`, `volumeM_Ven` (candidatos) | mulheres com taxa maior nos dois departamentos e menor no geral, com a maioria delas em Engenharia e a deles em Vendas | 22 |
+| `vies_sobrevivencia` | `amostra`, `nota_ativos` (média das notas, até 10) | máximo ≤ 10, mínimo ≥ 8 e média a menos de 0,15 de `nota_ativos` | 23 |
+| `taxa_base_bayes` | `total_transacoes`, `taxa_fraude`, `precisao_ia` (determinístico) | alarmes falsos > 50 × alarmes verdadeiros e chance real de fraude < 5% | 24 |
+| `correlacao_terceira_variavel` | `meses`, `r_pearson` (correlação alvo entre gasto e vendas) | r(gasto, vendas) ≥ `r_pearson` − 0,03 e r de cada um com a chuva ≥ 0,9 | 25 |
 | `contagens_assimetricas` | `n`, `pesos[]` (contagens 0, 1, 2, ...) | média ≥ 0,2 acima da mediana, a ≥ 0,5 da moda e P90 > 1,5 × média | 16 |
 
 Os cenários 14, 15 e 18 reaproveitam `assimetria_direita`, `cauda_longa` e `dispersao_outliers` com `n` pequeno.
@@ -216,6 +220,20 @@ Um invariante recebe também os `parametros` do cenário como segundo argumento 
 Atenção: alguns invariantes têm números fixos do cenário original. Mudar os parâmetros para fora desse intervalo faz o gerador falhar. Se precisar de outros valores, torne o invariante dependente dos parâmetros (como `distribuicao_normal_simetrica` já faz).
 
 `dados.tipo_grafico: 'segmentos'` (cenário 21) troca o histograma por uma tabela de taxas; o gerador precisa entregar as séries na ordem do `paradoxo_simpson`.
+
+#### Tabela de séries
+
+`dados.tipo_grafico: 'tabela_series'` (cenários 22, 24 e 25) mostra uma tabela em que **cada série é uma coluna** e cada posição dos valores, uma linha. Campos de `dados`:
+
+| Campo | Papel |
+| --- | --- |
+| `rotulos_linhas` | Nome de cada linha (ex.: `["Engenharia", "Vendas", "Geral"]`); uma por posição dos valores. |
+| `formatos` | Formato de cada série, na ordem (ver [Formatos](#formatos)); sem ele vale `dados.formato`. |
+| `ocultas_ate_resultado` | Índices das séries que só aparecem na tela de resultado: o dado que explica a resposta (candidatos, alarmes, a variável oculta). |
+| `legenda` | Título da tabela. |
+| `descricao_acessivel` | Descrição lida por leitores de tela (a tabela a referencia por `aria-describedby`). |
+
+Como o cenário não tem histograma, `rotulo_x` e `rotulo_y` não são usados.
 
 ### Criar um gerador novo
 

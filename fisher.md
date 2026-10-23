@@ -241,16 +241,19 @@ A variância é alta: em 10 turnos cada jogador decide cerca de 6 vezes, e a dif
 | 19 | Comparando o risco de duas filiais | Duas filiais de portes muito diferentes | **Coeficiente de variação (CV = dp / média)** | Comparar desvios padrões brutos de escalas diferentes |
 | 20 | Nota de clima e outliers comportamentais | Sino simétrico com notas 0 e 10 sem critério | **Média aparada** (5% de cada ponta) | Usar a média simples, ou a mediana, quando só as pontas devem ser descartadas |
 | 21 | O mistério da taxa de conversão | Taxas que sobem em cada dispositivo e caem no geral | **Paradoxo de Simpson** (mudança no peso dos grupos) | Esquecer que o total é uma média ponderada e desconfiar do painel |
+| 22 | Viés na contratação ou ilusão matemática? | Mulheres com taxa de aprovação maior em Engenharia e em Vendas, e menor no geral | **Paradoxo de Simpson** (volume de candidatos por departamento) | Ler a taxa geral como prova de viés sem olhar a composição dos grupos |
+| 23 | O aplicativo perfeito (para quem ficou) | Notas de usabilidade quase todas máximas, só de usuários antigos | **Viés de sobrevivência** (os insatisfeitos já foram embora) | Concluir pela base que sobrou e ignorar quem saiu |
+| 24 | O alarme infalível de 99% | 1 fraude em 10.000 transações e um alarme com 1% de erro | **Falácia da taxa base** (falsos positivos) | Tratar a precisão do teste como a chance de o alarme estar certo, ignorando a raridade do evento |
+| 25 | A mágica dos anúncios e guarda-chuvas | Gasto com anúncios e vendas sobem e descem juntos | **Correlação não implica causalidade** (variável oculta: a chuva) | Dobrar a verba esperando dobrar as vendas |
 
 O cenário 21 usa o gerador `paradoxo_simpson`: as taxas são fixas (Desktop 6% → 7%, Mobile 2% → 2,5%, geral 4% → 3%) e o sorteio muda só o volume de visitas, com o Mobile indo de 50% para 8/9 do tráfego. A tela mostra a tabela de taxas (`tipo_grafico: 'segmentos'`); as visitas, que explicam a inversão, só aparecem no resultado. Decisão de projeto: os números das taxas estão escritos no texto do cenário (são constantes do gerador, não sorteio). No cenário 20 a média simples quase não se afasta da aparada (as pontas são quase simétricas); o que o cenário avalia é reconhecer a técnica que descarta as pontas. As métricas `cv` (dp / |média|) e `media_aparada` (5% de cada ponta) entram no resumo dos dados e valem como placeholders e marcadores.
 
+Os cenários 22 a 25 vieram de um pacote de questões novas, adaptado ao formato do jogo. Os cenários 22, 24 e 25 mostram uma **tabela de séries** (`tipo_grafico: 'tabela_series'`) em vez de gráfico, e a coluna que explica a resposta fica oculta até o resultado (`dados.ocultas_ate_resultado`): os candidatos de cada grupo no 22, os alarmes disparados no 24 e a chuva de cada mês no 25. O 23 mostra o histograma das notas dos usuários que ficaram. Geradores: `paradoxo_simpson_rh` (taxas e volumes fixos: homens 5% e 20%, mulheres 8% e 25%; geral 18,5% contra 9,7%), `vies_sobrevivencia` (100 notas em meia-normal coladas no 10, média ≈ 9,8, sorteadas por seed), `taxa_base_bayes` (determinístico: 1 fraude, 9.999 legítimas, 1 alarme verdadeiro e 100 falsos, chance real de 1/101) e `correlacao_terceira_variavel` (a chuva sorteada move gasto e vendas; invariante r ≥ 0,92 entre os dois e ≥ 0,9 de cada um com a chuva). Decisões de adaptação: o setor `marketing` do pacote não existe no jogo e o 25 ficou em `dados` (diretoria de Tecnologia, que trata de engajamento digital); os gráficos de barras agrupadas (22), barras empilhadas (24) e dispersão (25) do pacote viraram tabela, como no 21; o 22 usa os valores gerais calculados (18,5% e 9,7%) em vez dos 15% e 10% do pacote, que não batiam com os volumes; e cada cenário ganhou uma justificativa `parcial` para chegar ao mínimo de 6 do pool.
+
 ### 4.2 Cenários candidatos (nível avançado e eventos)
 
-- Correlação vs. causalidade
-- Viés de sobrevivência
 - Tamanho de amostra pequeno
 - Eixo truncado em gráfico enganoso
-- Taxa-base (falso positivo em teste de doença rara)
 - Comparação de grupos com p-valor ou intervalo de confiança
 
 ### 4.3 Anatomia de um cenário

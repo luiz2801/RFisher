@@ -116,3 +116,33 @@ test('o menu sugere material de apoio e deixa escolher só questões conceituais
   assert.match(menu, /planilha/);
   assert.match(menu, /value="conceitual"/);
 });
+
+test('cenários de tabela de séries escondem as colunas que explicam a resposta até o resultado', () => {
+  const ids = ['cenario_22_simpson_rh', 'cenario_24_taxa_base_fraude', 'cenario_25_correlacao_espuria'];
+  for (const id of ids) {
+    const def = obterCenario(id);
+    let e = novoJogo({ jogadores: [{ nome: 'A', nivel: 'iniciante' }], seed: 3, teste: { casa: 'decisao', cenarios: [id] } });
+    const nomesOcultos = () => {
+      const { series } = e.cenarioAtual;
+      return def.dados.ocultas_ate_resultado.map((i) => esc(series[i].nome));
+    };
+    let antes = null;
+    for (let i = 0; i < 20 && e.fase !== 'MOSTRAR_RESULTADO'; i++) {
+      if (e.fase === 'ESCOLHER_METRICA') antes = viewJogo(e);
+      e = reduzir(e, {
+        ROLAR_DADO: { tipo: 'ROLAR' },
+        ESCOLHER_CONFIANCA: { tipo: 'CONFIANCA', valor: 'certeza' },
+        ESCOLHER_METRICA: { tipo: 'METRICA', valor: def.opcoes.find((o) => o.correta).id },
+        ESCOLHER_JUSTIFICATIVA: { tipo: 'JUSTIFICATIVA', valor: def.justificativas[0].id },
+      }[e.fase] ?? { tipo: 'CONTINUAR' });
+    }
+    assert.equal(e.fase, 'MOSTRAR_RESULTADO', id);
+    const depois = viewJogo(e);
+    for (const nome of nomesOcultos()) {
+      assert.ok(!antes.includes(`>${nome}</th>`), `${id}: "${nome}" apareceu antes da resposta`);
+      assert.ok(depois.includes(`>${nome}</th>`), `${id}: "${nome}" não apareceu no resultado`);
+    }
+    assert.match(antes, /<table class="tabela-dados"/);
+    assert.ok(!antes.includes('undefined') && !depois.includes('undefined') && !antes.includes('{{'), id);
+  }
+});

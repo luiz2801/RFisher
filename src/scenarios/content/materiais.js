@@ -62,4 +62,16 @@ export const MATERIAIS = {
     revisar: 'Lembre que um total é uma média ponderada: se o peso dos grupos muda, o resultado geral pode cair mesmo com todos os grupos melhorando.',
     links: [wiki('Paradoxo de Simpson', 'Paradoxo_de_Simpson'), wiki('Média ponderada', 'Média_ponderada')],
   },
+  vies_sobrevivencia: {
+    revisar: 'Pergunte quem ficou de fora da amostra: se só quem "sobreviveu" responde, os desistentes (e o problema) somem dos dados.',
+    links: [wiki('Viés de sobrevivência', 'Viés_de_sobrevivência'), wiki('Viés de seleção', 'Viés_de_seleção'), wiki('Amostragem', 'Amostragem')],
+  },
+  falacia_taxa_base: {
+    revisar: 'Para eventos raros, combine a precisão do teste com a taxa base: a maioria dos alarmes pode ser falso positivo mesmo com 99% de acerto.',
+    links: [wiki('Falácia da taxa base', 'Falácia_da_taxa_base'), wiki('Teorema de Bayes', 'Teorema_de_Bayes'), wiki('Falso positivo', 'Falso_positivo')],
+  },
+  correlacao_causalidade: {
+    revisar: 'Antes de concluir que A causa B, procure uma terceira variável que mova as duas (variável de confusão) e lembre que correlação alta não prova causa.',
+    links: [wiki('Correlação não implica causalidade', 'Correlação_não_implica_causalidade'), wiki('Correlação', 'Correlação'), wiki('Variável de confusão', 'Variável_de_confusão')],
+  },
 };
