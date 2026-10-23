@@ -327,7 +327,7 @@ Em `investimentos.js`, acrescente um objeto a `EMPRESAS` (regras em `fisher.md` 
   tempo: '3 anos',                  // tempo de mercado, em texto
   fundador: 'O que o fundador diz, em uma ou duas frases. É aqui que mora a falácia.',
   historico: [6, 7, 5, 6],          // lucro (prejuízo) dos 4 últimos trimestres, em R$ mil
-  prob: 0.25,                       // chance de sucesso, oculta (só a consultoria a mostra)
+  prob: 0.25,                       // chance de sucesso, oculta (só o relatório da consultoria a mostra)
   ganho: 2.0,                       // retorno do sucesso sobre o aporte (2,0 = +200%)
   perda: 1.0,                       // fração do aporte perdida no fracasso (1 = perda total)
   falha: 'sobrevivencia',           // sobrevivencia | taxa_base | regressao_media | amostra_pequena | null (argumento sólido)
@@ -340,7 +340,8 @@ Em `investimentos.js`, acrescente um objeto a `EMPRESAS` (regras em `fisher.md` 
 - **A falha e o valor esperado andam juntos.** Empresa com `falha` é uma furada e precisa de valor esperado negativo, `prob × ganho − (1 − prob) × perda < 0`. Empresa com `falha: null` precisa de argumento realmente sólido (dados completos, inclusive os casos ruins) e de valor esperado positivo. Isso vale mesmo no pior sorteio da chance: a cada oferta `prob` varia até ±0,04 (`SORTEIO_PROBABILIDADE`).
 - **A pista precisa estar no texto do `fundador`** (ou no `historico`), sem nomear a falácia. Quem lê deve poder descobrir; a `explicacao` só aparece depois da decisão.
 - **Mantenha a proporção:** cada porte com ao menos 2 empresas sólidas e 2 furadas, e cada falácia em ao menos uma empresa. O investimento às cegas deve ficar perto de zero em média (o teste confere por porte), senão o chute passa a compensar.
-- O valor esperado depois da consultoria (ganho × 0,75) deve continuar positivo na maioria das sólidas, senão a consultoria vira um beco sem saída.
+- A consultoria cobra 50% do ganho e R$ 15.000 no fracasso, então quase nenhuma empresa tem valor esperado positivo depois dela; isso é intencional (ela é informação cara). Não ajuste o catálogo para compensar.
+- O `historico` e os números de `prob`, `ganho` e `perda` só aparecem no relatório da consultoria; a pista da falácia precisa estar no texto do `fundador`.
 - Empresas novas entram no baralho de seu porte no próximo ciclo. Não renomeie nem remova um `id`: aportes salvos referenciam o id (a apuração tolera id ausente, mas perde a narrativa).
 - Narrativas de sucesso e fracasso são exibidas no Balanço ao apurar; escreva-as de modo a fazer sentido para qualquer um dos dois desfechos, sem citar números.
 

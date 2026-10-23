@@ -125,6 +125,7 @@ classDiagram
         +number ganho
         +number perda
         +boolean consultoria
+        +int honorario
         +int turnoAporte
     }
 
