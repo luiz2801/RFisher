@@ -21,6 +21,22 @@ export const SEQUENCIA_TETO = 2;
 export const SEQUENCIA_FATOR_ERRO = 0.9;
 export const SEQUENCIA_PISO = 0.5;
 
+// Investimentos do Mercado (fisher.md 3.14). O porte da empresa ofertada depende da reputação de quem cai na casa.
+export const FAIXAS_MERCADO = [
+  { id: 'micro', min: 0 },
+  { id: 'pme', min: 35 },
+  { id: 'consolidada', min: 70 },
+  { id: 'elite', min: 90 },
+];
+export const APORTES = [10000, 25000, 50000];
+// Relatório da consultoria: libera lucros, retornos e chance exata. Quem investe depois paga a consultoria pelo resultado:
+// metade do retorno, se der certo, ou um honorário fixo, se der errado.
+export const CONSULTORIA_PENALIDADE = 0.5; // fração do retorno do sucesso cobrada pela consultoria
+export const CONSULTORIA_HONORARIO_FRACASSO = 15000; // cobrado a mais quando o investimento dá errado
+export const SORTEIO_PROBABILIDADE = 0.04; // a chance de sucesso de cada oferta varia até ±0,04 em torno da do catálogo
+export const ANALISE_BONUS_REPUTACAO = 3; // diagnóstico certo do argumento do fundador
+export const ANALISE_PENALIDADE_REPUTACAO = 2; // diagnóstico errado
+
 // Modo cooperativo (docs/modo-cooperativo.md). Valores a calibrar por simulação.
 export const MODOS = ['competitivo', 'cooperativo'];
 export const META_CRESCIMENTO_POR_JOGADOR = 2000; // aumento do caixa mínimo a cada trimestre, por jogador

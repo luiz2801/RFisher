@@ -29,8 +29,11 @@ classDiagram
         +List~Jogador~ jogadores
         +List~string~ baralhoCenarios
         +List~string~ baralhoEventos
+        +Object baralhoInvestimentos
         +CenarioInstanciado cenarioAtual
         +EventoAtual eventoAtual
+        +OfertaMercado mercadoAtual
+        +List~ApuracaoFinal~ apuracaoFinal
         +Resultado resultado
         +Teste teste
         +boolean soConceitual
@@ -48,6 +51,7 @@ classDiagram
         +int posicao
         +int distancia
         +List~HistoricoDecisao~ historico
+        +List~Investimento~ investimentos
         +PerfilBot bot
     }
 
@@ -110,6 +114,59 @@ classDiagram
         +string licao
         +number dinheiro
         +number reputacao
+    }
+
+    class Investimento {
+        +string empresaId
+        +string nome
+        +Porte porte
+        +int valor
+        +number prob
+        +number ganho
+        +number perda
+        +boolean consultoria
+        +int honorario
+        +int turnoAporte
+    }
+
+    class OfertaMercado {
+        +string empresaId
+        +Porte porte
+        +number prob
+        +number ganho
+        +number perda
+        +boolean consultoria
+        +string diagnostico
+        +Analise analise
+        +int aporte
+        +string decisao
+    }
+
+    class EmpresaDef {
+        +string id
+        +Porte porte
+        +string nome
+        +string setor
+        +string tempo
+        +string fundador
+        +int[] historico
+        +number prob
+        +number ganho
+        +number perda
+        +Falacia falha
+        +string explicacao
+        +string sucesso
+        +string fracasso
+    }
+
+    class InvestimentosService {
+        +porteDaReputacao(reputacao) Porte
+        +valorEsperado(oferta) number
+        +ganhoComConsultoria(ganho) number
+        +sortearOferta(e, reputacao, rng) OfertaMercado
+        +liquidar(investimento, rng) ResultadoInvestimento
+        +liquidarTodos(carteira, jogador, rng) List
+        +totalInvestido(jogador) number
     }
 
     class RngService {
@@ -177,8 +234,11 @@ classDiagram
     GameState "1" *-- "1..3" Jogador : contém
     Jogador "1" *-- "*" HistoricoDecisao : registra
     Jogador "1" *-- "1" Sequencia : acumula
+    Jogador "1" *-- "*" Investimento : mantém em custódia até o Balanço
     GameState "1" o-- "0..1" CenarioDef : executa em 'decisao'
     GameState "1" o-- "0..1" EventoCarta : aciona em 'evento'
+    GameState "1" o-- "0..1" OfertaMercado : apresenta em 'mercado'
+    OfertaMercado "1" ..> "1" EmpresaDef : sorteada do catálogo
     CenarioDef "1" *-- "5" Opcao : possui
     CenarioDef "1" *-- "6..8" Justificativa : possui
     
@@ -187,6 +247,8 @@ classDiagram
     GameState ..> DificuldadeService : sorteia cenário por progresso
     GameState ..> BotService : decide a vez do rival (modo solo)
     GameState ..> CalculoService : confere o valor dos cenários de cálculo
+    GameState ..> InvestimentosService : oferece e apura investimentos
+    InvestimentosService ..> RngService : sorteia a oferta e o desfecho
     BotService ..> CalculoService : informa o valor no cenário de cálculo
     ScenarioLoader ..> CenarioDef : gerencia/instancia
     ScoringEngine <.. GameState : calcula pontuação
@@ -210,6 +272,7 @@ stateDiagram-v2
         
         ROLAR_DADO --> ESCOLHER_METRICA : ROLAR (caiu em 'decisao')
         ROLAR_DADO --> MOSTRAR_EVENTO : ROLAR (caiu em 'evento')
+        ROLAR_DADO --> MOSTRAR_MERCADO : ROLAR (caiu em 'mercado')
         ROLAR_DADO --> MOSTRAR_BALANCO : ROLAR (caiu em 'balanco')
         
         state FluxoDecisao {
@@ -222,8 +285,14 @@ stateDiagram-v2
             ESCOLHER_CONFIANCA --> MOSTRAR_RESULTADO : CONFIANCA('chute' | 'duvida' | 'provavel' | 'confiante' | 'certeza')
         }
         
+        state FluxoMercado {
+            MOSTRAR_MERCADO --> MOSTRAR_MERCADO : ABRIR_CONSULTORIA / DIAGNOSTICAR(falácia) (oferta aberta, uma vez cada)
+            MOSTRAR_MERCADO --> MOSTRAR_MERCADO : INVESTIR(aporte) / RECUSAR (fecha a oferta e paga o diagnóstico)
+        }
+
         MOSTRAR_RESULTADO --> ValidaFimTurno : CONTINUAR
         MOSTRAR_EVENTO --> ValidaFimTurno : CONTINUAR
+        MOSTRAR_MERCADO --> ValidaFimTurno : CONTINUAR (sem decidir, vale RECUSAR)
         MOSTRAR_BALANCO --> ValidaFimTurno : CONTINUAR
         
         state ValidaFimTurno <<choice>>
@@ -231,7 +300,7 @@ stateDiagram-v2
         ValidaFimTurno --> ROLAR_DADO : turnoAtual <= turnosPorJogador\n(próximo jogador que não faliu ou nova rodada)
     }
 
-    ValidaFimTurno --> FIM_DE_JOGO : turnoAtual > turnosPorJogador\nou empresa falida (coop.)\nou só um jogador sem falir
+    ValidaFimTurno --> FIM_DE_JOGO : turnoAtual > turnosPorJogador\n(apura os investimentos em custódia)\nou empresa falida (coop.)\nou só um jogador sem falir
     FIM_DE_JOGO --> MENU : NOVA partida (limpa storage)
 ```
 
@@ -251,6 +320,7 @@ sequenceDiagram
     participant Board as Board (board.js)
     participant Loader as ScenarioLoader (loader.js)
     participant Scoring as Scoring (scoring.js)
+    participant Invest as Investimentos (investimentos.js)
     participant Storage as Persist (persist.js)
 
     Jogador->>UI: Clica em "Jogar" no centro do tabuleiro (data-acao="ROLAR")
@@ -268,6 +338,9 @@ sequenceDiagram
         Machine->>Scoring: receitaBalanco(reputacao)
         Scoring-->>Machine: receita
         Note over Machine: Aplica balanço financeiro
+        Machine->>Invest: liquidarTodos(carteira, jogador, rng)
+        Invest->>RNG: prox() (um sorteio por aporte)
+        Invest-->>Machine: retornos dos investimentos (creditados antes da meta e da falência)
     end
 
     Note over Machine: distancia += dado; progresso = distancia / (turnos × 7)
@@ -279,6 +352,10 @@ sequenceDiagram
         Note over Machine: fase = 'ESCOLHER_METRICA'
     else Casa == 'evento'
         Note over Machine: Aplica efeito e fase = 'MOSTRAR_EVENTO'
+    else Casa == 'mercado'
+        Machine->>Invest: sortearOferta(e, reputacao, rng)
+        Invest-->>Machine: oferta (empresa do porte e chance sorteada)
+        Note over Machine: fase = 'MOSTRAR_MERCADO' (a chance fica oculta até a consultoria)
     else Casa == 'balanco'
         Note over Machine: fase = 'MOSTRAR_BALANCO'
     end
@@ -329,6 +406,7 @@ graph TD
         BOARD["board.js<br/>(Trilha e Posições)"]
         DIFICULDADE["dificuldade.js<br/>(Sorteio por dificuldade)"]
         BOT["bot.js<br/>(Rival do modo solo)"]
+        INVEST["investimentos.js<br/>(Oferta, consultoria e apuração do Mercado)"]
         SCORING["scoring.js<br/>(Cálculo de Pontos)"]
         CALCULO["calculo.js<br/>(Margem e valor dos cenários de cálculo)"]
         DESEMPENHO["desempenho.js<br/>(Perfil por conceito e relatório de fim de jogo)"]
@@ -339,7 +417,7 @@ graph TD
     subgraph Scenarios_Layer["Camada Cenários (src/scenarios/)"]
         LOADER["loader.js<br/>(Interpolação e Validação)"]
         GENERATORS["generators.js<br/>(Geração com Invariantes)"]
-        CONTENT["content/<br/>(cenarios.json, eventos.js, conceitos.js, materiais.js)"]
+        CONTENT["content/<br/>(cenarios.json, eventos.js, conceitos.js, materiais.js, investimentos.js)"]
     end
 
     subgraph Stats_Layer["Camada Stats (src/stats/)"]
@@ -363,6 +441,10 @@ graph TD
     MACHINE --> BOARD
     MACHINE --> DIFICULDADE
     MACHINE --> BOT
+    MACHINE --> INVEST
+    INVEST --> CONFIG
+    INVEST --> CONTENT
+    VIEWS --> INVEST
     MACHINE --> CALCULO
     MACHINE --> FORMAT
     BOT --> CONFIG
@@ -401,6 +483,7 @@ graph TD
 | **`src/engine/machine.js`** | Máquina de estados finitos que orquestra as transições a partir de ações do jogador. |
 | **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`, que aceita `turnos` (1 a 64) e `dinheiroInicial` (R$ 10.000 a R$ 1.000.000), ambos limitados, e `soConceitual`, para excluir os cenários de cálculo, e os atalhos de teste do menu: casa forçada e baralho restrito, ver `fisher.md` 5.8.1) e `diretoria` e `papeis` por jogador (a partir da escolha de setor no menu; `atribuirPapeis(n, escolhas)` em `papeis.js`) e funções seletoras puras (`jogadorAtual`, `dinheiroInicialDe`, `ehBot`, `ehFalido`, `empresaFalida`, `jogadoresAtivos`, `classificacao`, `vencedores`, `progressoDoJogador`). Falência (`fisher.md` 3.12): `continuar` em `machine.js` marca `falido` (ou `falencia` no cooperativo) quando o caixa fecha negativo uma jogada que passou pelo Balanço; `julgarBalanco` (em `state.js`) decide quem perde entre os negativados, adiando o veredito se um rival com saldo pior ainda não passou pelo Balanço; `classificacao` e `vencedores` põem o falido por último. |
 | **`src/engine/bot.js`** | Rival do modo solo: acerta métrica e justificativa com a probabilidade do perfil (menor nos cenários difíceis), escolhe distratores ao errar e deriva a confiança de uma certeza interna ruidosa. Perfis em `config.js`, calibração em `scripts/simular-bot.mjs` (`fisher.md` 3.11). |
+| **`src/engine/investimentos.js`** | Investimentos do Mercado (`fisher.md` 3.14): porte da empresa pela reputação (`porteDaReputacao`), oferta sem repetir no ciclo e com a chance de sucesso sorteada em torno da do catálogo (`sortearOferta`), retorno com a penalidade da consultoria (`ganhoComConsultoria`), valor esperado, sorteio do desfecho e crédito de cada aporte (`liquidar`, `liquidarTodos`) e o total em custódia. A máquina o chama ao cair no Mercado, no Balanço e no fim da partida; as empresas ficam em `scenarios/content/investimentos.js`. |
 | **`src/engine/dificuldade.js`** | Dificuldade-alvo a partir do progresso do jogador e sorteio ponderado de cenários do baralho. |
 | **`src/engine/rng.js`** | Gerador pseudo-aleatório determinístico baseado no algoritmo `mulberry32` com estado serializável em 32-bits. |
 | **`src/engine/desempenho.js`** | Perfil de desempenho do jogador a partir do histórico: domínio e diagnóstico por conceito, pontos fortes, deficiências, equívocos recorrentes e calibração da certeza; e o relatório de fim de jogo (`relatorioDesempenho`): acertos e erros, assuntos que mais e menos domina e sugestões de estudo com os materiais de `content/materiais.js` (`fisher.md` 4.6). |
@@ -411,4 +494,4 @@ graph TD
 | **`src/stats/metrics.js`** | Cálculos estatísticos fundamentais (média, mediana, moda, desvio padrão, percentil 90). |
 | **`src/stats/format.js`** | Formatação dos números por formato de cenário (R$, dias, minutos, s, ...) e leitura (`lerNumero`) do valor digitado em pt-BR. |
 | **`src/storage/persist.js`** | Camada de persistência em `window.localStorage` para salvamento automático a cada transição. |
-| **`src/ui/`** | Renderização reativa baseada em strings HTML puras e SVG (`grafico.js`), delegando ações de volta ao `main.js`. Em partida, o tabuleiro ocupa a tela toda (`viewJogo`): o centro traz a vez, os dados, o botão **Jogar** (fase `ROLAR_DADO`), o placar e o contexto; todas as demais fases (decisão, resultado, evento, balanço, fim de jogo) aparecem num painel modal (`.modal > .painel`) sobreposto ao tabuleiro. |
+| **`src/ui/`** | Renderização reativa baseada em strings HTML puras e SVG (`grafico.js`), delegando ações de volta ao `main.js`. Em partida, o tabuleiro ocupa a tela toda (`viewJogo`): o centro traz a vez, os dados, o botão **Jogar** (fase `ROLAR_DADO`), o placar e o contexto; todas as demais fases (decisão, resultado, evento, mercado, balanço, fim de jogo) aparecem num painel modal (`.modal > .painel`) sobreposto ao tabuleiro. |

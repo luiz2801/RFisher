@@ -3,7 +3,7 @@ import { CASAS, avancar } from './board.js';
 import {
   CUSTOS_BALANCO, MULTA_CRISE, REPUTACAO_POS_CRISE, META_CRESCIMENTO_POR_JOGADOR, BONUS_INVESTIDOR,
   BONUS_INVESTIDOR_REPUTACAO, CORTE_ORCAMENTO, CORTE_ORCAMENTO_REPUTACAO, REDUCAO_PREJUIZO_PASSIVA,
-  REPUTACAO_BALANCO_RH, PERFIS_BOT,
+  REPUTACAO_BALANCO_RH, PERFIS_BOT, APORTES, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO,
 } from './config.js';
 import { resolverDecisao, receitaBalanco, justificativaConta, atualizarSequencia, CONFIANCA } from './scoring.js';
 import {
@@ -15,8 +15,10 @@ import { lerNumero } from '../stats/format.js';
 import { escolherPorDificuldade } from './dificuldade.js';
 import { equivocosDaEscolha } from './desempenho.js';
 import { diretoriaDoSetor } from './papeis.js';
+import { OPCOES_DIAGNOSTICO, sortearOferta, ganhoComConsultoria, honorarioDaConsultoria, liquidarTodos, investimentosDe } from './investimentos.js';
 import { instanciar, obterCenario, idsCenarios } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
+import { obterEmpresa } from '../scenarios/content/investimentos.js';
 
 // Máquina de estados do turno: cada transição é (estado, ação) -> novo estado.
 // Ação inválida para a fase atual é ignorada.
@@ -56,11 +58,14 @@ function mudarReputacao(j, delta) {
 export const metaTrimestral = (e) =>
   dinheiroInicialDe(e) + META_CRESCIMENTO_POR_JOGADOR * e.jogadores.length * (e.turnoAtual - 1);
 
-function aplicarBalanco(e) {
+// Depois da receita e dos custos, os aportes do jogador da vez no Mercado são apurados (fisher.md 3.14); no
+// cooperativo isso vem antes da meta, então o retorno dos investimentos conta para o caixa exigido.
+function aplicarBalanco(e, rng) {
   const w = carteira(e);
   const receita = receitaBalanco(w.reputacao);
   w.dinheiro += receita - CUSTOS_BALANCO;
-  const balanco = { receita, custos: CUSTOS_BALANCO, liquido: receita - CUSTOS_BALANCO };
+  const investimentos = liquidarTodos(w, jogadorAtual(e), rng);
+  const balanco = { receita, custos: CUSTOS_BALANCO, liquido: receita - CUSTOS_BALANCO, investimentos };
   if (!ehCooperativo(e)) return balanco;
 
   // Cooperativo: bônus do RH, depois a meta. Quem falha sofre corte, ninguém é eliminado.
@@ -96,10 +101,10 @@ const TRANSICOES = {
       j.posicao = posicao;
       e.dado = dado;
       e.dados = [d1, d2];
-      e.balanco = passouInicio ? aplicarBalanco(e) : null;
+      e.balanco = passouInicio ? aplicarBalanco(e, rng) : null;
 
       const casa = e.teste?.casa ?? CASAS[posicao];
-      if (casa === 'balanco' && !e.balanco) e.balanco = aplicarBalanco(e); // casa forçada no teste
+      if (casa === 'balanco' && !e.balanco) e.balanco = aplicarBalanco(e, rng); // casa forçada no teste
       if (casa === 'decisao') {
         const def = obterCenario(sacarCenario(e, progressoDoJogador(e, j), rng));
         const inst = instanciar(def, rng);
@@ -124,6 +129,12 @@ const TRANSICOES = {
         const crise = carta.reputacao !== 0 ? mudarReputacao(w, carta.reputacao) : false;
         e.eventoAtual = { id: carta.id, crise, dinheiro };
         e.fase = 'MOSTRAR_EVENTO';
+      } else if (casa === 'mercado') {
+        // O rival do solo não investe: passa pelo Mercado sem oferta (e sem gastar sorteios).
+        e.mercadoAtual = ehBot(j)
+          ? { empresaId: null, decisao: 'recusou' }
+          : sortearOferta(e, carteira(e).reputacao, rng);
+        e.fase = 'MOSTRAR_MERCADO';
       } else {
         e.fase = 'MOSTRAR_BALANCO';
       }
@@ -194,6 +205,74 @@ const TRANSICOES = {
   },
 };
 
+// Fecha a oferta do Mercado: debita e registra o aporte, se houve, e paga o diagnóstico do argumento do fundador
+// (bônus de reputação se acertou, perda se errou). A explicação do argumento aparece na tela em qualquer caso.
+function decidirMercado(e, decisao, aporte = null) {
+  const m = e.mercadoAtual;
+  const w = carteira(e);
+  const j = jogadorAtual(e);
+  m.decisao = decisao;
+  if (decisao === 'investiu') {
+    const def = obterEmpresa(m.empresaId);
+    w.dinheiro -= aporte;
+    m.aporte = aporte;
+    j.investimentos = [
+      ...investimentosDe(j),
+      {
+        empresaId: m.empresaId,
+        nome: def.nome,
+        porte: m.porte,
+        valor: aporte,
+        prob: m.prob,
+        ganho: m.consultoria ? ganhoComConsultoria(m.ganho) : m.ganho,
+        perda: m.perda,
+        consultoria: m.consultoria,
+        honorario: honorarioDaConsultoria(m.consultoria),
+        turnoAporte: e.turnoAtual,
+      },
+    ];
+  }
+  if (m.diagnostico) {
+    const falha = obterEmpresa(m.empresaId).falha ?? 'nenhuma';
+    const correta = m.diagnostico === falha;
+    const deltaReputacao = correta ? ANALISE_BONUS_REPUTACAO : -ANALISE_PENALIDADE_REPUTACAO;
+    m.analise = { falha, correta, deltaReputacao, crise: mudarReputacao(w, deltaReputacao) };
+  }
+}
+
+// Só quem ainda pode agir na oferta: tem empresa (o rival do solo não) e não decidiu.
+const ofertaAberta = (e) => Boolean(e.mercadoAtual?.empresaId) && !e.mercadoAtual.decisao;
+
+TRANSICOES.MOSTRAR_MERCADO = {
+  // Como a dica (3.4): ver a chance exata tem preço, que só se paga se a pessoa investir (fisher.md 3.14).
+  ABRIR_CONSULTORIA(e) {
+    if (!ofertaAberta(e) || e.mercadoAtual.consultoria) return e;
+    e.mercadoAtual.consultoria = true;
+    return e;
+  },
+  DIAGNOSTICAR(e, { valor }) {
+    if (!ofertaAberta(e) || e.mercadoAtual.diagnostico || !OPCOES_DIAGNOSTICO.includes(valor)) return e;
+    e.mercadoAtual.diagnostico = valor;
+    return e;
+  },
+  INVESTIR(e, { valor }) {
+    const aporte = Number(valor);
+    if (!ofertaAberta(e) || !APORTES.includes(aporte) || aporte > carteira(e).dinheiro) return e;
+    decidirMercado(e, 'investiu', aporte);
+    return e;
+  },
+  RECUSAR(e) {
+    if (!ofertaAberta(e)) return e;
+    decidirMercado(e, 'recusou');
+    return e;
+  },
+  // Seguir sem escolher vale como recusar.
+  CONTINUAR(e) {
+    if (ofertaAberta(e)) decidirMercado(e, 'recusou');
+    return continuar(e);
+  },
+};
+
 // Pontua a decisão com as escolhas já gravadas em `cenarioAtual` (por uma pessoa ou pelo bot).
 function resolverEscolhas(e) {
   const c = e.cenarioAtual;
@@ -261,6 +340,7 @@ function continuar(e) {
   const dadosIguais = Array.isArray(e.dados) && e.dados[0] === e.dados[1];
   e.cenarioAtual = null;
   e.eventoAtual = null;
+  e.mercadoAtual = null;
   e.resultado = null;
   e.balanco = null;
   e.dado = null;
@@ -307,7 +387,22 @@ function continuar(e) {
     }
   } while (ehFalido(jogadorAtual(e)));
   e.fase = e.turnoAtual > e.turnosPorJogador ? 'FIM_DE_JOGO' : 'ROLAR_DADO';
+  if (e.fase === 'FIM_DE_JOGO') apurarInvestimentosFinais(e);
   return e;
+}
+
+// Fim da partida pelo número de trimestres: os aportes que ainda esperavam um Balanço são apurados agora, para o
+// ranking não ignorar o dinheiro em custódia (fisher.md 3.14). Quem faliu perde os seus; falência da empresa ou
+// vitória do último sobrevivente encerram a partida sem apuração.
+function apurarInvestimentosFinais(e) {
+  const rng = criarRng(e.rng);
+  const apuracao = [];
+  for (const j of e.jogadores) {
+    if (ehFalido(j) || !investimentosDe(j).length) continue;
+    apuracao.push({ jogador: j.id, nome: j.nome, investimentos: liquidarTodos(ehCooperativo(e) ? e.empresa : j, j, rng) });
+  }
+  e.rng = rng.estado;
+  e.apuracaoFinal = apuracao.length ? apuracao : null;
 }
 
 for (const fase of ['MOSTRAR_RESULTADO', 'MOSTRAR_EVENTO', 'MOSTRAR_BALANCO']) {

@@ -45,7 +45,7 @@ function lerTeste(dados) {
     calculo: todos.filter(ehCalculo).map((c) => c.id),
     comuns: todos.filter((c) => !ehCalculo(c)).map((c) => c.id),
   }[filtro] ?? todos.filter((c) => c.id === filtro).map((c) => c.id);
-  return { casa: ['decisao', 'evento', 'balanco'].includes(casa) ? casa : null, cenarios };
+  return { casa: ['decisao', 'evento', 'mercado', 'balanco'].includes(casa) ? casa : null, cenarios };
 }
 
 // Setores repetidos entre os jogadores não valem: cada setor vale para um jogador só (no cooperativo, com 3 jogadores).

@@ -78,6 +78,7 @@ Rola os dois dados (soma, 2 a 12) → cai numa casa → vê o cenário/gráfico 
 | 14 | **Sequências de erros e acertos** (implementado, 3.13): cada sucesso absoluto seguido multiplica o fator da sequência por 1,1 (teto 2) e cada erro total seguido por 0,9 (piso 0,5); o fator multiplica o ganho do sucesso e, invertido, a perda do erro total. Evento e Balanço não mexem na sequência | Faz o histórico recente pesar na aposta: errar em série fica caro e acertar em série compensa, sem premiar o acerto parcial. Valores e a leitura de "acertar" e "errar" são pontos de partida a calibrar no playtest; a sequência é por jogador, também no cooperativo |
 | 15 | **Dados iguais dão jogada extra** (implementado, 3.2): se os dois dados saem com a mesma face, o jogador resolve a casa normalmente e, ao continuar, joga de novo, sem gastar trimestre. Vale a todos os jogadores e modos, inclusive o rival do solo | Dá ao dado um lance de sorte visível sem tirar o peso do conhecimento (princípio 3): a jogada extra rende mais casas, não mais pontos por decisão. Sem limite de repetições (a chance de cada repetição é 1/6) e a jogada extra não conta como trimestre, então a partida mantém a duração escolhida. Quem faliu na jogada perde a vez e a partida que acabou não continua. Pode ser calibrado no playtest |
 | 16 | **Legendas do gráfico** (implementado, 5.9): o eixo X do histograma usa marcas redondas dentro do intervalo dos dados (passo 1, 2 ou 5 × 10^k), e um marcador de revelação só pode ser uma métrica que é **posição** na escala dos dados (média, mediana, moda, percentis, máximo etc.); métricas de dispersão (IQR, desvio padrão, amplitude, CV) não viram linha. O cenário 06 passou a marcar P25 e P75, as bordas da faixa central, como o 18 | O eixo antigo rotulava as pontas do intervalo com folga e mostrava valores que os dados não podem ter (salário negativo, nota 10,2), e o marcador "IQR: 5,8 min" desenhava uma linha na posição 5,8 min do eixo, o que não é onde o IQR está |
+| 17 | **Investimentos no Mercado** (implementado, 3.14): duas casas de Mercado oferecem aportar R$ 10 mil, 25 mil ou 50 mil numa empresa do porte da reputação. A pessoa **não vê a chance de sucesso**; a **consultoria** a revela, e libera também lucros e retornos, cobrando de quem investe depois 50% do retorno do sucesso, ou R$ 15.000 se der errado. O argumento do fundador carrega (ou não) uma falácia estatística, que a pessoa pode diagnosticar (reputação ±). O resultado é sorteado no próximo Balanço (e no fim da partida, para o que sobrar) | Dá um destino à reputação (ela abre portes melhores de empresa) e leva ao jogo a ideia de risco × retorno, sem virar roleta: investir às cegas rende ≈ 0 em média e a análise rende ≈ +0,19 por real. Segue a proposta de investimentos, com as escolhas do autor: probabilidades ocultas e vendidas como consultoria (como a dica, 3.4), falácias nas fichas e casa própria, para as cartas de Evento continuarem só com lições. O aporte arriscado de um jogador pode pesar no caixa comum do cooperativo; a decisão é do grupo. Fora do modelo: o rival do solo não investe, e a chance de sucesso, os retornos e os aportes são pontos de partida a calibrar no playtest |
 
 ---
 
@@ -92,15 +93,18 @@ Circuito de aproximadamente **20 casas**. Cada casa coloca pelo menos uma métri
 | **Decisão** | ~8 | Cenário estatístico com gráfico: escolhe a métrica, depois a justificativa. Dinheiro e reputação em jogo |
 | **Evento** | ~5 | Sorte ou revés com mini-lição (ex.: gráfico com eixo truncado engana um investidor) |
 | **Duelo** | ~2 | Mesma pergunta para dois jogadores. Quem acertar leva dinheiro do outro |
-| **Mercado** | ~2 | Compra dica de consultor, seguro de reputação ou glossário |
+| **Mercado** | 2 | Oportunidade de investimento em empresa, com consultoria opcional (3.14). Seguro de reputação e glossário seguem previstos |
 | **Imprensa/Auditoria** | ~2 | Reputação em xeque |
-| **Início/Balanço** | 1 | Receita fixa, ajustada pela reputação, menos custos |
+| **Início/Balanço** | 1 | Receita fixa, ajustada pela reputação, menos custos; apura também os investimentos do Mercado (3.14) |
+
+**Trilha implementada:** 28 casas, com 1 Balanço (a casa 1), 18 Decisões, 7 Eventos e 2 Mercados (casas 10 e 24). Duelo e Imprensa/Auditoria continuam para a Fase 2.
 
 ### 3.2 Estrutura do turno
 
 1. Rola os dois dados e avança a soma.
 2. Resolve a casa (decisão, evento, duelo, mercado, auditoria ou balanço).
 3. Em casas de decisão: **métrica → justificativa → confiança → resultado → explicação**. Nos cenários de cálculo (4.7), entre a métrica e a justificativa entra a etapa **valor calculado**.
+   Na casa de **Mercado**: oferta da empresa → (consultoria e diagnóstico, opcionais) → investir ou recusar → explicação do argumento (3.14).
 4. Atualiza o estado e passa a vez. **Exceção (dados iguais):** se os dois dados saíram com a mesma face, o mesmo jogador joga de novo em vez de passar a vez. A jogada extra não gasta trimestre, repete-se enquanto saírem dados iguais e não vale para quem faliu na jogada nem depois do fim da partida (decisão nº 15).
 
 ### 3.3 Decisão em duas etapas
@@ -216,6 +220,8 @@ A punição é ajustável. O ponto de partida é perda de dinheiro e reputação
 
 A variância é alta: em 10 turnos cada jogador decide cerca de 6 vezes, e a diferença final de dinheiro entre os dois tem desvio padrão de R$ 49 a 58 mil, contra uma diferença média de até R$ 31 mil. O rival difícil perde partidas, e o fácil ganha algumas, o que é saudável. Os números são pontos de partida. Depois do playtest, o acerto de referência deve ser trocado pelo acerto real medido no `historico`, e a calibração refeita.
 
+**Mercado (3.14).** O rival não investe: passa pela casa de Mercado sem oferta e sem gastar sorteios, então a calibração acima não conta investimentos, e uma pessoa que investe bem se afasta dela. Com as duas casas de Mercado no lugar de dois Eventos, a simulação foi refeita (4.000 partidas): 72,2%, 48,4% e 28,1% de vitória da referência, contra os alvos de 70%, 50% e 30%. Os perfis ficaram como estavam.
+
 **Fora do modelo, de propósito:** *rubber-banding* (o rival errar quando está à frente), porque desfaz a relação entre aprender e ganhar; rival que conhece a resposta e a embaralha; correlação entre métrica e justificativa, e pontos fortes por conceito, que ficam para uma fase posterior.
 
 ### 3.12 Falência
@@ -226,6 +232,7 @@ A variância é alta: em 10 turnos cada jogador decide cerca de 6 vezes, e a dif
 - **Quem tem o pior saldo perde (competitivo e solo):** quem passa pelo Balanço negativado fica marcado como `negativado`. Se há outro jogador **negativado com saldo pior que ainda não passou pelo Balanço**, o veredito **espera**: ninguém perde por ora, e o aviso na tela diz quem é esperado. Quando não há mais ninguém assim, perde o de **menor saldo** entre os negativados que passaram pelo Balanço (a reputação desempata). Pode ser quem passou antes: se o rival passa com saldo melhor, ou se recupera para zero ou mais, perde quem esperava. O saldo comparado é o atual, no momento do veredito. Depois de um veredito, as marcas de todos são limpas. Um veredito só elimina uma pessoa por vez, e quem sobreviveu precisa passar negativado de novo para voltar a concorrer.
 - **Competitivo e solo:** o jogador marcado como `falido` sai da disputa, é pulado nos turnos seguintes e fica abaixo de todos no ranking, mesmo com mais dinheiro que alguém. Com mais de um jogador, a partida termina assim que sobra um só (ele vence); no solo, se a pessoa quebra o rival vence, e se o rival quebra a pessoa vence. Se não sobra ninguém (jogador único), a partida termina sem vencedor.
 - **Cooperativo:** o caixa é da empresa, então ela **vai à falência** e a partida termina na hora, com a faixa "Falência".
+- **Investimentos:** o retorno dos aportes apurados na jogada do Balanço entra no caixa antes da checagem (3.14), então um sucesso pode salvar um caixa negativo e um fracasso pode quebrar. Quem faliu perde os aportes em custódia.
 - **Sem recuperação:** não há empréstimo nem investidor-anjo ainda (3.9). Por isso o chute sistemático agora pode eliminar, não só empobrecer (consequência da decisão nº 13).
 
 
@@ -249,6 +256,43 @@ A variância é alta: em 10 turnos cada jogador decide cerca de 6 vezes, e a dif
 - **Por jogador, em todos os modos.** A sequência é do jogador que decide, inclusive no cooperativo, onde o dinheiro é da empresa. O rival do modo solo segue a mesma regra. A calibração do rival (3.11) foi reconferida com `scripts/simular-bot.mjs` (1.000 partidas): 70,1%, 48,5% e 29,3% de vitória da referência, contra os alvos de 70%, 50% e 30%. A regra aumenta a variância (desvio padrão da diferença final de R$ 49 a 62 mil, antes R$ 47 a 57 mil).
 - **Na tela:** o placar mostra a sequência em andamento e os multiplicadores que a próxima decisão terá (por exemplo, "2 erros seguidos (ganhos ×0,81, perdas ×1,23)"), para a pessoa decidir a confiança sabendo o que está em jogo. A tela de resultado mostra o bônus ou ônus aplicado.
 - **Efeito na verificação anti-chute (3.5).** A esperança de um chutador deixa de ser constante: o erro total é o resultado mais provável do chute, então a perda média cresce com a sequência de erros (e os poucos sucessos seguintes rendem menos). O −0,27 × V × confiança vale só para quem não vem de uma sequência.
+
+### 3.14 Investimentos no Mercado
+
+**Implementado** (`src/engine/investimentos.js` e `machine.js`; empresas em `src/scenarios/content/investimentos.js`; fase `MOSTRAR_MERCADO`). Decisão nº 17. Nasceu da proposta de investimentos em empresas, com as escolhas do autor: a chance de sucesso fica oculta e é vendida como consultoria, as fichas carregam falácias estatísticas e o investimento tem casa própria.
+
+**Onde.** Nas duas casas de **Mercado** (10 e 24). Os Eventos não oferecem investimento. O rival do solo passa pela casa sem oferta e nunca investe.
+
+**Porte da empresa pela reputação** (a do jogador, ou a da empresa no cooperativo):
+
+| Reputação | Porte | Retornos típicos |
+| --- | --- | --- |
+| 0 a 34 | Microempresas e negócios informais | Sucesso de +100% a +220%; fracasso com perda total |
+| 35 a 69 | Pequenas e médias empresas e startups | Sucesso de +45% a +80%; perda de 40% a 60% |
+| 70 a 89 | Empresas consolidadas e indústrias nacionais | Sucesso de +25% a +35%; perda de 15% a 40% |
+| 90 a 100 | Blue chips, petrolíferas e big techs | Sucesso de +15% a +30%; perda de 20% a 40% |
+
+A oferta sai de um baralho por porte, sem repetir empresa dentro do ciclo. A reputação inicial (50) cai no porte das PMEs; reputações altas dão acesso a empresas mais estáveis, o que dá à reputação um uso além do multiplicador de ganhos (3.6).
+
+**A ficha.** Nome, setor, tempo de mercado, o que o fundador diz e o **lucro (ou prejuízo) dos 4 últimos trimestres, sempre visível**. Ficam ocultos a **chance de sucesso e de fracasso** e o **retorno provável de cada aporte** (em porcentagem e em reais): só aparecem no relatório da consultoria. A pessoa decide pelo texto do fundador e pelos lucros, como nas decisões de cenário.
+
+**Consultoria e relatório.** Botão opcional, como a dica (3.4). **Enquanto a consultoria não entrega o relatório, a chance de sucesso e de fracasso e o retorno provável de cada aporte ficam ocultos** (os botões de aporte mostram só o valor); os lucros da empresa são públicos. Ao contratá-la, o relatório libera a **chance exata** de sucesso e de fracasso e os retornos possíveis em porcentagem e em reais. **Se a pessoa investir depois de ver o relatório,** a consultoria cobra pelo resultado: **50% do retorno** quando der certo (`CONSULTORIA_PENALIDADE`; +80% vira +40%) e **R$ 15.000 de honorários** quando der errado (`CONSULTORIA_HONORARIO_FRACASSO`), além da perda. Por isso o crédito do fracasso pode ficar negativo (R$ 10.000 aportados e perdidos custam R$ 25.000). Ver o relatório e recusar não custa nada. O relatório já mostra os retornos descontados.
+
+**Diagnóstico do argumento (opcional).** A pessoa aponta se o que o fundador diz tem uma falha estatística: viés de sobrevivência, falácia da taxa-base, regressão à média, amostra pequena, ou "nenhuma falha". Metade das empresas do catálogo tem uma falha e é uma **furada** (valor esperado negativo); a outra metade tem argumento sólido e é um **bom negócio**, ainda que arriscado. O diagnóstico é conferido **ao decidir** (investir ou recusar): acertar rende **+3 de reputação** e errar custa **−2** (`ANALISE_BONUS_REPUTACAO`, `ANALISE_PENALIDADE_REPUTACAO`). Chutar entre as 5 opções rende −1 de reputação em média, então não compensa. A resposta e a explicação aparecem só depois da decisão, em qualquer caso (princípio 1: toda decisão termina com a explicação), para o diagnóstico não virar uma dica gratuita.
+
+**Aporte.** R$ 10.000, 25.000 ou 50.000 (`APORTES`), no máximo o caixa disponível (a empresa, no cooperativo). Com o caixa abaixo de R$ 10.000 (inclusive negativo) não dá para investir, mas o diagnóstico ainda vale. O valor sai do caixa na hora e fica em **custódia**: o placar mostra "investidos".
+
+**Apuração.** Quando o jogador passa pelo Balanço (ou cai nele), o Balanço regular é calculado e, em seguida, cada aporte dele é sorteado com o rng da partida (determinístico pela seed): com a chance de sucesso sorteada para aquela oferta, o aporte volta com `valor × (1 + ganho)`; senão, com `valor × (1 − perda)`, arredondado a centenas. A tela do Balanço (e o aviso das jogadas que passam por ele) conta, para cada aporte, o que aconteceu e quanto rendeu ou custou. Regras:
+
+- **Cooperativo:** o aporte sai do caixa da empresa e o retorno entra nele **antes da meta** do Balanço, então o investimento pesa na meta trimestral. Os aportes continuam de quem os fez e são apurados quando ele passa pelo Balanço. A quem pesa o risco é decisão do grupo (a conversa faz parte do jogo).
+- **Fim da partida:** se os trimestres acabam com aportes em custódia, eles são apurados no encerramento e já entram no caixa do ranking; a tela de fim de jogo mostra a apuração. Falência da empresa ou vitória do último sobrevivente encerram sem apuração, e quem faliu perde os seus.
+- O retorno **não** é multiplicado pela reputação, não altera a reputação e não mexe na sequência de erros e acertos (3.13).
+- Passando pelo Balanço e caindo em Mercado na mesma jogada, o Balanço apura os aportes antigos antes da nova oferta.
+
+**Chance de sucesso e sorteio.** Cada empresa do catálogo (4.8) tem uma chance base. A cada oferta ela varia até ±0,04 (`SORTEIO_PROBABILIDADE`), para decorar "qual empresa é furada" não bastar. A chance sorteada é a que a consultoria mostra e a que vale na apuração.
+
+**Calibração.** Pontos de partida, a calibrar no playtest. Valor esperado por real aportado, `p × ganho − (1 − p) × perda` (4.8): as furadas ficam entre −0,10 e −0,25 e as sólidas entre +0,10 e +0,30 (depois da consultoria, o valor esperado fica negativo em quase todas, porque o honorário fixo pesa mais no aporte pequeno; só uma sólida, com aporte de R$ 50.000, segue positiva). Investir sem critério em tudo que aparece dá ≈ +0,02 por real, perto de zero (e com variância alta), e escolher só as sólidas dá ≈ +0,19, o que cumpre o princípio 2 (acertar por sorte não compensa). Um aporte de R$ 50.000 numa empresa sólida vale ≈ +R$ 10.000 em média, comparável a uma decisão de cenário de V = R$ 20.000; o teto de R$ 50.000 e o custo da consultoria são os parâmetros mais prováveis de ajuste. Com o custo atual (50% do retorno e R$ 15.000), a consultoria funciona como informação cara: quem investe depois de lê-la quase sempre tem valor esperado negativo, então ela serve sobretudo para decidir recusar ou confirmar uma suspeita. Questão em aberto nº 12.
+
 
 ---
 
@@ -377,6 +421,32 @@ Como o save é apagado em `FIM_DE_JOGO`, o relatório não sobrevive a recarrega
 
 **Fora do escopo por ora:** cenários de cálculo com duas séries; métricas sem número (frequência por nota); o relatório de fim de jogo ainda não separa acerto de método de acerto de cálculo (só a categoria do resultado entra no perfil).
 
+### 4.8 Empresas do Mercado
+
+**Implementado** (`EMPRESAS` em `src/scenarios/content/investimentos.js`; testes em `tests/investimentos.test.js`). 16 empresas fictícias, 4 por porte, sendo 2 de argumento sólido e 2 com falácia em cada porte. `VE` é o valor esperado por real aportado, `p × ganho − (1 − p) × perda`, (sem consultoria). A coluna "Falha" é o que a ficha esconde no argumento do fundador.
+
+| Porte | Empresa | Falha no argumento | p | Ganho | Perda | VE |
+| --- | --- | --- | --- | --- | --- | --- |
+| Micro | Padaria Pão Dourado | Viés de sobrevivência (só os 3 amigos que deram certo) | 0,25 | +200% | 100% | −0,25 |
+| Micro | Quiosque Sol & Mar | Regressão à média (trimestre de alta temporada como rotina) | 0,25 | +220% | 100% | −0,20 |
+| Micro | Oficina do Seu Nonato | Nenhuma (15 anos de dados e clientes recorrentes) | 0,65 | +100% | 100% | +0,30 |
+| Micro | Variedades Bem-Vindo | Nenhuma (conta até a loja que fechou) | 0,50 | +150% | 100% | +0,25 |
+| PME | ByteStorm Labs | Nenhuma (12 clientes pagantes e as propostas perdidas) | 0,60 | +70% | 50% | +0,22 |
+| PME | NutriFácil Franquias | Amostra pequena (8 clientes aprovaram o cardápio) | 0,35 | +70% | 60% | −0,15 |
+| PME | Distribuidora Norte Vale | Nenhuma (lucros de todos os trimestres) | 0,70 | +45% | 40% | +0,20 |
+| PME | AgroSensor | Taxa-base (sensor de 95% para praga de 1%) | 0,30 | +80% | 60% | −0,18 |
+| Consolidada | Indústria Têxtil Fio Forte | Nenhuma (balanços de 42 anos, com as crises) | 0,75 | +30% | 15% | +0,19 |
+| Consolidada | Rede Farma Vida | Nenhuma (publica as lojas que não decolaram) | 0,80 | +25% | 20% | +0,16 |
+| Consolidada | Rápido Brasil Logística | Regressão à média (lucro recorde de um contrato único) | 0,40 | +30% | 40% | −0,12 |
+| Consolidada | Agro Campo Dourado | Viés de sobrevivência (só as fazendas que prosperaram) | 0,40 | +35% | 40% | −0,10 |
+| Elite | Petrolífera Atlântica S.A. | Nenhuma (relatório com campos desativados e riscos) | 0,80 | +22% | 25% | +0,13 |
+| Elite | Conglomerado Financeiro Meridional | Nenhuma (inadimplência de quatro crises) | 0,85 | +15% | 20% | +0,10 |
+| Elite | NeuroCore IA | Taxa-base (99% de acerto para fraude de 1 em 10.000) | 0,40 | +30% | 40% | −0,12 |
+| Elite | Conglomerado Orion | Amostra pequena (3 projetos-piloto contra um histórico de 8%) | 0,40 | +30% | 40% | −0,12 |
+
+Invariantes testados: o valor esperado de toda furada é negativo mesmo no pior sorteio da chance (+0,04) e o de toda sólida é positivo no melhor (−0,04); cada falácia do diagnóstico aparece em ao menos uma empresa; cada porte tem ao menos 2 empresas sólidas e 2 furadas; investir sem critério fica perto de zero em cada porte. As taxas e retornos diferem um pouco das faixas da proposta original para manter essas propriedades. Como o ganho sobe com o risco, o porte dos micronegócios tem ganho alto e perda total, e o dos consolidados tem retornos curtos, mas as furadas aí perdem até 40% (mais que o "−10% a −20%" da proposta), para o valor esperado poder ficar negativo com um ganho tão curto. Como criar uma empresa: [docs/criar-cenarios.md](docs/criar-cenarios.md).
+
+
 ---
 
 ## 5. Arquitetura técnica
@@ -448,7 +518,7 @@ INICIO_TURNO
                   ├─ Decisão ─> ESCOLHER_METRICA ─> [INFORMAR_VALOR, só em cenário de cálculo] ─> ESCOLHER_JUSTIFICATIVA ─> ESCOLHER_CONFIANCA ─> MOSTRAR_RESULTADO ─> MOSTRAR_EXPLICACAO
                   ├─ Evento ──> MOSTRAR_EVENTO ─> APLICAR_EFEITO
                   ├─ Duelo ───> (jogador A e B respondem em tela oculta) ─> COMPARAR ─> MOSTRAR_EXPLICACAO
-                  ├─ Mercado ─> COMPRAR_OU_PASSAR
+                  ├─ Mercado ─> MOSTRAR_MERCADO ─> [ABRIR_CONSULTORIA] [DIAGNOSTICAR] ─> INVESTIR | RECUSAR ─> CONTINUAR
                   └─ Auditoria> RESOLVER_REPUTACAO
                        └─> APLICAR_EFEITOS_ATRASADOS
                             └─> FIM_TURNO ─> (próximo jogador | FIM_DE_JOGO)
@@ -477,6 +547,9 @@ Cada transição é uma função pura `(estado, ação) -> novoEstado`, o que fa
       distancia: 23,             // casas percorridas no total, contando voltas (define a dificuldade dos cenários)
       efeitosAtivos: [           // consequências com atraso
         { tipo: "crise_turnover", turnosRestantes: 2, impacto: -15000 }
+      ],
+      investimentos: [           // aportes do Mercado em custódia, apurados no próximo Balanço (3.14)
+        { empresaId: "bytestorm_labs", valor: 25000, prob: 0.58, ganho: 0.7, perda: 0.5, consultoria: false }
       ],
       cenariosVistos: ["cenario_01_salarios"],
       historico: [               // base para feedback e repetição espaçada
@@ -596,14 +669,14 @@ A justificativa do tipo `parcial` deve contar como correta, incorreta ou meio-te
 
 Para testar uma parte do jogo sem esperar o sorteio, o menu de nova partida tem a seção **Atalhos de teste** (fechada por padrão), com duas opções independentes:
 
-- **Casa em que o peão cai:** normal (pelo tabuleiro), sempre Decisão, sempre Evento ou sempre Balanço. O peão anda os dados normalmente, mas a casa resolvida é a forçada (no Balanço forçado o resultado do Balanço também é calculado).
+- **Casa em que o peão cai:** normal (pelo tabuleiro), sempre Decisão, sempre Evento, sempre Mercado ou sempre Balanço. O peão anda os dados normalmente, mas a casa resolvida é a forçada (no Balanço forçado o resultado do Balanço também é calculado).
 - **Cenários sorteados:** todos, só os de cálculo, só os sem cálculo ou um cenário específico. O baralho passa a conter apenas esses cenários (com um só, ele se repete a cada Decisão); o sorteio por dificuldade segue valendo dentro do subconjunto.
 
 Para testar os cenários de cálculo sempre: casa "Sempre Decisão" e cenários "Só os de cálculo". A partida de teste mostra o selo "Partida de teste" no topo. As regras, a pontuação e o fim de jogo não mudam; é só uma restrição do que cai a cada rolagem, gravada em `teste` no estado.
 
 ### 5.8.2 Tela da partida
 
-O tabuleiro ocupa toda a tela, sob um topo fixo, num retângulo de proporção aproximada de 4:3 (largura:altura, grade 9x7) em tela deitada e 3:4 (grade 7x9) em tela em pé; a trilha continua com as mesmas 28 casas no perímetro. Todas as casas são quadradas e do mesmo tamanho (os peões ficam sobrepostos ao canto, sem alterar o tamanho) e cada tipo tem uma figura: 📊 Decisão, 🎲 Evento e 🏦 Balanço. No **centro** ficam a vez, os dados da última rolagem, o botão **Jogar** (no solo, durante a vez do rival, "Ver a jogada do rival"), o placar e o contexto da Fisher S.A. Ao rolar, os dados giram e o peão anda; ao chegar na casa, a etapa correspondente (pergunta da casa de Decisão com tabela, gráfico e alternativas; resultado; evento; balanço; fim de jogo) **aparece sobreposta ao tabuleiro**, num painel modal. Ao continuar, o painel some e o botão Jogar volta para o próximo jogador. Só a apresentação mudou: a máquina de estados e as regras são as mesmas.
+O tabuleiro ocupa toda a tela, sob um topo fixo, num retângulo de proporção aproximada de 4:3 (largura:altura, grade 9x7) em tela deitada e 3:4 (grade 7x9) em tela em pé; a trilha continua com as mesmas 28 casas no perímetro. Todas as casas são quadradas e do mesmo tamanho (os peões ficam sobrepostos ao canto, sem alterar o tamanho) e cada tipo tem uma figura: 📊 Decisão, 🎲 Evento, 💼 Mercado e 🏦 Balanço. No **centro** ficam a vez, os dados da última rolagem, o botão **Jogar** (no solo, durante a vez do rival, "Ver a jogada do rival"), o placar e o contexto da Fisher S.A. Ao rolar, os dados giram e o peão anda; ao chegar na casa, a etapa correspondente (pergunta da casa de Decisão com tabela, gráfico e alternativas; resultado; evento; balanço; fim de jogo) **aparece sobreposta ao tabuleiro**, num painel modal. Ao continuar, o painel some e o botão Jogar volta para o próximo jogador. Só a apresentação mudou: a máquina de estados e as regras são as mesmas.
 
 ### 5.9 Acessibilidade e persistência
 
@@ -651,6 +724,9 @@ A ideia original era validar justificativas escritas com IA no navegador. Ficou 
 | Jogo vira "decorar o gabarito" | Seed, ordem embaralhada, equívocos variados |
 | Múltipla escolha mede reconhecimento, não produção | Reforço com Duelo e, no futuro, modo texto livre |
 | Níveis desbalanceados no mesmo jogo | Multiplicador por nível; validar em playtest com jogadores mistos |
+| O investimento virar roleta de ações e diluir o caráter pedagógico (3.14) | Chance oculta e vendida como consultoria; fichas com falácias estatísticas que a pessoa precisa reconhecer; investir às cegas rende ≈ 0 em média |
+| O Mercado tomar o espaço das lições de Evento | Casa própria: os Eventos seguem só com cartas de lição (7 casas de Evento, 2 de Mercado) |
+| Aporte arriscado de um jogador arruinar o caixa comum no cooperativo | Aceito: o grupo conversa sobre o risco, que faz parte do jogo (3.14) |
 
 ---
 
@@ -667,6 +743,7 @@ A ideia original era validar justificativas escritas com IA no navegador. Ficou 
 9. **Stack final:** HTML/JS puro ou React; Chart.js ou SVG próprio.
 10. **Plano de playtest:** quem testa, e quais métricas coletar (acerto por cenário, onde travam, o chute compensa?).
 11. **Perfil de desempenho (4.6) depois do fim da partida:** o relatório já aparece na tela de fim de jogo e pode ser impresso, mas se apaga com o save em `FIM_DE_JOGO`. Falta decidir se deve ficar guardado (histórico entre partidas) e se os equívocos recorrentes entram no relatório (exigiria um rótulo legível para cada id de equívoco).
+12. **Calibração do Mercado (3.14):** o teto do aporte (R$ 50.000), o custo da consultoria (50% do retorno e R$ 15.000 no fracasso), as chances e retornos de cada empresa e o bônus e a perda do diagnóstico (+3 e −2 de reputação). Observar no playtest se investir em empresas sólidas domina as decisões de cenário como fonte de dinheiro, se a consultoria é usada, se o diagnóstico é lido ou ignorado e se o cooperativo discute o risco. O catálogo tem 16 empresas, então partidas repetidas reaproveitam fichas (a chance varia ±0,04, mas a história é a mesma).
 
 ---
 
@@ -676,7 +753,7 @@ A ideia original era validar justificativas escritas com IA no navegador. Ficou 
 | --- | --- | --- |
 | **0. Protótipo em papel (opcional)** | 1 cenário, 6 cartas de justificativa, marcador de dinheiro, aposta de confiança | 2 a 3 pessoas jogam e discutem; o chute não compensa |
 | **1. MVP jogável** | Tabuleiro com 3 jogadores, dois dados, casas de decisão e evento, aposta de confiança, 4 cenários do nível iniciante, resultado e explicação | Uma partida completa roda do início ao fim sem erros |
-| **2. Conteúdo e balanceamento** | 8+ cenários, Mercado, Duelo, Auditoria, geração por seed, testes de simulação | Chutar perde dinheiro; saber tudo ganha |
+| **2. Conteúdo e balanceamento** | 8+ cenários, Mercado (investimentos implementados, 3.14; faltam seguro de reputação e glossário), Duelo, Auditoria, geração por seed, testes de simulação | Chutar perde dinheiro; saber tudo ganha |
 | **3. Nível avançado** | Simpson, viés de sobrevivência, taxa-base, correlação vs. causalidade | Playtest com jogadores mistos equilibrado |
 | **4. Polimento** | Acessibilidade, persistência, glossário, tutorial | Pessoas novas jogam sem ajuda |
 | **5. Futuro** | Repetição espaçada, modo texto livre com IA local, inglês, multiplayer online | Conforme demanda |

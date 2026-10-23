@@ -36,13 +36,14 @@ test('avancar até a última casa (27) ainda não passa pelo início', () => {
   assert.deepEqual(avancar(22, 5), { posicao: 27, passouInicio: false });
 });
 
-test('o tabuleiro tem 28 casas: 1 balanço, 18 decisões e 9 eventos, e o balanço é a casa 0', () => {
+test('o tabuleiro tem 28 casas: 1 balanço, 18 decisões, 7 eventos e 2 mercados, e o balanço é a casa 0', () => {
   assert.equal(NUM_CASAS, 28);
   assert.equal(CASAS.length, 28);
   const conta = (tipo) => CASAS.filter((c) => c === tipo).length;
   assert.equal(conta('balanco'), 1);
   assert.equal(conta('decisao'), 18);
-  assert.equal(conta('evento'), 9);
+  assert.equal(conta('evento'), 7);
+  assert.equal(conta('mercado'), 2);
   assert.equal(CASAS[0], 'balanco');
   assert.ok(CASAS.every((c) => Object.hasOwn(ROTULO_CASA, c)), 'todo tipo de casa tem rótulo');
 });

@@ -50,13 +50,16 @@ Versão do formato: **`versao: 1`**.
 | `jogadores` | lista | Um objeto por jogador (ver abaixo). |
 | `baralhoCenarios` | lista de ids | Cenários ainda não sorteados no ciclo atual. A ordem não indica o próximo: o sorteio é ponderado pela dificuldade (ver `fisher.md` 4.5). |
 | `baralhoEventos` | lista de ids | Eventos ainda não sorteados no ciclo atual. |
+| `baralhoInvestimentos` | objeto | Por porte (`micro`, `pme`, `consolidada`, `elite`), os ids das empresas do Mercado ainda não ofertadas no ciclo daquele porte (`fisher.md` 3.14). Ausente em saves antigos (vale `{}`). |
 | `cenarioAtual` | objeto \| `null` | Decisão em andamento. |
 | `eventoAtual` | objeto \| `null` | Carta de evento em exibição. |
+| `mercadoAtual` | objeto \| `null` | Oferta do Mercado em exibição (ver abaixo). Ausente em saves antigos (vale `null`). |
+| `apuracaoFinal` | lista \| `null` | Só em `FIM_DE_JOGO` pelo fim dos trimestres: `{ jogador, nome, investimentos }` de cada jogador cujos aportes foram apurados no encerramento (`fisher.md` 3.14); `investimentos` tem o formato dos itens de `balanco.investimentos`. `null` se não sobrou aporte. Ausente em saves antigos (vale `null`). |
 | `resultado` | objeto \| `null` | Resultado da última decisão, na tela de resultado. |
 | `soConceitual` | booleano | Partida sem cenários de cálculo (jogador sem planilha ou papel; `fisher.md` 4.7). Ausente em saves antigos (vale `false`). |
-| `teste` | objeto \| `null` | Atalhos de teste do menu (`fisher.md` 5.8.1): `{ casa, cenarios }`, com `casa` em `'decisao'`, `'evento'`, `'balanco'` ou `null` (normal) e `cenarios` uma lista de ids que restringe o baralho, ou `null` (todos). `null` em partida normal. Ausente em saves antigos (vale `null`). |
+| `teste` | objeto \| `null` | Atalhos de teste do menu (`fisher.md` 5.8.1): `{ casa, cenarios }`, com `casa` em `'decisao'`, `'evento'`, `'mercado'`, `'balanco'` ou `null` (normal) e `cenarios` uma lista de ids que restringe o baralho, ou `null` (todos). `null` em partida normal. Ausente em saves antigos (vale `null`). |
 
-Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `INFORMAR_VALOR`, `ESCOLHER_JUSTIFICATIVA`, `ESCOLHER_CONFIANCA`, `MOSTRAR_RESULTADO`, `MOSTRAR_EVENTO`, `MOSTRAR_BALANCO`, `FIM_DE_JOGO`.
+Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `INFORMAR_VALOR`, `ESCOLHER_JUSTIFICATIVA`, `ESCOLHER_CONFIANCA`, `MOSTRAR_RESULTADO`, `MOSTRAR_EVENTO`, `MOSTRAR_MERCADO`, `MOSTRAR_BALANCO`, `FIM_DE_JOGO`.
 
 ### `jogadores[]`
 
@@ -67,7 +70,7 @@ Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `INFORMAR_VALOR`, `ESCOLHER
 | `nivel` | `'iniciante'` \| `'avancado'` | Nível de dificuldade. |
 | `dinheiro` | inteiro | Carteira individual. No cooperativo não muda (o caixa é da empresa). |
 | `reputacao` | 0–100 | Reputação individual. No cooperativo não muda. |
-| `posicao` | 0–27 | Casa no tabuleiro. |
+| `posicao` | 0–27 | Casa no tabuleiro (`balanco`, `decisao`, `evento` ou `mercado`; as casas 9 e 23, em índice, são de Mercado). |
 | `distancia` | inteiro ≥ 0 | Casas percorridas no total, contando as voltas (soma dos dados). Define a dificuldade dos cenários sorteados. Ausente em saves antigos (vale `posicao`). |
 | `historico` | lista | Decisões tomadas: `{ cenario, conceito, metrica, justificativa, confianca, resultado, delta, equivocos }`, mais `valor` (o número informado) e `valorCorreto` (dentro da margem) nas decisões de cenários de cálculo (`fisher.md` 4.7). `conceito` e `equivocos` (ids dos equívocos da opção e da justificativa escolhidas) alimentam o perfil de desempenho (`fisher.md` 4.6); ausentes em saves antigos, são recalculados a partir do conteúdo. |
 | `falido` | booleano | Caixa negativo ao fim de uma jogada que passou pelo Balanço: o jogador saiu da disputa, é pulado nos turnos e perde (competitivo e solo, `fisher.md` 3.12). Ausente em saves antigos (vale `false`; `ehFalido`). |
@@ -75,6 +78,7 @@ Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `INFORMAR_VALOR`, `ESCOLHER
 | `sequencia` | objeto | `{ erros, acertos }`: erros totais ou sucessos absolutos seguidos até a última decisão (só um dos dois é maior que zero); define o fator que multiplica o dinheiro da decisão seguinte (`fisher.md` 3.13); só decisões de cenário a alteram, não Evento nem Balanço. Ausente em saves antigos (vale `{ erros: 0, acertos: 0 }`; `sequenciaDe`). |
 | `bot` | `'facil'` \| `'medio'` \| `'dificil'` \| `null` | Perfil do rival controlado pelo computador (modo solo, `fisher.md` 3.11); `null` para uma pessoa. Ausente em saves antigos (vale pessoa). |
 | `papeis` | lista de ids de diretoria | Só no cooperativo; vazio no competitivo. |
+| `investimentos` | lista | Aportes do Mercado em custódia, à espera do próximo Balanço do jogador (`fisher.md` 3.14): `{ empresaId, nome, porte, valor, prob, ganho, perda, consultoria, honorario, turnoAporte }`. Com `consultoria` `true`, `ganho` já vem com 50% descontados e `honorario` (R$ 15.000) é cobrado no fracasso; sem consultoria `honorario` é 0 (ausente em saves da versão anterior: vale 0). Esvazia quando o Balanço (ou o fim da partida) apura. Ausente em saves antigos (vale `[]`; `investimentosDe`). |
 | `merito`, `habilidadeUsos` | inteiros | Reservados para o cooperativo; **ainda não usados** pelo motor. |
 
 ### Campos de contexto da fase
@@ -83,7 +87,8 @@ Valores de `fase`: `ROLAR_DADO`, `ESCOLHER_METRICA`, `INFORMAR_VALOR`, `ESCOLHER
 - **`eventoAtual`**: `{ id, crise, dinheiro }`. `dinheiro` já inclui o amortecimento do cooperativo.
 - **`confianca`** (em `historico`, `cenarioAtual` e `resultado`): uma das chaves `chute`, `duvida`, `provavel`, `confiante` ou `certeza`. Saves antigos, que só usavam `chute` e `certeza`, continuam válidos.
 - **`resultado`**: `{ cenarioId, metricaId, justificativaId, confianca, dicaUsada, metricaCorreta, justificativaCorreta, categoria, delta, multiplicador, multiplicadorSequencia, sequencia, deltaReputacao, crise }`. `multiplicadorSequencia` é o ônus ou bônus aplicado e `sequencia` a sequência depois da decisão (ambos ausentes em saves antigos, valendo ×1). Em cenários de cálculo acrescenta `valorCorreto` e `calculo: { chave, informado, esperado, margemPct, minimo, maximo, dentro }`. `metricaCorreta` diz se a *opção* era a correta; a `categoria` já considera também o valor (`fisher.md` 4.7). Ausentes em saves antigos e em cenários comuns.
-- **`balanco`**: `{ receita, custos, liquido }` e, no cooperativo, `bonusRh` e `meta: { valor, cumprida, dinheiro, reputacao, crise }`.
+- **`mercadoAtual`**: `{ empresaId, porte, prob, ganho, perda, consultoria, diagnostico, analise, aporte, decisao }`. `prob` é a chance de sucesso já sorteada para a oferta (a base do catálogo ±0,04), oculta da tela, junto com os retornos possíveis, até `consultoria` ser `true`. `diagnostico` é a falácia apontada (uma das chaves de `FALACIAS`, ou `'nenhuma'`) e `analise` o veredito, `{ falha, correta, deltaReputacao, crise }`, preenchido ao decidir. `decisao` é `null` (aberta), `'investiu'` (com `aporte`) ou `'recusou'`. Para o rival do solo vale `{ empresaId: null, decisao: 'recusou' }`.
+- **`balanco`**: `{ receita, custos, liquido, investimentos }` e, no cooperativo, `bonusRh` e `meta: { valor, cumprida, dinheiro, reputacao, crise }`. `investimentos` lista o que cada aporte apurado rendeu: `{ empresaId, nome, valor, consultoria, honorario, desfecho, retorno, credito, liquido, texto }` (`honorario` é o cobrado neste desfecho, que pode deixar `credito` negativo), com `desfecho` `'sucesso'` ou `'fracasso'`; é vazia sem aportes e ausente em saves antigos (vale `[]`). `liquido` não inclui os investimentos.
 
 Os campos de contexto só existem nas fases em que fazem sentido e são zerados em `CONTINUAR`.
 
@@ -162,5 +167,6 @@ Como o save referencia ids do conteúdo, alterar o conteúdo também pode quebra
 | 1 (sem incremento) | Acrescentado `soConceitual`, para jogar sem os cenários de cálculo. | Compatível: save sem `soConceitual` inclui todos os cenários |
 | 1 (sem incremento) | Acrescentado `jogadores[].sequencia`, e `resultado.multiplicadorSequencia` e `resultado.sequencia`, para as sequências de erros e acertos (`fisher.md` 3.13). | Compatível: save sem `sequencia` começa a contar do zero |
 | 1 (sem incremento) | Acrescentado `dinheiroInicial`, o caixa inicial escolhido no menu. | Compatível: save sem `dinheiroInicial` usa R$ 100.000 |
+| 1 (sem incremento) | Casa e fase de Mercado (`MOSTRAR_MERCADO`), com os investimentos (`fisher.md` 3.14): `mercadoAtual`, `apuracaoFinal`, `baralhoInvestimentos`, `jogadores[].investimentos` e `balanco.investimentos`. A trilha passou a ter 2 casas de Mercado no lugar de 2 de Evento (casas 10 e 24). | Compatível: os campos ausentes valem vazio e o save antigo nunca esteve na nova fase; o código trata a ausência como sem investimentos. Num save antigo em andamento, as casas 10 e 24 passam a ser de Mercado, e uma jogada que cairia ali em Evento vira oferta de investimento |
 
 Ao mudar o formato, acrescente uma linha aqui.

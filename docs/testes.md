@@ -33,13 +33,13 @@ Funções puras do motor, testadas com valores calculados à mão a partir de `f
 - **Variação de reputação** por categoria, vinda de `impacto` do cenário.
 - **`justificativaConta`**: `parcial` conta como errada enquanto `PARCIAL_CONTA_COMO_CORRETA` for `false`. Deve existir um teste para cada valor da constante (decisão em aberto no README).
 - **`receitaBalanco`**: receita nos três pontos de reputação.
-- **Tabuleiro** (`board.js`): `avancar` com e sem volta completa (`passouInicio`), em especial a posição 27 + dado e o limite exato `total === NUM_CASAS`; `coordenadas` devolve 28 células distintas no perímetro da grade 9x7 (e da 7x9); contagem de casas (1 balanço, 18 decisão, 9 evento) bate com o README.
+- **Tabuleiro** (`board.js`): `avancar` com e sem volta completa (`passouInicio`), em especial a posição 27 + dado e o limite exato `total === NUM_CASAS`; `coordenadas` devolve 28 células distintas no perímetro da grade 9x7 (e da 7x9); contagem de casas (1 balanço, 18 decisão, 7 evento, 2 mercado) bate com o README.
 - **Papéis** (`papeis.js`): `atribuirPapeis` para 1, 2 e 3 jogadores cobre as três diretorias sem repetição; todo setor de `SETORES` pertence a exatamente uma diretoria; `diretoriaDoSetor` para setor inexistente.
 - **Estado inicial** (`state.js`): `novoJogo` nos dois modos (empresa só no cooperativo, papéis só no cooperativo); `classificacao` e `vencedores` com empate de dinheiro e de reputação; `classificarEmpresa` em cada limite de faixa (exatamente 175 %, 125 %, 50 % do caixa inicial e reputação 75, 60); `turnos` e `dinheiroInicial` limitados a 1–64 e R$ 10.000–1.000.000 (valor inválido cai no padrão), e meta e faixas do cooperativo acompanhando o caixa inicial (`tests/machine.test.js`).
 
 - **Perfil de desempenho** (`desempenho.js`): escala de certeza, evidência de domínio, os quatro diagnósticos, calibração, ordenação de pontos fortes e deficiências, equívocos pesados pela certeza, histórico antigo sem `conceito`, o histórico gravado pela máquina numa partida inteira, e o relatório de fim de jogo (contagem de acertos, parciais e erros, ordem das sugestões, conceitos não vistos, partida sem decisões e materiais para todo conceito).
 
-**Situação:** `tests/scoring.test.js` cobre pontuação, multiplicador e anti-chute. `tests/desempenho.test.js` cobre o perfil de desempenho. `tests/board.test.js` cobre `avancar` (com e sem volta, casa 27 e limite exato) e a contagem de casas (1 balanço, 18 decisões, 9 eventos), e `tests/machine.test.js` cobre `classificarEmpresa` em cada limite de faixa. Faltam `papeis.js`, `state.js` (empates de `classificacao` e `vencedores`) e `receitaBalanco` isolado.
+**Situação:** `tests/scoring.test.js` cobre pontuação, multiplicador e anti-chute. `tests/desempenho.test.js` cobre o perfil de desempenho. `tests/board.test.js` cobre `avancar` (com e sem volta, casa 27 e limite exato) e a contagem de casas (1 balanço, 18 decisões, 7 eventos e 2 mercados), e `tests/machine.test.js` cobre `classificarEmpresa` em cada limite de faixa. Faltam `papeis.js`, `state.js` (empates de `classificacao` e `vencedores`) e `receitaBalanco` isolado.
 
 ## 2. Unitário de estatística e formatação
 
@@ -79,6 +79,7 @@ A reprodutibilidade por seed é pilar do projeto (partida salva, invariantes, si
 - **Balanço:** disparado ao passar pela casa 0 (inclusive cair nela), no competitivo e no cooperativo; cálculo de `receita − CUSTOS_BALANCO`.
 - **Cooperativo:** `metaTrimestral` por trimestre e por nº de jogadores; meta cumprida (bônus) e falha (corte); bônus do RH; amortecimento do prejuízo de eventos do setor da diretoria (`REDUCAO_PREJUIZO_PASSIVA`) e nenhum amortecimento em ganhos ou setores sem diretor; caixa da empresa separado da carteira dos jogadores.
 - **Competitivo:** carteira individual, sem `empresa`.
+- **Investimentos do Mercado** (`fisher.md` 3.14): a oferta abre na casa de Mercado com o porte da reputação; `INVESTIR` debita e registra o aporte, ignora valor fora das faixas ou acima do caixa; só se decide uma vez; a consultoria corta o ganho guardado em 50% e cobra R$ 15.000 no fracasso (o crédito pode ficar negativo), e olhar o relatório sem investir não custa nada; o diagnóstico certo rende e o errado custa reputação (inclusive a crise de imagem); `CONTINUAR` sem decidir vale recusar; o rival do solo não recebe oferta; o Balanço apura só os aportes de quem passa por ele, antes da nova oferta e antes da falência; no cooperativo usa o caixa da empresa e conta para a meta; o fim da partida apura o que sobrou (e não apura para quem faliu); save antigo sem os campos de investimento (`tests/investimentos.test.js`).
 
 **Situação:** `tests/machine.test.js` cobre determinismo, os atalhos de teste (casa forçada e baralho restrito), fim de partida, ação inválida por fase, pureza, ordem da decisão, JSON e todo o cooperativo. Também cobre, desde o relatório de testes: bônus do RH, valores exatos e limite (`>=`) da meta do Balanço, estrutura de `balanco.meta`, amortecimento passivo de eventos (todas as cartas, nos dois modos) e a crise de imagem nos três pontos de origem (decisão, evento e Balanço cooperativo), inclusive a crise que empurra o caixa para negativo e leva à falência. Faltam entradas inválidas de `valor`, o esgotamento e reembaralhamento dos baralhos e a tabela completa fase × ação.
 
@@ -106,6 +107,7 @@ Cenários e eventos são dados; o conteúdo é validado como código.
 - **Coerência pedagógica:** `cenario.opcoes[correta]` corresponde ao gabarito calculado a partir dos dados (por exemplo, a opção correta do cenário 1 é a mediana, e o valor mostrado vem de `resumo`).
 - Distribuição por setor: todo setor de `SETORES` tem pelo menos um cenário e um evento (necessário para o cooperativo).
 - Contagem de cenários e eventos igual à do README (25 cenários, 18 eventos).
+- **Empresas do Mercado** (`tests/investimentos.test.js`): ids únicos e campos válidos, narrativas, valor esperado por tipo (furada negativa, sólida positiva, mesmo no pior sorteio da chance), portes com empresas dos dois tipos, todas as falácias usadas e o investimento às cegas perto de zero.
 - **Cenários de cálculo** (`tests/calculo.test.js`): o validador recusa opção que revela o valor, opção sem `chave`, falta de `como_calcular` e `exibir` sem tabela; margem de 5% abaixo de 100 e 2% a partir de 100, relativa ao valor exato, com piso para valor zero; valor conferido contra a métrica escolhida (e não a correta); valor fora da margem invalida a métrica; o rival informa o valor exato; `lerNumero` entende pt-BR; a tela do valor mostra tabela, margem e campo sem revelar a resposta; o resultado mostra valor informado, exato, faixa e como calcular; partida inteira reproduzível com save a cada ação; a calculadora embutida aparece só na etapa do valor, bate com as métricas do cenário e recusa P fora de 0 a 100, lista vazia e desvio com um registro.
 
 **Situação:** `tests/scenarios.test.js` cobre a validação geral, ids únicos, placeholders e setores. Os testes negativos atômicos do validador estão cobertos (opções, justificativas, tipo, equívocos, marcador, dificuldade, setor, conceito, placeholder). Faltam coerência do gabarito, cobertura por setor e contagem.
@@ -122,6 +124,7 @@ Valida que o jogo premia conhecimento e não sorte (`fisher.md` 5.8 e 3.5).
 - Nos dois níveis (`iniciante`, `avancado`) e com 1, 2 e 3 jogadores.
 - Cooperativo: equipe que sabe tudo chega a faixa superior; equipe que chuta chega a `falencia` ou `sobrevivencia`; nenhuma faixa é inalcançável. A calibração das constantes de `config.js` é marcada como "a calibrar" e deve ser acompanhada por um teste de relatório, não de aprovação rígida.
 - Sem partida que não termina, sem `NaN` em dinheiro ou reputação, reputação sempre em 0–100.
+- Mercado: investir sem critério rende perto de zero por porte e investir só nas sólidas rende bem mais (cálculo exato sobre o catálogo, em `tests/investimentos.test.js`); a frequência de sucesso de um aporte acompanha a chance. Falta simular partidas inteiras com uma política de investimento e medir o efeito no ranking (questão em aberto nº 12 do `fisher.md`).
 
 Observação: testes estatísticos devem usar seeds fixas e margens amplas para não ficarem instáveis.
 
@@ -143,6 +146,7 @@ Observação: testes estatísticos devem usar seeds fixas e margens amplas para 
 As views são funções puras `estado → string HTML`, testáveis sem navegador.
 
 - Todas as telas de uma partida renderizam, em ambos os modos, sem placeholder não substituído e sem `undefined` (já existe).
+- Mercado: a oferta mostra o fundador e os lucros, e esconde retornos e chance até o relatório da consultoria; aportes acima do caixa desabilitados; a decisão mostra o veredito do diagnóstico e a explicação do argumento; o rival do solo vê o Mercado sem oferta; o placar e o painel da empresa mostram o dinheiro investido; o Balanço (e o aviso de quem passa por ele) lista o retorno dos investimentos, inclusive em save antigo sem a lista; o fim de jogo mostra a apuração final com nome escapado (`tests/views.test.js`).
 - Cada fase tem uma view e nenhuma fase cai no ramo padrão.
 - Conteúdo condicional: dica só para `iniciante`, oculta até ser pedida (`ABRIR_DICA`), com bônus de confiança reduzido nos ganhos; revelação de marcadores no resultado; aviso de crise; banner de balanço; meta do Balanço no cooperativo; placar competitivo versus painel da empresa; empate no fim de jogo; faixas de fim cooperativo.
 - Formatos numéricos em `pt-BR` e sinais (+/−) corretos nos deltas.

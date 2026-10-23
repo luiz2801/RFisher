@@ -1,6 +1,6 @@
 # Guia de autoria de conteúdo
 
-Como adicionar ou alterar **cenários** (casas de Decisão), **cartas de evento** (casas de Evento) e **geradores de dados**. Para quem escreve conteúdo, com ou sem experiência no motor do jogo.
+Como adicionar ou alterar **cenários** (casas de Decisão), **cartas de evento** (casas de Evento), **empresas do Mercado** (casas de Mercado) e **geradores de dados**. Para quem escreve conteúdo, com ou sem experiência no motor do jogo.
 
 Referências: regras em [fisher.md](../fisher.md) (seções 3 e 4), schema original na seção 5.5 e validação na seção 5.8. Este guia descreve o que o **código atual** aceita. Onde ele difere do `fisher.md`, a diferença está na seção [Diferenças em relação ao fisher.md](#diferenças-em-relação-ao-fishermd).
 
@@ -11,6 +11,8 @@ Referências: regras em [fisher.md](../fisher.md) (seções 3 e 4), schema origi
 | Banco de cenários, incluindo os de cálculo (array JSON) | [src/scenarios/content/cenarios.json](../src/scenarios/content/cenarios.json) |
 | Margem, valor exato e notas de método dos cenários de cálculo | [src/engine/calculo.js](../src/engine/calculo.js) |
 | Cartas de evento (lista `EVENTOS`) | [src/scenarios/content/eventos.js](../src/scenarios/content/eventos.js) |
+| Empresas do Mercado (lista `EMPRESAS`, portes e falácias) | [src/scenarios/content/investimentos.js](../src/scenarios/content/investimentos.js) |
+| Regras do Mercado (portes por reputação, aportes, penalidade da consultoria) | [src/engine/config.js](../src/engine/config.js) |
 | Geradores de dados e invariantes | [src/scenarios/generators.js](../src/scenarios/generators.js) |
 | Placeholders, instanciação e validador | [src/scenarios/loader.js](../src/scenarios/loader.js) |
 | Métricas calculadas (média, P90, ...) | [src/stats/metrics.js](../src/stats/metrics.js) |
@@ -312,6 +314,37 @@ Em `eventos.js`, acrescente um objeto a `EVENTOS`:
 - Ordens de grandeza usadas hoje: dinheiro de −10.000 a +10.000 e reputação de −5 a +5. Mantenha o equilíbrio entre cartas positivas e negativas (hoje 9 positivas e 9 negativas), senão o jogo tende a punir sem compensar.
 - Eventos não têm validação além do setor. Revise à mão: id único, `licao` presente, valores numéricos.
 
+## Criar uma empresa do Mercado
+
+Em `investimentos.js`, acrescente um objeto a `EMPRESAS` (regras em `fisher.md` 3.14 e a tabela do catálogo em 4.8):
+
+```js
+{
+  id: 'padaria_pao_dourado',        // único
+  porte: 'micro',                   // micro | pme | consolidada | elite (a reputação do jogador define qual aparece)
+  nome: 'Padaria Pão Dourado',
+  setor: 'Comércio de alimentos',
+  tempo: '3 anos',                  // tempo de mercado, em texto
+  fundador: 'O que o fundador diz, em uma ou duas frases. É aqui que mora a falácia.',
+  historico: [6, 7, 5, 6],          // lucro (prejuízo) dos 4 últimos trimestres, em R$ mil
+  prob: 0.25,                       // chance de sucesso, oculta (só o relatório da consultoria a mostra)
+  ganho: 2.0,                       // retorno do sucesso sobre o aporte (2,0 = +200%)
+  perda: 1.0,                       // fração do aporte perdida no fracasso (1 = perda total)
+  falha: 'sobrevivencia',           // sobrevivencia | taxa_base | regressao_media | amostra_pequena | null (argumento sólido)
+  explicacao: 'O que a ficha escondia, e por que a falha enganava.',
+  sucesso: 'Narrativa do desfecho bom, mostrada no Balanço.',
+  fracasso: 'Narrativa do desfecho ruim.',
+}
+```
+
+- **A falha e o valor esperado andam juntos.** Empresa com `falha` é uma furada e precisa de valor esperado negativo, `prob × ganho − (1 − prob) × perda < 0`. Empresa com `falha: null` precisa de argumento realmente sólido (dados completos, inclusive os casos ruins) e de valor esperado positivo. Isso vale mesmo no pior sorteio da chance: a cada oferta `prob` varia até ±0,04 (`SORTEIO_PROBABILIDADE`).
+- **A pista precisa estar no texto do `fundador`** (ou no `historico`), sem nomear a falácia. Quem lê deve poder descobrir; a `explicacao` só aparece depois da decisão.
+- **Mantenha a proporção:** cada porte com ao menos 2 empresas sólidas e 2 furadas, e cada falácia em ao menos uma empresa. O investimento às cegas deve ficar perto de zero em média (o teste confere por porte), senão o chute passa a compensar.
+- A consultoria cobra 50% do ganho e R$ 15.000 no fracasso, então quase nenhuma empresa tem valor esperado positivo depois dela; isso é intencional (ela é informação cara). Não ajuste o catálogo para compensar.
+- O `historico` é sempre visível na ficha; `prob`, `ganho` e `perda` só aparecem no relatório da consultoria. A pista da falácia deve estar no texto do `fundador` ou no `historico`.
+- Empresas novas entram no baralho de seu porte no próximo ciclo. Não renomeie nem remova um `id`: aportes salvos referenciam o id (a apuração tolera id ausente, mas perde a narrativa).
+- Narrativas de sucesso e fracasso são exibidas no Balanço ao apurar; escreva-as de modo a fazer sentido para qualquer um dos dois desfechos, sem citar números.
+
 ## Estilo de escrita
 
 - Português do Brasil, tom de situação de trabalho (você é a pessoa que decide).
@@ -332,6 +365,7 @@ Em `eventos.js`, acrescente um objeto a `EVENTOS`:
 - Cenários de cálculo: `dados.exibir` com `tabela`, cada opção com `chave` calculável e sem placeholders no texto, e `feedback.como_calcular` presente.
 - Todas as telas renderizam sem placeholder não substituído, sem `undefined` e sem HTML injetado.
 - Todo evento tem setor válido.
+- Empresas do Mercado (`tests/investimentos.test.js`): ids únicos, campos e textos presentes, valor esperado negativo para toda furada e positivo para toda sólida (mesmo no pior sorteio), portes com empresas dos dois tipos, cada falácia usada, investimento às cegas perto de zero.
 
 O validador **não** confere que a opção marcada `correta` é de fato a correta matematicamente. Isso é responsabilidade do invariante e da revisão humana.
 
@@ -348,6 +382,7 @@ O validador **não** confere que a opção marcada `correta` é de fato a corret
 - [ ] Cenário incluído em `cenarios.json` (ou evento em `EVENTOS`).
 - [ ] README atualizado: contagem e lista de cenários e eventos (obrigatório pelo `CLAUDE.md`).
 - [ ] `fisher.md` atualizado se o conteúdo mudar a especificação (seção 4).
+- [ ] Empresa do Mercado: `falha` coerente com o sinal do valor esperado, pista no texto do fundador, `explicacao` e narrativas escritas, catálogo (4.8) e README atualizados.
 - [ ] `docs/diagramas-uml.md` atualizado se a estrutura mudar (novo gerador ou módulo).
 - [ ] `npm test` passa.
 
