@@ -15,6 +15,9 @@ let estado = null;
 const semMovimento = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function render({ focar = false } = {}) {
+  // Cada jogador tem um tema próprio (style.css, body[data-vez]); a troca de vez muda as cores da tela.
+  if (estado && estado.fase !== 'FIM_DE_JOGO') document.body.dataset.vez = String(estado.jogadorAtual);
+  else delete document.body.dataset.vez;
   app.innerHTML = estado ? viewJogo(estado) : viewMenu({ salvo: carregar() });
   if (focar) (document.getElementById('painel') ?? app.querySelector('.cta-jogar'))?.focus({ preventScroll: true });
 }

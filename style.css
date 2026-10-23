@@ -42,6 +42,25 @@
   }
 }
 
+/* Tema por vez: tons próximos de azul-esverdeado, um por jogador. Só troca o fundo e a cor de destaque. */
+body {
+  transition: background-color .4s ease;
+}
+
+body[data-vez="0"] { --bg: #eef2fa; --primaria: #1f5fbf; --primaria-texto: #ffffff; --borda: #cdd5e4; }
+body[data-vez="1"] { --bg: #ebf5f3; --primaria: #0f766e; --primaria-texto: #ffffff; --borda: #c8dad6; }
+body[data-vez="2"] { --bg: #efeefa; --primaria: #4f46e5; --primaria-texto: #ffffff; --borda: #d3d1e8; }
+
+@media (prefers-color-scheme: dark) {
+  body[data-vez="0"] { --bg: #131a26; --primaria: #6ea3f2; --primaria-texto: #0d1a2e; --borda: #343e50; }
+  body[data-vez="1"] { --bg: #12201f; --primaria: #5cc9bd; --primaria-texto: #082220; --borda: #2f4744; }
+  body[data-vez="2"] { --bg: #181a2b; --primaria: #9aa0f5; --primaria-texto: #121436; --borda: #3a3d5c; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body { transition: none; }
+}
+
 * {
   box-sizing: border-box;
 }
