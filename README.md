@@ -18,7 +18,9 @@ Requer Node.js 20 ou mais recente. O CI (`.github/workflows/test.yml`, GitHub Ac
 
 ## Deploy
 
-O workflow `.github/workflows/deploy.yml` publica o jogo no GitHub Pages a cada push na `main` (depois de `npm test` passar) ou manualmente (Actions → Deploy GitHub Pages → Run workflow). O site é estático e sem build: só `index.html`, `style.css` e `src/` vão para o ar. Configuração única: em Settings → Pages → Source, escolha **GitHub Actions**. Endereço: https://luiz2801.github.io/RFisher/
+O workflow `.github/workflows/deploy.yml` publica o jogo no GitHub Pages a cada push na `main` (depois de `npm run lint` e `npm test` passarem) ou manualmente (Actions → Deploy GitHub Pages → Run workflow). O site é estático e sem build: só `index.html`, `style.css` e `src/` vão para o ar. Configuração única: em Settings → Pages → Source, escolha **GitHub Actions**. Endereço: https://luiz2801.github.io/RFisher/
+
+A `main` é protegida (Settings → Branches): não aceita push direto, nem do administrador, nem force push ou exclusão. Toda mudança entra por pull request, que só pode ser mergeado com os checks `Node 20` e `Node 22` do workflow de testes verdes e com a branch atualizada em relação à `main` (sem conflitos e testada sobre a versão mais recente). Não é exigida aprovação de revisor.
 
 ## Estado atual
 

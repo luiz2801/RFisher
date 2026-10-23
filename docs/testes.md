@@ -224,6 +224,10 @@ O projeto não tem rotas HTTP; o equivalente a um teste de API é conduzir uma p
 
 `.github/workflows/test.yml` (GitHub Actions) roda em todo pull request e em push na `main`, com matriz Node 20 e 22 (`fail-fast: false`), permissão só de leitura e cancelamento de execuções antigas da mesma ref. Etapas: `npm ci` só se houver `package-lock.json`, `npm run lint`, `npm run test:cobertura` e upload do `coverage/lcov.info` como artefato (só no Node 22).
 
+Os checks `Node 20` e `Node 22` são obrigatórios na proteção da `main`: o merge de um pull request exige os dois verdes e a branch atualizada em relação à `main`, e não há push direto (a regra vale também para administradores).
+
+`.github/workflows/deploy.yml` publica no GitHub Pages a cada push na `main`, com o job `deploy` dependente de `npm run lint` e `npm test` no Node 22. O lint entra no deploy porque o `npm test` não carrega arquivos sem teste (como `src/main.js`), e um erro de sintaxe neles quebraria o jogo no navegador. O Node 20 fica só no workflow de testes: o site roda no navegador, e o merge na `main` já exige o check `Node 20`. O Pages usa a origem **GitHub Actions**; com a origem legacy ("Deploy from a branch"), o GitHub publicaria a `main` também por conta própria, sem testes.
+
 ## Decisões tomadas
 
 - **Lint e cobertura sem dependências.** O lint é um script próprio (sintaxe e bloqueio de `.only`/`debugger`), não ESLint nem Prettier; a cobertura usa `node --test --experimental-test-coverage` com os reporters nativos `spec` e `lcov`. Adotar regras de estilo ou formatação exigiria dependências e deve ser decidido antes.
