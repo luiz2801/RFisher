@@ -39,7 +39,10 @@ export const DIFICULDADE_MAX = 3;
 export const PASSO_MEDIO_DADO = 7; // casas por jogada (soma de 2d6), para estimar o percurso total da partida
 export const SELETIVIDADE_DIFICULDADE = 4; // peso do cenário = 1 / (1 + k × distância²) até a dificuldade-alvo
 
-// Cenários de cálculo (fisher.md 4.7): a margem aceita no valor informado é relativa ao valor correto,
-// com um piso absoluto para quando o valor correto é zero. O validador limita a margem de um cenário.
+// Cenários de cálculo (fisher.md 4.7): a margem aceita no valor informado é relativa ao valor exato, com um
+// piso absoluto para quando ele é zero. A porcentagem depende só da grandeza do valor exato: 5% abaixo de 100
+// (valores em unidades) e 2% a partir de 100 (valores na centena ou mais).
 export const MARGEM_CALCULO_PISO = 0.005;
-export const MARGEM_CALCULO_MAX_PCT = 10;
+export const MARGEM_CALCULO_LIMITE = 100;
+export const MARGEM_CALCULO_UNIDADES_PCT = 5;
+export const MARGEM_CALCULO_CENTENAS_PCT = 2;

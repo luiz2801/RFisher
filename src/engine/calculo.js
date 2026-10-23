@@ -1,4 +1,9 @@
-import { MARGEM_CALCULO_PISO } from './config.js';
+import {
+  MARGEM_CALCULO_CENTENAS_PCT,
+  MARGEM_CALCULO_LIMITE,
+  MARGEM_CALCULO_PISO,
+  MARGEM_CALCULO_UNIDADES_PCT,
+} from './config.js';
 import { soma, media, mediana, moda, percentil, desvioPadrao } from '../stats/metrics.js';
 
 // Cenários de cálculo (fisher.md 4.7): além de escolher a métrica, a pessoa calcula o valor a partir
@@ -6,12 +11,14 @@ import { soma, media, mediana, moda, percentil, desvioPadrao } from '../stats/me
 
 export const ehCalculo = (def) => def?.tipo === 'calculo';
 
-export const margemPct = (def, opcao) => opcao.margem_pct ?? def.calculo.margem_pct;
+// Margem em % pela grandeza do valor exato: 5% para valores em unidades, 2% a partir de 100.
+export const margemPct = (esperado) =>
+  Math.abs(esperado) < MARGEM_CALCULO_LIMITE ? MARGEM_CALCULO_UNIDADES_PCT : MARGEM_CALCULO_CENTENAS_PCT;
 
 // Avalia o valor informado contra a métrica escolhida (`opcao.chave` aponta para `num`).
-export function avaliarCalculo(def, opcao, num, informado) {
+export function avaliarCalculo(opcao, num, informado) {
   const esperado = num[opcao.chave];
-  const pct = margemPct(def, opcao);
+  const pct = margemPct(esperado);
   const tolerancia = Math.max((Math.abs(esperado) * pct) / 100, MARGEM_CALCULO_PISO);
   return {
     chave: opcao.chave,

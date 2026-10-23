@@ -203,7 +203,7 @@ function resolverEscolhas(e) {
   const w = carteira(e);
   const metrica = def.opcoes.find((o) => o.id === c.metricaId);
   // Em cenário de cálculo, métrica certa só vale com o valor dentro da margem (fisher.md 4.7).
-  const calculo = ehCalculo(def) ? avaliarCalculo(def, metrica, c.num, c.valorInformado) : null;
+  const calculo = ehCalculo(def) ? avaliarCalculo(metrica, c.num, c.valorInformado) : null;
   if (ehCalculo(def) && !Number.isFinite(c.valorInformado)) return e;
   const r = resolverDecisao({
     nivel: j.nivel,

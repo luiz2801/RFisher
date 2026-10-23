@@ -255,7 +255,6 @@ Um cenário `tipo: 'calculo'` entrega os dados numa **tabela** (e, se quiser, ta
   id: 'cenario_NN_exemplo',
   tipo: 'calculo',
   /* setor, conceito, dificuldade, titulo, contexto, dica, valor_base como no modelo comum */
-  calculo: { margem_pct: 2 },             // margem aceita no valor informado, em % do valor exato (0 a 10)
   dados: {
     gerador: { tipo: 'cauda_longa', parametros: { n: 21, /* ... */ } },   // poucos registros, para calcular à mão
     formato: 'minutos',
@@ -283,7 +282,7 @@ Um cenário `tipo: 'calculo'` entrega os dados numa **tabela** (e, se quiser, ta
 Regras e cuidados:
 
 - **Poucos registros** (de 8 a 40) e valores que dê para ordenar e somar à mão. A tabela mostra os registros na ordem sorteada, então a pessoa precisa ordená-los.
-- **A margem** (`calculo.margem_pct`) vale para qualquer métrica escolhida e pode ser sobreposta por opção (`margem_pct` na opção). Escolha-a pelo que uma pessoa que arredonda de forma razoável erra: 1% para valores que são elementos da tabela (mediana, percentil em posição inteira), 2% a 3% para médias e desvios. Abaixo disso o jogo pune arredondamento; acima de 10% o validador recusa. Há um piso absoluto (`MARGEM_CALCULO_PISO`) para quando o valor exato é zero.
+- **A margem não se configura no cenário.** Ela segue a grandeza do valor exato da métrica escolhida: 5% abaixo de 100 e 2% a partir de 100 (`MARGEM_CALCULO_UNIDADES_PCT`, `MARGEM_CALCULO_CENTENAS_PCT`, `MARGEM_CALCULO_LIMITE` em `src/engine/config.js`). Por isso, ao escrever os dados, cuide de valores exatos perto de 100, em que a faixa muda. Há um piso absoluto (`MARGEM_CALCULO_PISO`) para quando o valor exato é zero.
 - **Convenções:** percentis e quartis usam o método linear (posição `p × (n − 1) + 1`, como `PERCENTIL.INC` e `QUARTIL.INC`) e o desvio padrão é o amostral (`n − 1`). A tela de valor avisa isso. Se a convenção mudar o resultado além da margem, o cenário é injusto: ajuste `n` para o percentil cair numa posição inteira, como nos cenários 15 e 18.
 - **Todas as opções precisam de número:** não use métricas sem valor (como "distribuição de frequências").
 - **O valor é conferido contra a métrica escolhida,** não contra a correta. A métrica só conta como certa com a opção correta **e** o valor dentro da margem (pontuação em `fisher.md` 3.5 e 4.7).
@@ -330,7 +329,7 @@ Em `eventos.js`, acrescente um objeto a `EVENTOS`:
 - Unicidade dos `id` dos cenários.
 - `dificuldade` inteira de 1 a 3 em todo cenário, com ao menos um cenário por nível.
 - Invariantes de todos os geradores em 1.000 seeds.
-- Cenários de cálculo: `calculo.margem_pct` entre 0 e 10, `dados.exibir` com `tabela`, cada opção com `chave` calculável e sem placeholders no texto, e `feedback.como_calcular` presente.
+- Cenários de cálculo: `dados.exibir` com `tabela`, cada opção com `chave` calculável e sem placeholders no texto, e `feedback.como_calcular` presente.
 - Todas as telas renderizam sem placeholder não substituído, sem `undefined` e sem HTML injetado.
 - Todo evento tem setor válido.
 
@@ -344,7 +343,7 @@ O validador **não** confere que a opção marcada `correta` é de fato a corret
 - [ ] Nenhum número de dado escrito à mão; só placeholders.
 - [ ] O invariante prova o ponto pedagógico e passa em 1.000 seeds.
 - [ ] Teste específico do gerador adicionado ou atualizado.
-- [ ] Cenário de cálculo: margem escolhida, convenção de percentil/desvio avisada na tela e `como_calcular` escrito.
+- [ ] Cenário de cálculo: convenção de percentil/desvio avisada na tela, `como_calcular` escrito e valores exatos conferidos em relação ao limiar de 100 da margem.
 - [ ] `dados.formato` e rótulos dos eixos corretos; `descricao_acessivel` escrita.
 - [ ] Cenário incluído em `cenarios.json` (ou evento em `EVENTOS`).
 - [ ] README atualizado: contagem e lista de cenários e eventos (obrigatório pelo `CLAUDE.md`).

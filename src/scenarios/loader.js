@@ -4,7 +4,7 @@ import { gerar } from './generators.js';
 import { resumo } from '../stats/metrics.js';
 import { formatar } from '../stats/format.js';
 import { SETORES } from '../engine/papeis.js';
-import { DIFICULDADE_MAX, MARGEM_CALCULO_MAX_PCT } from '../engine/config.js';
+import { DIFICULDADE_MAX } from '../engine/config.js';
 import { ehCalculo } from '../engine/calculo.js';
 
 const POR_ID = new Map(CENARIOS.map((c) => [c.id, c]));
@@ -49,11 +49,9 @@ function textosDe(def) {
   return t;
 }
 
-// Cenário de cálculo (fisher.md 4.7): cada métrica aponta para um número calculável, a margem é razoável,
-// as opções não entregam o valor e há explicação do cálculo.
+// Cenário de cálculo (fisher.md 4.7): cada métrica aponta para um número calculável, as opções não entregam
+// o valor e há explicação do cálculo. A margem não é configurada no cenário: vem da grandeza do valor exato.
 function validarCalculo(def, num, err) {
-  const m = def.calculo?.margem_pct;
-  if (!(m > 0 && m <= MARGEM_CALCULO_MAX_PCT)) err(`calculo.margem_pct deve ficar entre 0 e ${MARGEM_CALCULO_MAX_PCT}: ${m}`);
   const exibir = def.dados.exibir ?? [];
   if (!exibir.includes('tabela') || exibir.some((x) => !['tabela', 'grafico'].includes(x))) {
     err('dados.exibir deve incluir "tabela" e só aceita "tabela" e "grafico"');
@@ -63,7 +61,6 @@ function validarCalculo(def, num, err) {
   for (const o of def.opcoes) {
     if (!(o.chave in num)) err(`opção sem chave de métrica calculável: ${o.id}`);
     if (o.texto.includes('{{')) err(`o texto da opção não pode revelar o valor: ${o.id}`);
-    if (o.margem_pct !== undefined && !(o.margem_pct > 0 && o.margem_pct <= MARGEM_CALCULO_MAX_PCT)) err(`margem_pct inválida: ${o.id}`);
   }
 }
 
