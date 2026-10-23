@@ -41,4 +41,6 @@ No resumo final ao usuário, diga quais documentos foram atualizados (ou por que
 
 ## 2. Commits exigem `npm test`
 
+A `main` é protegida: não aceita push direto. Trabalhe numa branch e abra um pull request; o merge exige os checks `Node 20` e `Node 22` verdes e a branch atualizada em relação à `main`.
+
 Antes de fazer qualquer commit, rode `npm test` e confirme que passa. Não faça commit com testes falhando ou sem tê-los rodado. Se não for possível rodar (por exemplo, Node indisponível no ambiente), não faça o commit: avise o usuário e peça que ele rode ou autorize explicitamente o commit sem os testes.
