@@ -183,7 +183,7 @@ Exigida pelo `fisher.md` 5.9.
 
 - Fluxo ponta a ponta: menu → configurar → jogar uma partida inteira → fim → nova partida.
 - Retomar partida salva depois de recarregar a página.
-- Despacho de ações pelos `data-acao`; `NOVA` pede confirmação durante a partida; `ABRIR_CONFIG`, `CONTINUAR_SALVA`; mudança do nº de jogadores mostra/esconde os campos.
+- Despacho de ações pelos `data-acao`; `NOVA` pede confirmação durante a partida; `ABRIR_CONFIG` (abre o assistente da tela inicial, com navegação Anterior/Próximo), `CONTINUAR_SALVA`; mudança do nº de jogadores mostra/esconde os campos.
 - Saneamento do formulário: `n` limitado a 1–`MAX_JOGADORES`, nome vazio vira "Jogador N", nível e modo inválidos caem no padrão, seed é uma lista (aleatória ou Mercado 1 a 20): vazia gera aleatória, valor da lista reproduz e valor fora da lista cai em aleatória.
 - Partida terminada limpa o save.
 

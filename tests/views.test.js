@@ -432,3 +432,11 @@ test('Monty Hall: depois de decidir, a tela diz se trocou e traz a lição', () 
     assert.ok(!html.includes('undefined') && !html.includes('NaN'));
   }
 });
+
+test('menu: tela inicial é a introdução e a configuração fica num assistente por etapas', () => {
+  const html = viewMenu();
+  assert.match(html, /data-acao="ABRIR_CONFIG"/);
+  assert.match(html, /data-nav="anterior"/);
+  assert.match(html, /data-nav="proximo"/);
+  assert.equal((html.match(/data-etapa/g) ?? []).length, 12);
+});

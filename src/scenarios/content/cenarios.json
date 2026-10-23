@@ -2829,7 +2829,7 @@
     "idioma": "pt-BR",
     "nivel": "intermediario",
     "dificuldade": 2,
-    "titulo": "O aplicativo perfeito (para quem ficou)",
+    "titulo": "O aplicativo perfeito",
     "contexto": "O aplicativo sofre com alta perda de clientes (churn). Para entender o problema, você envia uma pesquisa de satisfação para os usuários que abrem o app diariamente há mais de 6 meses. O resultado mostra nota máxima para usabilidade. A equipe conclui que a interface não precisa de mudanças. Qual o erro dessa conclusão?",
     "dica": "Onde estão os usuários que desistiram de usar o aplicativo?",
     "valor_base": 20000,
