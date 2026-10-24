@@ -15,7 +15,7 @@ import { lerNumero } from '../stats/format.js';
 import { escolherPorDificuldade } from './dificuldade.js';
 import { equivocosDaEscolha } from './desempenho.js';
 import { diretoriaDoSetor } from './papeis.js';
-import { motivoIndisponivel, registrarUso } from './habilidades.js';
+import { motivoIndisponivel, registrarUso, testeAB } from './habilidades.js';
 import { OPCOES_DIAGNOSTICO, sortearOferta, ganhoComConsultoria, honorarioDaConsultoria, liquidarTodos, investimentosDe } from './investimentos.js';
 import { instanciar, obterCenario, idsCenarios } from '../scenarios/loader.js';
 import { EVENTOS, TIPOS_CARTA, eventosDoTipo } from '../scenarios/content/eventos.js';
@@ -124,7 +124,7 @@ const TRANSICOES = {
           confianca: null,
           dicaUsada: false,
           dicaLivre: false,
-          dashboard: false,
+          testeAB: null,
           opcaoRemovida: null,
           habilidades: [],
           metricaId: null,
@@ -172,7 +172,7 @@ const TRANSICOES = {
         c.opcaoRemovida = erradas[rng.inteiro(0, erradas.length - 1)].id;
         e.rng = rng.estado;
       } else if (valor === 'tecnologia') {
-        c.dashboard = true;
+        c.testeAB = testeAB(def, c);
       } else {
         c.dicaLivre = true;
       }

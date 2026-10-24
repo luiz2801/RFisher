@@ -6,7 +6,7 @@ export const DIRETORIAS = {
     passivo: { nome: 'Cadeia protegida', descricao: 'perde 30% menos dinheiro nos eventos de logística e produção' },
   },
   tecnologia: { nome: 'Tecnologia', cargo: 'Diretor(a) de Tecnologia', icone: '💻', foco: 'Testes A/B, engajamento digital e algoritmos', setores: ['dados', 'produto'],
-    habilidade: { nome: 'Dashboard', descricao: 'mostra n, mínimo, quartis e máximo dos dados do cenário' },
+    habilidade: { nome: 'Teste A/B', descricao: 'revela as duas métricas finalistas do cenário, sem dizer qual é a certa' },
     passivo: { nome: 'Dados sob controle', descricao: 'perde 30% menos dinheiro nos eventos de dados e produto' },
   },
   pessoas_financas: {
