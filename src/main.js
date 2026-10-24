@@ -6,6 +6,7 @@ import { obterCenario, todosCenarios } from './scenarios/loader.js';
 import { MAX_JOGADORES, PERFIS_BOT } from './engine/config.js';
 import { NUM_CASAS } from './engine/board.js';
 import { ehCalculo } from './engine/calculo.js';
+import { setoresRepetidos } from './engine/papeis.js';
 import { dadoHtml } from './ui/components/dado.js';
 import { lerNumero } from './stats/format.js';
 import { calcularOperacao, formatarResultadoCalculadora } from './engine/calculo.js';
@@ -51,13 +52,11 @@ function lerTeste(dados) {
   return { casa: ['decisao', 'evento', 'mercado', 'balanco'].includes(casa) ? casa : null, cenarios };
 }
 
-// Setores repetidos entre os jogadores não valem: cada setor vale para um jogador só (no cooperativo, com 3 jogadores).
-function setoresRepetidos(form) {
+// Setores repetidos entre os jogadores não valem (regra em papeis.js, compartilhada com o multiplayer).
+function formTemSetoresRepetidos(form) {
   const modo = form.elements.modo.value;
-  const n = Number(form.elements.n.value);
-  if (modo === 'solo' || (modo === 'cooperativo' && n !== 3)) return false;
-  const escolhas = Array.from({ length: n }, (_, i) => form.elements[`diretoria_${i}`].value);
-  return new Set(escolhas).size < n;
+  const n = modo === 'solo' ? 1 : Number(form.elements.n.value);
+  return setoresRepetidos(modo, Array.from({ length: n }, (_, i) => form.elements[`diretoria_${i}`].value));
 }
 
 // Campo numérico do menu: vazio ou inválido vira NaN, e o motor cai no padrão.
@@ -65,7 +64,7 @@ const lerInteiro = (valor) => (String(valor ?? '').trim() === '' ? NaN : Number(
 
 function iniciar(form) {
   const erro = form.querySelector('[data-erro-setor]');
-  erro.hidden = !setoresRepetidos(form);
+  erro.hidden = !formTemSetoresRepetidos(form);
   if (!erro.hidden) {
     mostrarEtapa(etapasVisiveis(form).indexOf(form.querySelector('[data-jogador="0"]')));
     return;

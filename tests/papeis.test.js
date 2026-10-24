@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { atribuirPapeis } from '../src/engine/papeis.js';
+import { atribuirPapeis, setoresRepetidos } from '../src/engine/papeis.js';
 import { novoJogo } from '../src/engine/state.js';
 
 test('atribuirPapeis: 3 jogadores respeitam a escolha, desde que seja uma permutação', () => {
@@ -28,4 +28,14 @@ test('novoJogo guarda o setor escolhido; valor inválido ou ausente fica null', 
     modo: 'cooperativo',
   });
   assert.deepEqual(coop.jogadores[0].papeis, ['tecnologia']);
+});
+
+test('setoresRepetidos: competitivo sempre confere; cooperativo só com 3; solo nunca', () => {
+  assert.equal(setoresRepetidos('competitivo', ['operacoes', 'operacoes']), true);
+  assert.equal(setoresRepetidos('competitivo', ['operacoes', 'tecnologia']), false);
+  assert.equal(setoresRepetidos('cooperativo', ['operacoes', 'operacoes', 'tecnologia']), true);
+  assert.equal(setoresRepetidos('cooperativo', ['operacoes', 'tecnologia', 'pessoas_financas']), false);
+  assert.equal(setoresRepetidos('cooperativo', ['operacoes', 'operacoes']), false);
+  assert.equal(setoresRepetidos('cooperativo', ['operacoes']), false);
+  assert.equal(setoresRepetidos('solo', ['operacoes']), false);
 });
