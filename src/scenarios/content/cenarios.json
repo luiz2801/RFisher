@@ -66,34 +66,34 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "Um salário muito alto isolado puxa a média para cima, e a mediana não é afetada por isso.",
+        "texto": "Um salário muito alto isolado puxa a média para cima, e a mediana, que é o valor do meio, não é afetada por isso.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "Os salários estão concentrados em poucos valores, então a mediana reflete bem a maioria.",
+        "texto": "Os salários estão concentrados em poucos valores, então a mediana reflete bem a maioria dos funcionários.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "A mediana é o valor que mais se repete, por isso representa a equipe.",
+        "texto": "A mediana é o valor que mais se repete na lista, por isso ela representa bem toda a equipe.",
         "tipo": "erro_conceitual",
         "equivoco": "confunde_mediana_moda"
       },
       {
         "id": "j4",
-        "texto": "A média usa todos os dados, então é sempre mais justa e completa.",
+        "texto": "A média usa todos os dados da folha, então é sempre a medida mais justa, completa e confiável.",
         "tipo": "erro_conceitual",
         "equivoco": "ignora_outliers"
       },
       {
         "id": "j5",
-        "texto": "A mediana é mais fácil de calcular.",
+        "texto": "A mediana é mais fácil de calcular, porque basta ordenar a lista e olhar para o valor do meio.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "Outliers puxam a mediana tanto quanto a média.",
+        "texto": "Os outliers puxam a mediana tanto quanto puxam a média, então as duas se movem juntas.",
         "tipo": "afirmacao_falsa",
         "equivoco": "mediana_sensivel"
       }
@@ -191,34 +191,34 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "O P90 é o prazo dentro do qual 90% dos pedidos chegam, e expõe a cauda de atrasos que a média e a mediana escondem.",
+        "texto": "O P90 é o prazo dentro do qual 90% dos pedidos chegam, e mostra os atrasos que a média esconde.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "A maioria das entregas é rápida, então um prazo baseado nelas descreve bem a experiência típica.",
+        "texto": "A maioria das entregas é rápida, então um prazo baseado nelas descreve bem a experiência típica de quem compra na loja.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "O P90 é a média dos 90% menores tempos.",
+        "texto": "O P90 é a média dos 90% menores tempos de entrega, por isso ele já resume bem o prazo prometido ao cliente.",
         "tipo": "erro_conceitual",
         "equivoco": "confunde_percentil_media"
       },
       {
         "id": "j4",
-        "texto": "A média considera todas as entregas, então já representa bem a experiência de todos os clientes.",
+        "texto": "A média considera todas as entregas realizadas no período, então já representa bem a experiência de todos os clientes, até a dos que esperaram muito.",
         "tipo": "erro_conceitual",
         "equivoco": "media_oculta_falhas"
       },
       {
         "id": "j5",
-        "texto": "O P90 é mais bonito de mostrar no relatório.",
+        "texto": "O P90 é mais bonito de mostrar no relatório, e os diretores costumam preferir números que parecem mais sofisticados e técnicos.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "A mediana garante que 90% dos pedidos chegam dentro do prazo.",
+        "texto": "A mediana garante que 90% dos pedidos chegam dentro do prazo, então ela basta para prometer o prazo ao cliente.",
         "tipo": "afirmacao_falsa",
         "equivoco": "mediana_cobre_90"
       }
@@ -327,17 +327,17 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "Queremos saber qual numeração vende mais, e isso é a moda, o valor que mais se repete. A média daria um número que nem existe.",
+        "texto": "Queremos saber qual numeração vende mais, e isso é a moda, o valor que mais se repete. A média daria um número inexistente.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "Os dados são numerações inteiras, então precisamos de um valor que exista de verdade na lista.",
+        "texto": "Os dados são numerações inteiras, então precisamos de um valor que exista de verdade na lista, e não de um número intermediário qualquer.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "A moda é a soma de todas as numerações dividida pela quantidade de pares.",
+        "texto": "A moda é a soma de todas as numerações dividida pela quantidade total de pares vendidos.",
         "tipo": "erro_conceitual",
         "equivoco": "confunde_moda_media"
       },
@@ -349,12 +349,12 @@
       },
       {
         "id": "j5",
-        "texto": "A moda é mais fácil de calcular.",
+        "texto": "A moda é mais fácil de calcular, porque basta contar quantas vezes cada numeração aparece na tabela de vendas da loja.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "A moda só pode ser calculada quando os dados são contínuos.",
+        "texto": "A moda só pode ser calculada quando os dados são contínuos, como peso ou altura, e nunca com numerações.",
         "tipo": "afirmacao_falsa",
         "equivoco": "moda_so_continuo"
       }
@@ -464,34 +464,34 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "Com médias iguais, o que diferencia as máquinas é o quanto as medidas se espalham em torno da média, e isso o desvio padrão mede.",
+        "texto": "Com médias iguais, o que diferencia as máquinas é o espalhamento das medidas, e isso o desvio padrão mede.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "É preciso comparar algo além do valor central, porque ele sozinho não distingue as máquinas.",
+        "texto": "É preciso comparar algo além do valor central, porque ele sozinho não distingue as duas máquinas que estamos avaliando.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "O desvio padrão é a média das medidas de cada máquina.",
+        "texto": "O desvio padrão é a média de todas as medidas de cada uma das máquinas.",
         "tipo": "erro_conceitual",
         "equivoco": "confunde_dp_media"
       },
       {
         "id": "j4",
-        "texto": "Se as médias são iguais, as duas máquinas têm a mesma qualidade.",
+        "texto": "Se as médias das duas máquinas são iguais, então as duas têm a mesma qualidade e a escolha entre elas é indiferente.",
         "tipo": "erro_conceitual",
         "equivoco": "ignora_dispersao"
       },
       {
         "id": "j5",
-        "texto": "A máquina mais nova costuma ser a mais precisa.",
+        "texto": "A máquina mais nova costuma ser a mais precisa, então devemos ficar com ela independentemente dos números.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "Quando as médias são iguais, os desvios padrão também precisam ser iguais.",
+        "texto": "Quando as médias são iguais, os desvios padrão também precisam ser iguais, pois um depende do outro.",
         "tipo": "afirmacao_falsa",
         "equivoco": "dp_depende_da_media"
       }
@@ -586,17 +586,17 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "A média e a mediana apontam para um centro vazio, enquanto a distribuição de frequências revela que o público está dividido entre amar e odiar o produto.",
+        "texto": "A distribuição mostra um público dividido entre amar e odiar, algo que a média e a mediana não revelam.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "É preciso analisar as notas extremas para entender o descontentamento e a aprovação.",
+        "texto": "É preciso analisar as notas extremas para entender o descontentamento e a aprovação do público, e não apenas um resumo central.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "A média aritmética de {{media}} resume com exatidão a satisfação do cliente típico.",
+        "texto": "A média aritmética de {{media}} resume com exatidão a satisfação do cliente típico, então ela basta para decidir o futuro do produto.",
         "tipo": "erro_conceitual",
         "equivoco": "media_em_bimodal"
       },
@@ -608,12 +608,12 @@
       },
       {
         "id": "j5",
-        "texto": "Notas altas geram mais engajamento nas redes sociais.",
+        "texto": "Notas altas geram mais engajamento nas redes sociais, e isso ajuda a divulgar o produto para novos clientes.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "Distribuições com dois picos sempre possuem desvio padrão menor que distribuições uniformes.",
+        "texto": "Distribuições com dois picos sempre têm desvio padrão menor que as uniformes.",
         "tipo": "afirmacao_falsa",
         "equivoco": "dp_bimodal_falso"
       }
@@ -710,34 +710,34 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "A amplitude interquartil (IQR) mede o espalhamento dos 50% centrais dos atendimentos e não é distorcida pelos chamados esquecidos.",
+        "texto": "A amplitude interquartil (IQR) mede o espalhamento dos 50% centrais e não sofre com os chamados esquecidos.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "Uma métrica que foca na maioria dos chamados e ignora os piores casos isolados representa melhor a rotina.",
+        "texto": "Uma métrica focada na maioria dos chamados, sem os piores casos isolados, mostra a rotina.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "O desvio padrão é superior porque inclui os chamados de {{maximo}} com peso elevado no cálculo.",
+        "texto": "O desvio padrão é superior porque inclui os chamados de {{maximo}} com peso elevado no cálculo, e assim reflete o pior da fila.",
         "tipo": "erro_conceitual",
         "equivoco": "dp_sensivel_outliers"
       },
       {
         "id": "j4",
-        "texto": "A média aritmética mede o espalhamento dos tempos de espera em torno do centro.",
+        "texto": "A média aritmética mede o espalhamento dos tempos de espera em torno do centro, por isso ela mostra a variação dos chamados.",
         "tipo": "erro_conceitual",
         "equivoco": "confunde_dispersao_tendencia"
       },
       {
         "id": "j5",
-        "texto": "Chamados mais longos sempre trazem clientes mais fiéis.",
+        "texto": "Chamados mais longos sempre trazem clientes mais fiéis, porque quem espera muito acaba valorizando mais o atendimento recebido depois.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "A amplitude interquartil é sempre idêntica ao desvio padrão em qualquer distribuição.",
+        "texto": "A amplitude interquartil é sempre idêntica ao desvio padrão em qualquer distribuição de dados.",
         "tipo": "afirmacao_falsa",
         "equivoco": "iqr_igual_dp"
       }
@@ -832,29 +832,29 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "Em dados simétricos com formato normal e sem outliers, a média aritmética é o estimador mais eficiente e aproveita todas as medições.",
+        "texto": "Em dados simétricos, de formato normal e sem outliers, a média é o estimador mais eficiente e aproveita todas as medições.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "A distribuição é simétrica e centrada, então a média representa com fidelidade o peso dos pacotes.",
+        "texto": "A distribuição é simétrica e centrada, então a média representa com fidelidade o peso dos pacotes produzidos na linha.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "A média deve sempre ser descartada em decisões de qualidade, mesmo sem outliers.",
+        "texto": "A média deve sempre ser descartada nas decisões de qualidade, mesmo quando não há outliers.",
         "tipo": "erro_conceitual",
         "equivoco": "rejeicao_indevida_media"
       },
       {
         "id": "j4",
-        "texto": "O percentil 95 é a métrica padrão para indicar o centro de qualquer processo industrial.",
+        "texto": "O percentil 95 é a métrica padrão para indicar o centro de qualquer processo industrial, e não só deste aqui.",
         "tipo": "erro_conceitual",
         "equivoco": "percentil_para_centro"
       },
       {
         "id": "j5",
-        "texto": "Pacotes mais pesados garantem clientes mais satisfeitos no café da manhã.",
+        "texto": "Pacotes mais pesados garantem clientes mais satisfeitos no café da manhã e menos reclamações no serviço de atendimento.",
         "tipo": "irrelevante"
       },
       {
@@ -961,7 +961,7 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "A Página B tem média maior mas desvio padrão de {{dp_b}} (altamente instável por amostra reduzida), enquanto a Página A é muito mais consistente ({{dp_a}}).",
+        "texto": "A Página B tem média maior, mas desvio padrão de {{dp_b}} (instável); a Página A é mais consistente ({{dp_a}}).",
         "tipo": "correta"
       },
       {
@@ -971,24 +971,24 @@
       },
       {
         "id": "j3",
-        "texto": "Como a média da Página B ({{media_b}}) foi superior, ela já é comprovadamente a melhor escolha.",
+        "texto": "Como a média da Página B ({{media_b}}) foi superior, ela já é comprovadamente a melhor escolha, e a decisão está tomada.",
         "tipo": "erro_conceitual",
         "equivoco": "ignora_instabilidade"
       },
       {
         "id": "j4",
-        "texto": "A mediana das duas páginas é suficiente para garantir repetibilidade futura.",
+        "texto": "A mediana das duas páginas é suficiente para garantir a repetibilidade futura das taxas.",
         "tipo": "erro_conceitual",
         "equivoco": "ignora_variabilidade"
       },
       {
         "id": "j5",
-        "texto": "Páginas mais modernas sempre vendem mais rápido.",
+        "texto": "Páginas mais modernas sempre vendem mais rápido, e o visual novo da Página B explica o resultado dela.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "Amostras de qualquer tamanho produzem estimativas com a mesma margem de erro.",
+        "texto": "Amostras de qualquer tamanho produzem estimativas com a mesma margem de erro, sejam grandes ou pequenas, sem exceção.",
         "tipo": "afirmacao_falsa",
         "equivoco": "amostra_margem_erro"
       }
@@ -1078,12 +1078,12 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "A restrição é física: se um único caminhão não passa, o portão falha. Por isso a referência é o maior valor da frota, e não um valor típico.",
+        "texto": "A restrição é física: se um único caminhão não passa, o portão falha. Por isso vale o maior valor da frota.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "O portão precisa ser alto, então devemos olhar para os caminhões maiores.",
+        "texto": "O portão precisa ser alto, então devemos olhar para os caminhões maiores da frota, e só para eles, ignorando todos os demais veículos da empresa.",
         "tipo": "parcial"
       },
       {
@@ -1100,12 +1100,12 @@
       },
       {
         "id": "j5",
-        "texto": "Portões mais altos valorizam o imóvel.",
+        "texto": "Portões mais altos valorizam o imóvel, e por isso vale a pena construir um portão maior do que o necessário, mesmo que isso custe mais caro.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "O maior valor de um conjunto é sempre um erro de medição e deve ser descartado.",
+        "texto": "O maior valor de um conjunto é sempre um erro de medição e deve ser descartado antes de qualquer análise dos dados da frota, seja ela grande ou pequena.",
         "tipo": "afirmacao_falsa",
         "equivoco": "maximo_sempre_erro"
       }
@@ -1205,7 +1205,7 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "O P95 é o tempo abaixo do qual ficam 95% das requisições, exatamente o que o contrato pede, e ele já leva em conta as requisições lentas.",
+        "texto": "O P95 é o tempo abaixo do qual ficam 95% das requisições, exatamente o que o contrato pede, e ele já considera as lentas.",
         "tipo": "correta"
       },
       {
@@ -1215,13 +1215,13 @@
       },
       {
         "id": "j3",
-        "texto": "O P90 e o P95 são praticamente iguais, então tanto faz qual dos dois usar.",
+        "texto": "O P90 e o P95 são praticamente iguais, então tanto faz qual dos dois usar no contrato, pois a diferença entre eles não muda o resultado de nenhum cliente.",
         "tipo": "erro_conceitual",
         "equivoco": "percentil_errado"
       },
       {
         "id": "j4",
-        "texto": "A média já inclui as requisições lentas, então cobre 95% delas.",
+        "texto": "A média já inclui as requisições lentas, então ela cobre os 95% das requisições que o contrato exige.",
         "tipo": "erro_conceitual",
         "equivoco": "media_oculta_falhas"
       },
@@ -1232,7 +1232,7 @@
       },
       {
         "id": "j6",
-        "texto": "O P95 é o tempo da requisição de número 95 da lista.",
+        "texto": "O P95 é o tempo da requisição de número 95 da lista, depois de ordenados os tempos medidos.",
         "tipo": "afirmacao_falsa",
         "equivoco": "percentil_como_posicao"
       }
@@ -1336,34 +1336,34 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "As poucas taxas muito baixas puxam a média para baixo, enquanto a mediana fica no atendente do meio e não é afetada por elas.",
+        "texto": "As taxas muito baixas puxam a média para baixo, enquanto a mediana fica no atendente do meio e não sofre com elas.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "A maioria dos atendentes tem taxas parecidas, então o valor típico deve vir desse grupo.",
+        "texto": "A maioria dos atendentes tem taxas parecidas, então o valor típico deve vir desse grupo e não dos extremos.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "Outliers só distorcem a média quando estão acima dos demais valores.",
+        "texto": "Outliers só distorcem a média quando estão acima dos demais valores, então as taxas muito baixas não alteram o resultado da média.",
         "tipo": "erro_conceitual",
         "equivoco": "outlier_so_acima"
       },
       {
         "id": "j4",
-        "texto": "A média usa a taxa de todos os atendentes, então é a mais justa para definir a meta.",
+        "texto": "A média usa a taxa de todos os atendentes, então é a mais justa para definir a meta e não precisa de nenhum ajuste.",
         "tipo": "erro_conceitual",
         "equivoco": "ignora_outliers_baixos"
       },
       {
         "id": "j5",
-        "texto": "Atendentes mais experientes costumam atender mais rápido.",
+        "texto": "Atendentes mais experientes costumam atender mais rápido e com menos erros.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "Quando há valores muito baixos, a mediana fica sempre abaixo da média.",
+        "texto": "Quando há valores muito baixos, a mediana fica sempre abaixo da média, em qualquer caso.",
         "tipo": "afirmacao_falsa",
         "equivoco": "mediana_abaixo_media"
       }
@@ -1465,34 +1465,34 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "O dinheiro da folha não pode encolher em nenhum mês. O desvio padrão mostra que o Fundo B oscila muito ({{dp_b}}) e chega a {{minimo_b}} em um mês, enquanto o A é estável ({{dp_a}}).",
+        "texto": "O dinheiro da folha não pode encolher em nenhum mês. O Fundo B oscila muito (DP {{dp_b}}) e cai a {{minimo_b}}; o A é estável ({{dp_a}}).",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "Para um dinheiro que será usado logo, a previsibilidade do rendimento é importante.",
+        "texto": "Para um dinheiro que será usado logo, a previsibilidade do rendimento é importante, mais do que ter a maior média possível no período.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "Se o Fundo B tem a maior média, ele também é o mais seguro para o caixa.",
+        "texto": "Se o Fundo B tem a maior média, ele também é o mais seguro para o caixa da empresa.",
         "tipo": "erro_conceitual",
         "equivoco": "ignora_risco"
       },
       {
         "id": "j4",
-        "texto": "O desvio padrão mostra quanto cada fundo rendeu no total do período.",
+        "texto": "O desvio padrão mostra quanto cada fundo rendeu no total do período, somando todos os meses em que o dinheiro ficou aplicado.",
         "tipo": "erro_conceitual",
         "equivoco": "confunde_dp_total"
       },
       {
         "id": "j5",
-        "texto": "O Fundo A tem um nome mais conhecido no mercado.",
+        "texto": "O Fundo A tem um nome mais conhecido no mercado, e isso costuma indicar uma gestão mais cuidadosa do dinheiro.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "Um desvio padrão maior significa que o fundo rende mais.",
+        "texto": "Um desvio padrão maior significa que o fundo rende mais no período.",
         "tipo": "afirmacao_falsa",
         "equivoco": "dp_como_retorno"
       }
@@ -1584,34 +1584,34 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "A média é o total gasto dividido pelo número de usuários, contando os que não pagaram. Multiplicada pelo número de novos usuários, ela devolve exatamente a receita total esperada.",
+        "texto": "A média é o gasto total dividido por todos os usuários, até os que não pagaram, e multiplicada pelos novos dá a receita.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "Os pagantes são poucos, mas o dinheiro deles precisa entrar na conta.",
+        "texto": "Os pagantes são poucos, mas o dinheiro deles precisa entrar na conta, e é ele que sustenta toda a receita do aplicativo no mês.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "Como os dados são muito assimétricos, a mediana é sempre a métrica mais segura.",
+        "texto": "Como os dados são muito assimétricos, a mediana é sempre a métrica mais segura, qualquer que seja a pergunta que se faz.",
         "tipo": "erro_conceitual",
         "equivoco": "mediana_para_total"
       },
       {
         "id": "j4",
-        "texto": "A média deve ser calculada só com quem pagou, porque quem não paga não gera receita.",
+        "texto": "A média deve ser calculada só com quem pagou, porque quem não paga não gera nenhuma receita para a empresa.",
         "tipo": "erro_conceitual",
         "equivoco": "media_sem_zeros"
       },
       {
         "id": "j5",
-        "texto": "Usuários do plano gratuito podem indicar o aplicativo para amigos.",
+        "texto": "Usuários do plano gratuito podem indicar o aplicativo para amigos, e isso traz novos clientes sem custo.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "Se a mediana do gasto é zero, a receita total também tende a ser zero.",
+        "texto": "Se a mediana do gasto é zero, a receita total também tende a ser zero ou muito próxima disso.",
         "tipo": "afirmacao_falsa",
         "equivoco": "mediana_zero_receita_zero"
       }
@@ -1723,12 +1723,12 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "Um aluguel muito alto isolado puxa a média para cima, e a mediana, que é o valor do meio, não é afetada por ele.",
+        "texto": "Um aluguel muito alto isolado puxa a média para cima, mas a mediana, o valor do meio, não é afetada.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "A maioria dos aluguéis está concentrada em valores parecidos, então um valor central descreve bem o bairro.",
+        "texto": "A maioria dos aluguéis tem valores parecidos, então um valor central descreve bem o bairro.",
         "tipo": "parcial"
       },
       {
@@ -1745,12 +1745,12 @@
       },
       {
         "id": "j5",
-        "texto": "Imobiliárias costumam divulgar números redondos.",
+        "texto": "Imobiliárias costumam divulgar números redondos, o que torna os anúncios mais fáceis de comparar.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "O aluguel mais alto puxa a mediana tanto quanto puxa a média.",
+        "texto": "O aluguel mais alto puxa a mediana tanto quanto puxa a média, pois as duas medem o mesmo.",
         "tipo": "afirmacao_falsa",
         "equivoco": "mediana_sensivel"
       }
@@ -1859,34 +1859,34 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "O P90 é o tempo dentro do qual 90% dos pacientes são atendidos; ele inclui quem esperou muito, o que a média e a mediana escondem.",
+        "texto": "O P90 inclui quem esperou muito, coisa que a média esconde.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "A maioria dos pacientes espera pouco, então um número baseando nesse grupo descreve a experiência típica.",
+        "texto": "A maioria dos pacientes espera pouco, então um número baseado nesse grupo descreve a experiência típica.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "O P90 é a média dos 90% menores tempos de espera.",
+        "texto": "O P90 é a média dos 90% menores tempos de espera, de modo que ele resume o que a maior parte dos pacientes viveu e dispensa qualquer outra métrica de apoio.",
         "tipo": "erro_conceitual",
         "equivoco": "confunde_percentil_media"
       },
       {
         "id": "j4",
-        "texto": "A média considera todos os pacientes, então já representa bem a espera de quem mais demorou.",
+        "texto": "A média considera todos os pacientes, então já representa bem a espera de quem mais demorou e de quem foi atendido logo.",
         "tipo": "erro_conceitual",
         "equivoco": "media_oculta_falhas"
       },
       {
         "id": "j5",
-        "texto": "Hospitais costumam usar painéis digitais na recepção.",
+        "texto": "Hospitais costumam usar painéis digitais na recepção, que chamam os pacientes.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "A mediana garante que 90% dos pacientes esperam menos que ela.",
+        "texto": "A mediana garante que 90% dos pacientes esperam menos que ela, então basta usá-la como o limite.",
         "tipo": "afirmacao_falsa",
         "equivoco": "mediana_cobre_90"
       }
@@ -2002,7 +2002,7 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "O total é a soma de todos os chamados: a média multiplicada pelo número de clientes devolve essa soma, inclusive a parte de quem abre muitos chamados.",
+        "texto": "A média vezes o número de clientes devolve o total, inclusive o de quem abre muitos.",
         "tipo": "correta"
       },
       {
@@ -2012,24 +2012,24 @@
       },
       {
         "id": "j3",
-        "texto": "A mediana não é afetada por valores extremos, então sempre dá a melhor projeção.",
+        "texto": "A mediana não é afetada por valores extremos, então sempre dá a melhor projeção, seja qual for a pergunta.",
         "tipo": "erro_conceitual",
         "equivoco": "mediana_para_total"
       },
       {
         "id": "j4",
-        "texto": "A moda é o número de chamados mais comum, então multiplicá-la pelos clientes dá o total.",
+        "texto": "A moda é o número de chamados mais comum, então multiplicá-la pelo número de clientes dá o total esperado de chamados.",
         "tipo": "erro_conceitual",
         "equivoco": "moda_para_total"
       },
       {
         "id": "j5",
-        "texto": "Equipes de suporte costumam ser dimensionadas no começo do mês.",
+        "texto": "Equipes de suporte costumam ser dimensionadas no começo do mês, e isso é o que define o total de chamados.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "Multiplicar a mediana pelo número de clientes dá sempre o total exato de chamados.",
+        "texto": "Mediana vezes clientes dá sempre o total exato de chamados.",
         "tipo": "afirmacao_falsa",
         "equivoco": "mediana_para_total"
       }
@@ -2134,17 +2134,17 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "O desvio padrão mede o quanto cada ciclo se afasta, em média, do tempo médio, usando todas as medições.",
+        "texto": "O desvio padrão mede o quanto cada ciclo se afasta, em média, do tempo médio, usando todas as medições feitas na máquina.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "O desvio padrão é um número só, fácil de comparar com o de outras máquinas.",
+        "texto": "O desvio padrão é um número só, fácil de comparar com o de outras máquinas e de acompanhar ao longo do tempo.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "A amplitude é a melhor medida de variabilidade porque usa os dois ciclos mais importantes: o mais lento e o mais rápido.",
+        "texto": "A amplitude é a melhor medida de variabilidade porque usa o ciclo mais lento e o mais rápido, e só eles.",
         "tipo": "erro_conceitual",
         "equivoco": "amplitude_so_extremos"
       },
@@ -2156,12 +2156,12 @@
       },
       {
         "id": "j5",
-        "texto": "A embaladora fica na ala leste da fábrica.",
+        "texto": "A embaladora fica na ala leste da fábrica, perto das docas de carga, e por isso o fluxo de caminhões costuma atrapalhar o ritmo dos ciclos.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "O desvio padrão é a própria média dos tempos de ciclo.",
+        "texto": "O desvio padrão é a própria média dos tempos de ciclo, só que apresentada de um jeito mais complicado.",
         "tipo": "afirmacao_falsa",
         "equivoco": "dp_igual_media"
       }
@@ -2264,29 +2264,29 @@
       },
       {
         "id": "j2",
-        "texto": "O IQR mostra a variação da maior parte das execuções.",
+        "texto": "O IQR mostra a variação da maior parte das execuções, mas por si só não diz qual foi o tamanho do atraso.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "O desvio padrão é sempre a melhor medida de variação, porque usa todos os valores.",
+        "texto": "O desvio padrão é sempre a melhor medida de variação, porque usa todos os valores, inclusive os mais extremos da série.",
         "tipo": "erro_conceitual",
         "equivoco": "dp_sensivel_outlier"
       },
       {
         "id": "j4",
-        "texto": "A amplitude mostra melhor a variação, porque inclui a execução que travou.",
+        "texto": "A amplitude mostra melhor a variação, porque inclui a execução que travou e a mais rápida, os dois extremos.",
         "tipo": "erro_conceitual",
         "equivoco": "amplitude_so_extremos"
       },
       {
         "id": "j5",
-        "texto": "A carga noturna roda quando poucos usuários estão no sistema.",
+        "texto": "A carga noturna roda quando poucos usuários estão no sistema, e isso a torna mais rápida.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "Um valor extremo altera pouco o desvio padrão, porque os demais valores compensam.",
+        "texto": "Um valor extremo altera pouco o desvio padrão, porque os demais valores compensam o desvio dele.",
         "tipo": "afirmacao_falsa",
         "equivoco": "dp_robusto"
       }
@@ -2388,34 +2388,34 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "O Coeficiente de Variação ajusta o desvio padrão ao tamanho da média, permitindo comparar a volatilidade de negócios de tamanhos distintos.",
+        "texto": "O Coeficiente de Variação ajusta o desvio padrão à média e compara filiais de portes diferentes.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "O desvio padrão da Filial B é muito maior simplesmente porque ela fatura muito mais, não necessariamente por ser mais arriscada.",
+        "texto": "O desvio padrão da Filial B é maior simplesmente porque ela fatura mais, e não porque seja mais arriscada; logo, os desvios nem precisam ser comparados.",
         "tipo": "erro_conceitual",
         "equivoco": "ignora_escala"
       },
       {
         "id": "j3",
-        "texto": "Comparar os desvios padrões já resolve, porque o maior desvio indica sempre a filial mais arriscada.",
+        "texto": "Comparar os desvios padrões já resolve, pois o maior desvio indica a filial mais arriscada.",
         "tipo": "erro_conceitual",
         "equivoco": "ignora_escala"
       },
       {
         "id": "j4",
-        "texto": "Dividir o desvio padrão pela média ajuda, mas só vale se as duas filiais tiverem o mesmo número de meses.",
+        "texto": "Dividir o desvio padrão pela média ajuda, mas só vale se as duas filiais tiverem o mesmo número de meses de vendas registrado na tabela.",
         "tipo": "parcial"
       },
       {
         "id": "j5",
-        "texto": "A Filial B tem mais funcionários e, por isso, mais estoque parado no fim do mês.",
+        "texto": "A Filial B tem mais funcionários e, por isso, mais estoque parado no fim do mês, o que encarece o capital de giro e a operação toda.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "Duas filiais com médias diferentes nunca podem ser comparadas em dispersão.",
+        "texto": "Duas filiais com médias diferentes nunca podem ser comparadas em dispersão, porque a escala de cada uma é própria e incomparável.",
         "tipo": "afirmacao_falsa",
         "equivoco": "confunde_dispersao"
       }
@@ -2513,34 +2513,34 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "A média aparada descarta (por exemplo) os 5% piores e melhores resultados, calculando a média apenas com os funcionários que responderam de forma representativa.",
+        "texto": "A média aparada descarta (por exemplo) os 5% piores e melhores resultados e calcula a média só com as respostas representativas.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "A média simples vai incorporar as notas cegas de 10 e os trolls de 0, distorcendo o resultado do bônus.",
+        "texto": "A média simples vai incorporar as notas cegas de 10 e as de 0, distorcendo o bônus.",
         "tipo": "erro_conceitual",
         "equivoco": "sensivel_a_extremos"
       },
       {
         "id": "j3",
-        "texto": "A mediana é sempre igual à média aparada, então tanto faz qual das duas usar.",
+        "texto": "A mediana é sempre igual à média aparada, então tanto faz qual das duas usar, nunca haverá diferença.",
         "tipo": "afirmacao_falsa",
         "equivoco": "perde_informacao"
       },
       {
         "id": "j4",
-        "texto": "Cortar só os valores mais baixos já basta, pois as notas 10 dadas sem critério não distorcem o bônus.",
+        "texto": "Cortar só as notas mais baixas já basta; as notas 10 não distorcem.",
         "tipo": "parcial"
       },
       {
         "id": "j5",
-        "texto": "Funcionários que respondem rápido costumam gostar mais do gestor.",
+        "texto": "Funcionários que respondem rápido costumam gostar mais do gestor, e isso influencia a nota que dão ao final.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "A moda é melhor porque a nota mais votada representa a equipe inteira.",
+        "texto": "A moda é melhor porque a nota mais votada representa a equipe inteira, sem ser distorcida por nenhum extremo.",
         "tipo": "erro_conceitual",
         "equivoco": "moda_inadequada"
       }
@@ -2638,12 +2638,12 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "Isso é o Paradoxo de Simpson: ocorre quando a composição da amostra muda. Se o tráfego do Mobile (que tem taxa menor) aumentou muito em proporção, ele 'pesa' mais na média global, puxando-a para baixo.",
+        "texto": "É o Paradoxo de Simpson: o tráfego do Mobile, de taxa menor, cresceu e pesa mais na média global, puxando-a para baixo.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "Painéis de BI apenas agregam a matemática; não é um erro, é uma falha de interpretação da média ponderada.",
+        "texto": "Painéis de BI apenas agregam a matemática; não é um erro, é uma falha de interpretação da média ponderada por parte de quem lê.",
         "tipo": "erro_conceitual",
         "equivoco": "desconfia_ferramenta"
       },
@@ -2660,12 +2660,12 @@
       },
       {
         "id": "j5",
-        "texto": "O Desktop converte mais porque as telas maiores são mais bonitas.",
+        "texto": "O Desktop converte mais porque as telas maiores são mais bonitas e passam mais confiança ao comprador.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "A taxa geral é sempre a média simples das taxas dos segmentos.",
+        "texto": "A taxa geral é sempre a média simples das taxas dos segmentos, sem considerar o volume de cada um deles.",
         "tipo": "afirmacao_falsa",
         "equivoco": "nao_explica_matematica"
       }
@@ -2771,36 +2771,36 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "Isso é o Paradoxo de Simpson. As mulheres se candidataram em massa para Engenharia (onde a aprovação geral é muito baixa), puxando sua média global para baixo, mesmo tendo taxa maior em ambas as áreas.",
+        "texto": "É o Paradoxo de Simpson: as mulheres se candidataram em massa à Engenharia, onde a aprovação é baixa, o que reduz a taxa geral.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "O sistema não errou. É um efeito matemático real das médias ponderadas.",
+        "texto": "O sistema não errou. É um efeito matemático real das médias ponderadas, que mudam conforme o volume de cada departamento.",
         "tipo": "erro_conceitual",
         "equivoco": "desconfia_ferramenta"
       },
       {
         "id": "j3",
-        "texto": "O viés pode existir, mas a matemática dos dados aponta que, isoladamente, as mulheres estão sendo mais aprovadas que os homens.",
+        "texto": "O viés pode existir, mas a matemática dos dados aponta que as mulheres estão sendo mais aprovadas.",
         "tipo": "erro_conceitual",
         "equivoco": "ignora_matematica"
       },
       {
         "id": "j4",
-        "texto": "Sazonalidade altera o volume ao longo do tempo, mas não explica a inversão matemática simultânea das taxas.",
+        "texto": "Sazonalidade altera o volume ao longo do ano, mas não explica a inversão matemática simultânea das taxas.",
         "tipo": "irrelevante",
         "equivoco": "fator_irrelevante"
       },
       {
         "id": "j5",
-        "texto": "O cenário considera milhares de currículos, a diferença não é obra do acaso.",
+        "texto": "O cenário considera milhares de currículos, então a diferença não é obra do acaso.",
         "tipo": "afirmacao_falsa",
         "equivoco": "ruido_amostral"
       },
       {
         "id": "j6",
-        "texto": "As mulheres têm taxa maior em cada departamento, mas isso sozinho não explica por que a taxa geral delas é menor.",
+        "texto": "As mulheres têm taxa maior em cada departamento, mas isso sozinho não explica a taxa geral menor.",
         "tipo": "parcial"
       }
     ],
@@ -2881,12 +2881,12 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "A equipe analisou apenas os 'sobreviventes'. Quem achou a interface confusa provavelmente já cancelou a conta e não recebeu a pesquisa.",
+        "texto": "A equipe analisou apenas os 'sobreviventes'. Quem achou a interface confusa já cancelou e não recebeu a pesquisa.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "O problema não é a quantidade de respostas, mas sim o perfil de quem foi selecionado para responder.",
+        "texto": "O problema não é a quantidade de respostas, mas sim o perfil de quem foi selecionado para responder à pesquisa enviada.",
         "tipo": "erro_conceitual",
         "equivoco": "confunde_tamanho_qualidade"
       },
@@ -2898,13 +2898,13 @@
       },
       {
         "id": "j4",
-        "texto": "O erro está na filtragem da base ('há mais de 6 meses'), não no momento do envio.",
+        "texto": "O erro está na filtragem da base ('há mais de 6 meses'), não no momento do envio da pesquisa por e-mail.",
         "tipo": "irrelevante",
         "equivoco": "fator_externo"
       },
       {
         "id": "j5",
-        "texto": "Como a base inteira pesquisada deu notas altas, a média e a mediana seriam ambas elevadas. O erro é de amostragem.",
+        "texto": "Com notas altas, média e mediana seriam elevadas; o erro é de amostragem.",
         "tipo": "erro_conceitual",
         "equivoco": "falsa_mediana"
       },
@@ -3003,18 +3003,18 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "Em 10.000 transações, há apenas 1 fraude (detectada). Mas o 1% de erro da IA sobre as 9.999 transações boas gera ~100 alarmes falsos. Se o alarme toca, a chance real de fraude é inferior a 1%!",
+        "texto": "Com 1 fraude em 10.000, o erro de 1% nas boas gera ~100 alarmes falsos: a chance real de fraude é inferior a 1%.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "O gestor ignorou a estatística Bayesiana básica ao focar apenas na precisão da ferramenta e não na raridade do evento.",
+        "texto": "O gestor ignorou a estatística Bayesiana básica ao focar na precisão da ferramenta e não na raridade do evento.",
         "tipo": "erro_conceitual",
         "equivoco": "nega_falacia"
       },
       {
         "id": "j3",
-        "texto": "Mesmo a melhor IA sofre com o paradoxo de falsos positivos quando aplicada a eventos extremamente raros.",
+        "texto": "Mesmo a melhor IA sofre com o paradoxo dos falsos positivos quando aplicada a eventos extremamente raros, como as fraudes.",
         "tipo": "parcial",
         "equivoco": "solucao_tecnica"
       },
@@ -3026,13 +3026,13 @@
       },
       {
         "id": "j5",
-        "texto": "Isso é uma especulação operacional, não explica o erro estatístico da afirmação do gestor.",
+        "texto": "Isso é uma especulação operacional, que não explica o erro estatístico da afirmação do gestor e depende de dados que o enunciado não traz.",
         "tipo": "irrelevante",
         "equivoco": "hipotese_sem_dados"
       },
       {
         "id": "j6",
-        "texto": "Com 99% de precisão, quando o alarme toca a chance de ser fraude é de 99%, não importa quão rara seja a fraude.",
+        "texto": "Com 99% de precisão, quando o alarme toca a chance de ser fraude é de 99%, não importa quão rara seja a fraude no conjunto de todas as transações.",
         "tipo": "erro_conceitual",
         "equivoco": "nega_falacia"
       }
@@ -3135,30 +3135,30 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "Variável de confusão! Em meses chuvosos, as pessoas navegam mais na internet (gastando sua verba de Ads) e, naturalmente, compram mais guarda-chuvas. Dobrar os Ads num mês de sol não fará chover.",
+        "texto": "Há uma variável de confusão: a chuva aumenta os Ads e as vendas ao mesmo tempo; dobrar os Ads não faz chover.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "Questões financeiras de custo de anúncio não explicam o aumento na demanda física do produto.",
+        "texto": "Questões financeiras de custo de anúncio não explicam o aumento na demanda física do produto no período.",
         "tipo": "erro_conceitual",
         "equivoco": "fator_financeiro"
       },
       {
         "id": "j3",
-        "texto": "O mercado competitivo não explica a oscilação alinhada das duas métricas no gráfico.",
+        "texto": "O mercado competitivo não explica a oscilação alinhada das duas métricas no gráfico, que se repete ao longo dos meses.",
         "tipo": "irrelevante",
         "equivoco": "cenario_competitivo"
       },
       {
         "id": "j4",
-        "texto": "Um teto de orçamento impede a execução da ideia, mas não explica por que a análise dos dados está logicamente errada.",
+        "texto": "Um teto de orçamento impede a execução da ideia, mas não explica o erro lógico da análise.",
         "tipo": "irrelevante",
         "equivoco": "restricao_operacional"
       },
       {
         "id": "j5",
-        "texto": "O gráfico demonstra uma alta correlação ao longo de vários meses, não um caso isolado.",
+        "texto": "O gráfico mostra alta correlação em vários meses, e não um caso isolado.",
         "tipo": "afirmacao_falsa",
         "equivoco": "busca_outliers"
       },
@@ -3262,17 +3262,17 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "O P75 é o valor abaixo do qual ficam 75% das pessoas; quem o alcança está no quarto superior, que é o grupo do bônus.",
+        "texto": "O P75 é o valor abaixo do qual ficam 75% das pessoas; quem o alcança está no quarto superior, o grupo do bônus.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "O corte precisa ficar acima da maioria da equipe, e não no meio dela.",
+        "texto": "O corte precisa ficar acima da maioria da equipe, e não no meio dela, para premiar só quem se destaca.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "O P75 é a média dos 75% menores valores.",
+        "texto": "O P75 é a média dos 75% menores valores, e por isso serve como corte do bônus da equipe.",
         "tipo": "erro_conceitual",
         "equivoco": "confunde_percentil_media"
       },
@@ -3284,12 +3284,12 @@
       },
       {
         "id": "j5",
-        "texto": "Bônus costumam ser pagos junto com o 13º salário.",
+        "texto": "Bônus costumam ser pagos junto com o 13º salário, e por isso o corte deve ser decidido com a folha de dezembro.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "A mediana separa a equipe em 25% e 75%.",
+        "texto": "A mediana separa a equipe em 25% e 75%, então ela já serve de corte para o bônus.",
         "tipo": "afirmacao_falsa",
         "equivoco": "mediana_e_metade"
       }
@@ -3395,34 +3395,34 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "A média aparada descarta só as pontas sem critério e mantém todas as outras notas na conta.",
+        "texto": "A média aparada descarta só as pontas sem critério e mantém todas as outras notas na conta do fornecedor.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "O resumo precisa ignorar as notas dadas sem critério.",
+        "texto": "O resumo precisa ignorar as notas dadas sem critério, que distorcem a nota geral e escondem a opinião real.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "Média aparada é a média das notas arredondadas.",
+        "texto": "Média aparada é a média das notas arredondadas, ou seja, aquelas que foram aproximadas para o número inteiro mais perto.",
         "tipo": "erro_conceitual",
         "equivoco": "confunde_aparada_arredondada"
       },
       {
         "id": "j4",
-        "texto": "A média simples é melhor porque usa todos os dados, até os que não foram avaliados com critério.",
+        "texto": "A média simples é melhor porque usa todos os dados, mesmo os sem critério.",
         "tipo": "erro_conceitual",
         "equivoco": "media_simples"
       },
       {
         "id": "j5",
-        "texto": "Dossiês de fornecedores costumam ter muitas páginas.",
+        "texto": "Dossiês de fornecedores costumam ter muitas páginas, então o resumo da nota precisa caber em uma só linha.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "A mediana é sempre igual à média aparada.",
+        "texto": "A mediana é sempre igual à média aparada, em qualquer conjunto de notas.",
         "tipo": "afirmacao_falsa",
         "equivoco": "mediana_descarta_demais"
       }
@@ -3517,40 +3517,40 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "Quem fica entre os piores num trimestre costuma ter tido azar além de desempenho baixo, e o acaso se normaliza no seguinte. As melhores, sem treino, também se aproximaram da média: o mesmo movimento, em sentido oposto.",
+        "texto": "Quem foi mal teve azar, que passa no trimestre seguinte; quem foi bem também volta à média.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "Para saber o efeito do treinamento, faltaria comparar com um grupo de controle.",
+        "texto": "Para saber o efeito do treinamento, faltaria comparar com um grupo de controle que não o tivesse feito.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "Se subiram depois do treinamento, foi por causa dele: o que vem depois é sempre consequência.",
+        "texto": "Se subiram depois do treinamento, foi por causa dele: o que vem depois é sempre consequência do que veio antes, sem outra explicação possível.",
         "tipo": "erro_conceitual",
         "equivoco": "atribui_ao_treino"
       },
       {
         "id": "j4",
-        "texto": "As melhores equipes caíram por acomodação, e isso não tem relação com a melhora das piores.",
+        "texto": "As melhores equipes caíram por acomodação, e isso não tem relação nenhuma com a melhora das piores equipes da rede.",
         "tipo": "erro_conceitual",
         "equivoco": "inventa_causa"
       },
       {
         "id": "j5",
-        "texto": "Treinamentos intensivos costumam ser caros.",
+        "texto": "Treinamentos intensivos costumam ser caros, e por isso só devem ser aplicados nas equipes com os piores resultados.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "A média da rede toda quase não mudou, então nenhuma equipe individual mudou.",
+        "texto": "A média da rede quase não mudou, então nenhuma equipe individual mudou.",
         "tipo": "afirmacao_falsa",
         "equivoco": "media_global_esconde"
       },
       {
         "id": "j7",
-        "texto": "Quem foi mal num trimestre vai mal no seguinte com certeza.",
+        "texto": "Quem foi mal num trimestre vai mal no seguinte com certeza, porque o desempenho de uma equipe nunca muda.",
         "tipo": "afirmacao_falsa",
         "equivoco": "persistencia_total"
       }
@@ -3659,40 +3659,40 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "Cada teste a 5% tem 1 chance em 20 de dar positivo por acaso. Com 20 testes, esperar cerca de um falso positivo é normal. É preciso corrigir o limite (por exemplo, dividir 0,05 pelo número de testes) ou repetir o teste só com a variação vencedora.",
+        "texto": "A 5%, cada teste tem 1 chance em 20 de dar falso positivo; em 20 testes, um é esperado. Corrija o limite ou repita o teste.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "O resultado é suspeito porque só uma variação em vinte deu positivo.",
+        "texto": "O resultado é suspeito porque só uma variação em vinte deu positivo, e isso é raro demais para ser puro acaso.",
         "tipo": "parcial"
       },
       {
         "id": "j3",
-        "texto": "Valor-p abaixo de 0,05 significa 95% de certeza de que o efeito existe.",
+        "texto": "Valor-p abaixo de 0,05 significa 95% de certeza de que o efeito existe, então o resultado pode ser tomado como definitivo.",
         "tipo": "erro_conceitual",
         "equivoco": "confunde_valor_p"
       },
       {
         "id": "j4",
-        "texto": "Quanto mais testes se faz, mais confiável fica o conjunto de resultados.",
+        "texto": "Quanto mais testes se faz, mais confiável fica o conjunto de resultados, porque cada teste confirma os outros.",
         "tipo": "erro_conceitual",
         "equivoco": "mais_testes_mais_confianca"
       },
       {
         "id": "j5",
-        "texto": "Testes A/B são comuns em empresas de tecnologia.",
+        "texto": "Testes A/B são comuns em empresas de tecnologia, que costumam rodar vários experimentos por semana.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "Em vinte testes sem efeito real, a chance de nenhum dar positivo a 5% é de 95%.",
+        "texto": "Em vinte testes sem efeito real, a chance de nenhum dar positivo a 5% é de 95%, como em um só teste.",
         "tipo": "afirmacao_falsa",
         "equivoco": "subestima_acumulo"
       },
       {
         "id": "j7",
-        "texto": "O valor-p mede o tamanho do efeito: {{minimo}} indica um efeito grande.",
+        "texto": "O valor-p mede o tamanho do efeito: {{minimo}} indica um efeito grande, e quanto menor ele for, maior será o impacto da variação.",
         "tipo": "afirmacao_falsa",
         "equivoco": "p_e_tamanho_efeito"
       }
@@ -3785,12 +3785,12 @@
     "justificativas": [
       {
         "id": "j1",
-        "texto": "A redução relativa compara os dois riscos; a absoluta diz quantas pessoas deixam de se acidentar. Com o risco inicial baixo, cortar pela metade evita poucos casos, então a decisão pesa o custo por acidente evitado.",
+        "texto": "A relativa compara os riscos; a absoluta diz quantos acidentes são evitados. Com risco inicial baixo, são poucos casos.",
         "tipo": "correta"
       },
       {
         "id": "j2",
-        "texto": "O percentual é verdadeiro, mas sozinho não diz quantos acidentes o curso evita.",
+        "texto": "O percentual é verdadeiro, mas sozinho não diz quantos acidentes o curso evita, nem se o custo do treinamento compensa o benefício.",
         "tipo": "parcial"
       },
       {
@@ -3801,24 +3801,24 @@
       },
       {
         "id": "j4",
-        "texto": "Quanto maior o percentual de redução, maior o benefício, sempre.",
+        "texto": "Quanto maior o percentual de redução, maior o benefício, sempre, seja qual for o risco inicial da empresa.",
         "tipo": "erro_conceitual",
         "equivoco": "percentual_impressiona"
       },
       {
         "id": "j5",
-        "texto": "Fornecedores de treinamento costumam fazer propaganda dos cursos.",
+        "texto": "Fornecedores de treinamento costumam fazer propaganda dos cursos, e por isso os números divulgados são exagerados.",
         "tipo": "irrelevante"
       },
       {
         "id": "j6",
-        "texto": "Se a redução relativa é de 50%, a redução absoluta também é de 50 pontos percentuais.",
+        "texto": "Se a redução relativa é de 50%, a redução absoluta também é de 50 pontos percentuais, em qualquer caso.",
         "tipo": "afirmacao_falsa",
         "equivoco": "relativo_como_absoluto"
       },
       {
         "id": "j7",
-        "texto": "Quando o risco inicial é pequeno, qualquer redução relativa é irrelevante.",
+        "texto": "Quando o risco inicial é pequeno, qualquer redução relativa é irrelevante, por menor que seja o custo.",
         "tipo": "afirmacao_falsa",
         "equivoco": "descarta_relativo"
       }

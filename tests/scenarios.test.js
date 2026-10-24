@@ -191,3 +191,35 @@ test('validador: placeholder inexistente no contexto', () => {
 test('validador: marcador de dispersão não vira linha no eixo', () => {
   erroUnico((d) => { d.feedback.revelacao.marcadores.push({ chave: 'iqr', rotulo: 'IQR' }); }, /marcador de dispersão.*iqr/);
 });
+
+// O tamanho da justificativa não pode entregar a resposta: os comprimentos seguem uma distribuição
+// aproximadamente normal e a certa é só mais uma amostra dela (fisher.md 4.3).
+test('o tamanho das justificativas não revela a certa e segue uma distribuição normal', () => {
+  const tamanho = (j) => j.texto.replace(/\{\{[^}]+\}\}/g, '123456').length;
+  const media = (v) => v.reduce((a, b) => a + b, 0) / v.length;
+  const dp = (v) => Math.sqrt(media(v.map((x) => (x - media(v)) ** 2)));
+  const cenarios = todosCenarios();
+  const todos = cenarios.flatMap((c) => c.justificativas.map(tamanho));
+  const m = media(todos);
+  const s = dp(todos);
+  const assimetria = media(todos.map((x) => ((x - m) / s) ** 3));
+  const curtose = media(todos.map((x) => ((x - m) / s) ** 4)) - 3;
+  assert.ok(Math.abs(assimetria) < 0.5, `assimetria ${assimetria.toFixed(2)}`);
+  assert.ok(Math.abs(curtose) < 1, `curtose ${curtose.toFixed(2)}`);
+
+  const z = [];
+  let maiores = 0;
+  for (const c of cenarios) {
+    const t = c.justificativas.map(tamanho);
+    const certa = tamanho(c.justificativas.find((j) => j.tipo === 'correta'));
+    z.push((certa - media(t)) / dp(t));
+    if (t.every((x) => x <= certa)) maiores++;
+  }
+  assert.ok(Math.abs(media(z)) < 0.6, `a certa destoa da média do pool em ${media(z).toFixed(2)} dp`);
+  assert.ok(maiores <= cenarios.length * 0.3, `a certa é a maior em ${maiores} de ${cenarios.length} cenários`);
+
+  for (const tipo of ['correta', 'parcial', 'erro_conceitual', 'afirmacao_falsa', 'irrelevante']) {
+    const doTipo = cenarios.flatMap((c) => c.justificativas.filter((j) => j.tipo === tipo).map(tamanho));
+    assert.ok(Math.abs(media(doTipo) - m) < 15, `o tipo ${tipo} tem tamanho médio ${media(doTipo).toFixed(0)} (geral ${m.toFixed(0)})`);
+  }
+});

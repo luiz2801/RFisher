@@ -126,6 +126,8 @@ De **6 a 8**, com **exatamente uma** `correta`. Tipos aceitos:
 
 Um pool típico tem 1 `correta`, 1 `parcial`, 2 `erro_conceitual`, 1 `irrelevante` e 1 `afirmacao_falsa`, como nos cenários existentes.
 
+**O tamanho não pode denunciar a certa.** Os textos de todos os cenários seguem uma distribuição aproximadamente normal, com média de cerca de 105 caracteres e desvio de cerca de 20 (a maioria entre 65 e 145). A `correta` não deve ser a mais longa por hábito, nem as `irrelevante` ou `afirmacao_falsa` as mais curtas: sorteie a posição da certa entre os tamanhos do pool, encurtando a explicação dela ou alongando as erradas com detalhes plausíveis. Um placeholder conta como cerca de 6 caracteres. `tests/scenarios.test.js` confere isso.
+
 A justificativa é avaliada **separadamente** da métrica. Por isso é possível acertar a métrica por sorte (justificativa errada) ou ter a justificativa certa com a métrica errada. Escreva as erradas para que, de fato, não sustentem a métrica correta.
 
 ### Equívocos e feedback
@@ -386,7 +388,7 @@ O validador **não** confere que a opção marcada `correta` é de fato a corret
 ## Checklist antes de concluir
 
 - [ ] `id` único; `setor` válido; `conceito` do catálogo; `dificuldade` de 1 a 3.
-- [ ] 5 opções (1 correta); 6–8 justificativas (1 `correta`).
+- [ ] 5 opções (1 correta); 6–8 justificativas (1 `correta`), com tamanhos variados e sem a certa sempre a mais longa.
 - [ ] Todo `equivoco` tem feedback.
 - [ ] Nenhum número de dado escrito à mão; só placeholders.
 - [ ] O invariante prova o ponto pedagógico e passa em 1.000 seeds.
