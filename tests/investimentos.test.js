@@ -9,7 +9,7 @@ import {
 import { EMPRESAS, PORTES, FALACIAS, obterEmpresa } from '../src/scenarios/content/investimentos.js';
 import {
   APORTES, FAIXAS_MERCADO, CONSULTORIA_PENALIDADE, SORTEIO_PROBABILIDADE, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO,
-  CUSTOS_BALANCO, CONSULTORIA_HONORARIO_FRACASSO,
+  CUSTOS_BALANCO, CONSULTORIA_HONORARIO_FRACASSO, CONSULTORIA_PENALIDADE_RH, CONSULTORIA_HONORARIO_RH,
 } from '../src/engine/config.js';
 import { receitaBalanco } from '../src/engine/scoring.js';
 
@@ -75,6 +75,14 @@ test('a consultoria cobra metade do retorno do sucesso e um honorário fixo no f
   assert.equal(CONSULTORIA_HONORARIO_FRACASSO, 15000);
   assert.equal(honorarioDaConsultoria(true), 15000);
   assert.equal(honorarioDaConsultoria(false), 0);
+});
+
+test('com o desconto de Pessoas e Finanças a consultoria cobra metade: 25% do retorno e R$ 7.500', () => {
+  assert.equal(CONSULTORIA_PENALIDADE_RH, CONSULTORIA_PENALIDADE / 2);
+  assert.equal(CONSULTORIA_HONORARIO_RH, CONSULTORIA_HONORARIO_FRACASSO / 2);
+  assert.equal(ganhoComConsultoria(1, true), 0.75);
+  assert.equal(honorarioDaConsultoria(true, true), 7500);
+  assert.equal(honorarioDaConsultoria(false, true), 0);
 });
 
 // ---------- porte e oferta ----------
@@ -465,4 +473,16 @@ test('save antigo, sem os campos de investimento, segue funcionando', () => {
   const investiu = agir(oferta, 'INVESTIR', 10000);
   assert.equal(investiu.jogadores[0].investimentos.length, 1);
   assert.equal(ateOFim(investiu).fase, 'FIM_DE_JOGO');
+});
+
+test('cooperativo: a consultoria sai pela metade do preço (25% do retorno, R$ 7.500)', () => {
+  const coop = () => novoJogo({ jogadores: DOIS, seed: 21, modo: 'cooperativo', teste: { casa: 'mercado' } });
+  const o = reduzir(coop(), { tipo: 'ROLAR' });
+  const consultado = agir(o, 'ABRIR_CONSULTORIA');
+  const guardado = agir(consultado, 'INVESTIR', 10000).jogadores[0].investimentos[0];
+  assert.equal(guardado.ganho, o.mercadoAtual.ganho * (1 - CONSULTORIA_PENALIDADE_RH));
+  assert.equal(guardado.honorario, CONSULTORIA_HONORARIO_RH);
+  const recusou = agir(consultado, 'RECUSAR');
+  assert.equal(recusou.mercadoAtual.honorarioPago, CONSULTORIA_HONORARIO_RH);
+  assert.equal(recusou.empresa.dinheiro, o.empresa.dinheiro - CONSULTORIA_HONORARIO_RH);
 });

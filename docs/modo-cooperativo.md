@@ -2,7 +2,7 @@
 
 **Status:** fase 1 (base) implementada; fases 2 e 3 pendentes. Decisão registrada no histórico do [fisher.md](../fisher.md) (nº 9).
 
-**Implementado na fase 1:** campo `setor` em cenários e eventos (validado), `modo` e `empresa` no estado, acessor `carteira(e)`, papéis por número de jogadores (`src/engine/papeis.js`), efeito passivo de Pessoas e Finanças (+2 de reputação por Balanço) e de prejuízo amortecido em 30% nos eventos de setor, meta de caixa no Balanço (bônus de R$ 10.000 e +3 de reputação, ou corte de R$ 8.000 e −5), classificação final por faixas e a UI correspondente. Os valores estão em `src/engine/config.js`. O passivo de Operações ainda não tem efeito, porque não há eventos de logística nem de produção.
+**Implementado na fase 1:** campo `setor` em cenários e eventos (validado), `modo` e `empresa` no estado, acessor `carteira(e)`, papéis por número de jogadores (`src/engine/papeis.js`), efeito passivo de Pessoas e Finanças (consultoria do Mercado pela metade do preço) e de prejuízo amortecido em 30% nos eventos de setor, meta de caixa no Balanço (bônus de R$ 10.000 e +3 de reputação, ou corte de R$ 8.000 e −5), classificação final por faixas e a UI correspondente. Os valores estão em `src/engine/config.js`. O passivo de Operações ainda não tem efeito, porque não há eventos de logística nem de produção.
 
 **Relaciona-se com:** questão em aberto nº 2 (tema e tom), nº 6 (mecanismo de recuperação) e nº 1 do roadmap.
 
@@ -44,7 +44,7 @@ Cada diretoria tem uma habilidade ativa, usada de 1 a 2 vezes por partida, e um 
 | --- | --- | --- |
 | Operações | **Rota alternativa:** rola o dado duas vezes e escolhe um dos resultados | Perde menos dinheiro em eventos de cadeia e estoque |
 | Tecnologia | **Dashboard:** mostra o resumo estatístico do cenário (n, mín., máx., quartis) | Reduz o prejuízo de eventos de dados enganosos (eixo truncado, taxa-base) |
-| Pessoas e Finanças | **Treinamento:** libera a `dica` do cenário (o campo já existe no schema) | +2 de reputação a cada Balanço |
+| Pessoas e Finanças | **Treinamento:** libera a `dica` do cenário (o campo já existe no schema) | **Consultoria pela metade do preço** (**implementado**): 25% do retorno no sucesso e R$ 7.500 de honorário, em vez de 50% e R$ 15.000 |
 
 **Eventos (`fisher.md` 3.15).** Na casa de Evento quem joga escolhe participar ou passar, e o grupo pode discutir antes. Ao participar, escolhe uma de três cartas viradas (uma boa, uma ruim e uma troll), o jogo revela uma das outras, e o grupo decide se mantém a carta ou troca (Monty Hall). O efeito da carta final vale para a empresa. O efeito passivo de prejuízo (−30%) vale para a carta escolhida e para o valor mostrado nas outras duas, reveladas ao final.
 
@@ -82,6 +82,7 @@ Sem pressão, o cooperativo fica morno.
 **Implementado** (`fisher.md` 3.14). As casas de Mercado funcionam também no cooperativo, com estas diferenças:
 
 - O porte da empresa ofertada vem da **reputação da empresa**, e o aporte sai do **caixa da empresa** (no máximo o caixa disponível).
+- A consultoria sai **pela metade do preço**, efeito passivo de Pessoas e Finanças (`CONSULTORIA_PENALIDADE_RH` = 25% do retorno do sucesso e `CONSULTORIA_HONORARIO_RH` = R$ 7.500, no fracasso ou na hora de quem não investe). Como todo setor tem responsável no cooperativo, o desconto vale sempre. Substituiu o antigo +2 de reputação por Balanço, que era um bônus fixo e sem decisão do grupo.
 - Cada aporte fica registrado em quem o fez (`jogadores[].investimentos`) e é apurado quando **essa pessoa** passa pelo Balanço. O retorno entra no caixa da empresa **antes da meta trimestral**, então um investimento bem-sucedido ajuda a cumprir a meta e um aporte em custódia reduz o caixa que a meta compara. O risco que o aporte de um jogador impõe ao orçamento comum é assunto do grupo: a conversa faz parte do jogo (como nas decisões de cenário).
 - Diagnóstico certo ou errado do argumento do fundador muda a reputação da empresa.
 - Os aportes ainda em custódia no fim dos trimestres são apurados no encerramento e entram no caixa final, que define a faixa da empresa. Falência da empresa encerra a partida sem apuração.

@@ -8,8 +8,8 @@ import { DIRETORIAS } from '../engine/papeis.js';
 import { metaTrimestral, dinheiroDoEvento } from '../engine/machine.js';
 import { relatorioDesempenho } from '../engine/desempenho.js';
 import { CONFIANCA, ROTULO_CONFIANCA, NIVEL, confiancaEfetiva, multiplicadorSequencia } from '../engine/scoring.js';
-import { totalInvestido, ganhoComConsultoria, honorarioDaConsultoria } from '../engine/investimentos.js';
-import { MAX_JOGADORES, APORTES, CONSULTORIA_PENALIDADE, CONSULTORIA_HONORARIO_FRACASSO, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL_PASSO, REPUTACAO_INICIAL, REPUTACAO_INICIAL_MIN, REPUTACAO_INICIAL_MAX, REPUTACAO_INICIAL_PASSO, PERFIS_BOT, PROGRESSOES, PROGRESSAO_PADRAO, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
+import { totalInvestido, ganhoComConsultoria, honorarioDaConsultoria, penalidadeDaConsultoria, honorarioFixoDaConsultoria } from '../engine/investimentos.js';
+import { MAX_JOGADORES, APORTES, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL_PASSO, REPUTACAO_INICIAL, REPUTACAO_INICIAL_MIN, REPUTACAO_INICIAL_MAX, REPUTACAO_INICIAL_PASSO, PERFIS_BOT, PROGRESSOES, PROGRESSAO_PADRAO, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
 import { obterCenario, todosCenarios, preencher, valorDoMarcador } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
 import { PORTES, FALACIAS, obterEmpresa } from '../scenarios/content/investimentos.js';
@@ -782,8 +782,9 @@ function viewMercado(e) {
   const porte = PORTES[m.porte];
   const caixa = carteira(e).dinheiro;
   const aberta = !m.decisao;
-  const ganho = m.consultoria ? ganhoComConsultoria(m.ganho) : m.ganho;
-  const honorario = honorarioDaConsultoria(m.consultoria);
+  const desconto = ehCooperativo(e);
+  const ganho = m.consultoria ? ganhoComConsultoria(m.ganho, desconto) : m.ganho;
+  const honorario = honorarioDaConsultoria(m.consultoria, desconto);
 
   const ficha = `<article class="ficha">
     <h3>${esc(def.nome)}</h3>
@@ -797,11 +798,11 @@ function viewMercado(e) {
   const relatorio = m.consultoria
     ? `<section class="ficha"><h3>Relatório da consultoria</h3>
       <p>Chance de sucesso: <strong>${pctMercado(m.prob)}</strong> · chance de fracasso: ${pctMercado(1 - m.prob)}.</p>
-      <p>Se der certo: <strong>+${pctMercado(ganho)}</strong> sobre o aporte (já sem os ${pctMercado(CONSULTORIA_PENALIDADE)} do retorno cobrados pela consultoria). Se der errado: <strong>−${pctMercado(m.perda)}</strong> do aporte, mais ${brl(honorario)} de honorários.</p></section>`
+      <p>Se der certo: <strong>+${pctMercado(ganho)}</strong> sobre o aporte (já sem os ${pctMercado(penalidadeDaConsultoria(desconto))} do retorno cobrados pela consultoria). Se der errado: <strong>−${pctMercado(m.perda)}</strong> do aporte, mais ${brl(honorario)} de honorários.</p></section>`
     : '';
 
   const consultoria = !m.consultoria && aberta
-    ? `<button class="discreto" data-acao="ABRIR_CONSULTORIA">Contratar consultoria (relatório com a chance exata e os retornos possíveis; se você investir, ela cobra ${pctMercado(CONSULTORIA_PENALIDADE)} do retorno quando der certo e ${brl(CONSULTORIA_HONORARIO_FRACASSO)} quando der errado; se não investir, cobra ${brl(CONSULTORIA_HONORARIO_FRACASSO)} na hora)</button>`
+    ? `<button class="discreto" data-acao="ABRIR_CONSULTORIA">Contratar consultoria (relatório com a chance exata e os retornos possíveis; se você investir, ela cobra ${pctMercado(penalidadeDaConsultoria(desconto))} do retorno quando der certo e ${brl(honorarioFixoDaConsultoria(desconto))} quando der errado; se não investir, cobra ${brl(honorarioFixoDaConsultoria(desconto))} na hora${desconto ? '; desconto da diretoria de Pessoas e Finanças' : ''})</button>`
     : '';
 
   let diagnostico = '';
@@ -849,8 +850,7 @@ function viewMercado(e) {
       <tr class="total"><td>Resultado</td><td>${brlSinal(b.liquido)}</td></tr>
       ${
         b.meta
-          ? `<tr><td>Meta de caixa: ${brl(b.meta.valor)} (${b.meta.cumprida ? 'cumprida: bônus de investidor' : 'não cumprida: corte de orçamento'})</td><td>${brlSinal(b.meta.dinheiro)} · Rep. ${b.meta.reputacao > 0 ? '+' : '−'}${Math.abs(b.meta.reputacao)}</td></tr>
-      <tr><td>Pessoas e Finanças: treinamento da equipe</td><td>Rep. +${b.bonusRh}</td></tr>`
+          ? `<tr><td>Meta de caixa: ${brl(b.meta.valor)} (${b.meta.cumprida ? 'cumprida: bônus de investidor' : 'não cumprida: corte de orçamento'})</td><td>${brlSinal(b.meta.dinheiro)} · Rep. ${b.meta.reputacao > 0 ? '+' : '−'}${Math.abs(b.meta.reputacao)}</td></tr>`
           : ''
       }
     </table>${listaInvestimentos(b.investimentos)}${b.meta?.crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}${botaoContinuar}`;

@@ -3,7 +3,7 @@ import { CASAS, avancar } from './board.js';
 import {
   CUSTOS_BALANCO, MULTA_CRISE, REPUTACAO_POS_CRISE, META_CRESCIMENTO_POR_JOGADOR, BONUS_INVESTIDOR,
   BONUS_INVESTIDOR_REPUTACAO, CORTE_ORCAMENTO, CORTE_ORCAMENTO_REPUTACAO, REDUCAO_PREJUIZO_PASSIVA,
-  REPUTACAO_BALANCO_RH, PERFIS_BOT, APORTES, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO,
+  PERFIS_BOT, APORTES, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO,
 } from './config.js';
 import { resolverDecisao, receitaBalanco, justificativaConta, atualizarSequencia, CONFIANCA } from './scoring.js';
 import {
@@ -63,8 +63,7 @@ function aplicarBalanco(e, rng) {
   const balanco = { receita, custos: CUSTOS_BALANCO, liquido: receita - CUSTOS_BALANCO, investimentos };
   if (!ehCooperativo(e)) return balanco;
 
-  // Cooperativo: bônus do RH, depois a meta. Quem falha sofre corte, ninguém é eliminado.
-  mudarReputacao(w, REPUTACAO_BALANCO_RH);
+  // Cooperativo: a meta. Quem falha sofre corte, ninguém é eliminado.
   const meta = metaTrimestral(e);
   const cumprida = w.dinheiro >= meta;
   const ajusteDinheiro = cumprida ? BONUS_INVESTIDOR : -CORTE_ORCAMENTO;
@@ -72,7 +71,6 @@ function aplicarBalanco(e, rng) {
   const crise = mudarReputacao(w, cumprida ? BONUS_INVESTIDOR_REPUTACAO : -CORTE_ORCAMENTO_REPUTACAO);
   return {
     ...balanco,
-    bonusRh: REPUTACAO_BALANCO_RH,
     meta: { valor: meta, cumprida, dinheiro: ajusteDinheiro, reputacao: cumprida ? BONUS_INVESTIDOR_REPUTACAO : -CORTE_ORCAMENTO_REPUTACAO, crise },
   };
 }
@@ -229,15 +227,15 @@ function decidirMercado(e, decisao, aporte = null) {
         porte: m.porte,
         valor: aporte,
         prob: m.prob,
-        ganho: m.consultoria ? ganhoComConsultoria(m.ganho) : m.ganho,
+        ganho: m.consultoria ? ganhoComConsultoria(m.ganho, ehCooperativo(e)) : m.ganho,
         perda: m.perda,
         consultoria: m.consultoria,
-        honorario: honorarioDaConsultoria(m.consultoria),
+        honorario: honorarioDaConsultoria(m.consultoria, ehCooperativo(e)),
         turnoAporte: e.turnoAtual,
       },
     ];
   } else if (m.consultoria) {
-    m.honorarioPago = honorarioDaConsultoria(true);
+    m.honorarioPago = honorarioDaConsultoria(true, ehCooperativo(e));
     w.dinheiro -= m.honorarioPago;
   }
   if (m.diagnostico) {

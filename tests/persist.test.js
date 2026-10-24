@@ -185,11 +185,10 @@ test('save legado sem modo, empresa e papeis: vira competitivo, com a carteira d
   assert.ok(e.jogadores.every((j) => !('papeis' in j)));
   assert.equal(ehCooperativo(e), false);
   assert.equal(carteira(e), e.jogadores[e.jogadorAtual]);
-  // O balanço de um save assim não tem meta nem bônus do RH.
+  // O balanço de um save assim não tem meta.
   const balanco = reduzir({ ...e, teste: { casa: 'balanco', cenarios: null }, fase: 'ROLAR_DADO', jogadores: e.jogadores.map((j) => ({ ...j, posicao: 27 })) }, { tipo: 'ROLAR' });
   assert.equal(balanco.fase, 'MOSTRAR_BALANCO');
   assert.equal(balanco.balanco.meta, undefined);
-  assert.equal(balanco.balanco.bonusRh, undefined);
 });
 
 test('save legado sem distancia: a distância vale a posição, o progresso é finito e a jogada soma a partir dela', () => {
