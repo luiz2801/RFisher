@@ -83,6 +83,7 @@ Rola os dois dados (soma, 2 a 12) → cai numa casa → vê o cenário/gráfico 
 | 19 | **Eventos com escolha de carta** (implementado, 3.15): ao cair numa casa de Evento a pessoa escolhe participar ou passar. Ao participar, vê três cartas viradas, **uma boa, uma ruim e uma troll**, e escolhe uma sem saber qual é qual, como as portas do problema de Monty Hall. As boas são oportunidades bem acima da média, as ruins são reveses pesados e as trolls são vexames engraçados que custam reputação e quase nenhum dinheiro | Troca o sorteio às cegas pela **sensação de escolha**: participar é uma aposta com a composição conhecida (uma de cada), mas posições desconhecidas. O valor esperado em dinheiro fica perto de zero, então passar é uma opção legítima de quem prefere não arriscar, e o custo médio em reputação (as trolls) pesa contra participar sem necessidade. As 18 cartas de lição seguem no jogo (as positivas viram boas e as negativas, ruins), junto de 23 cartas novas. **Troca no estilo Monty Hall:** depois da escolha, o jogo revela uma das outras duas cartas, nunca a boa, e a pessoa decide manter a sua ou trocar pela que sobrou; quem sabe que trocar leva à carta boa em 2 de cada 3 vezes ganha, em média, bem mais que quem mantém. Fora do modelo: o rival do solo não participa. Valores das cartas e o peso dessa vantagem a calibrar no playtest |
 | 20 | **Progressão da dificuldade configurável** (implementado, 4.5): o menu (etapa Dificuldade) oferece Gradual, Tradicional (padrão) e Acelerada, que mudam só o ritmo com que a dificuldade-alvo sobe com o progresso (expoente 2,6, 2 ou 1); começo e fim da partida são iguais nas três. Vale a todos os jogadores da partida | A subida linear original fazia os cenários de nível 2 dominarem já com 40% do percurso, rápido demais para quem está aprendendo. Em vez de fixar um ritmo, o grupo escolhe: quem quer desafio usa a Acelerada (a curva original), quem quer mais tempo nos conceitos básicos usa a Gradual. Não muda pontuação nem o acerto do rival do solo, apenas quais cenários saem. Saves antigos valem a Tradicional. Expoentes a calibrar no playtest |
 | 21 | **Habilidades das diretorias em todos os modos** (implementado, 3.16): cada diretoria tem uma habilidade ativa (Plano B, Dashboard ou Treinamento, 2 usos por partida cada, na escolha da métrica) e uma passiva (menos 30% de prejuízo nos eventos do próprio setor e, em Pessoas e Finanças, consultoria pela metade do preço). Valem no competitivo, no solo e no cooperativo, para quem tem a diretoria; o rival do computador não as usa | A diretoria deixa de ser só um cargo fora do cooperativo e vira uma escolha com efeito. As ativas dão **informação, nunca a resposta**, para a justificativa continuar obrigatória (princípio 2). A **Rota alternativa** da proposta original foi trocada pelo **Plano B**, porque o dado é o de movimento e ela não atuaria na decisão. O +2 de reputação por Balanço de Pessoas e Finanças foi retirado: era fixo, automático e sem ligação com o papel. Usos e percentuais a calibrar no playtest |
+| 22 | **O tamanho da justificativa não pode entregar a certa** (implementado, 4.3): os comprimentos das justificativas de todos os cenários seguem uma distribuição aproximadamente normal (média ≈ 105 caracteres, desvio ≈ 20), e o tamanho da certa é uma amostra dela, sem relação com o tipo. Um teste confere assimetria, curtose, que a certa não seja sistematicamente a maior e que nenhum tipo se afaste da média geral | Antes, a certa era quase sempre a mais longa (e a irrelevante a mais curta): dava para acertar a justificativa só olhando o tamanho, o que fere o princípio 2 (acertar por sorte não pode compensar). O texto mais completo não pode ser pista |
 
 ---
 
@@ -419,7 +420,7 @@ Cada cenário contém:
 1. **Contexto narrativo** (você, CEO, precisa decidir X).
 2. **Dados e gráfico**, gerados por seed.
 3. **5 alternativas** de métrica, cada uma ligada a um equívoco quando errada.
-4. **Pool de 6 a 8 justificativas** com tipo e equívoco associado.
+4. **Pool de 6 a 8 justificativas** com tipo e equívoco associado. O **tamanho** de cada texto segue a distribuição comum a todos os cenários (decisão 22), para que ele não denuncie a certa.
 5. **Feedback por equívoco:** explicação específica do porquê aquela escolha estava errada.
 6. **Revelação visual:** os dados exibidos com a métrica certa e a errada lado a lado (ex.: média vs. mediana sobre o mesmo histograma).
 7. **Impacto:** valor V e variação de reputação.
@@ -428,12 +429,12 @@ Cada cenário contém:
 
 | Justificativa | Tipo |
 | --- | --- |
-| "Um salário muito alto isolado puxa a média para cima, e a mediana não é afetada por isso." | Correta |
-| "Os salários estão concentrados em poucos valores, então a mediana reflete bem a maioria." | Parcial |
-| "A mediana é o valor que mais se repete, por isso representa a equipe." | Erro: confunde com moda |
-| "A média usa todos os dados, então é sempre mais justa e completa." | Erro: ignora outliers |
-| "A mediana é mais fácil de calcular." | Irrelevante |
-| "Outliers puxam a mediana tanto quanto a média." | Afirmação falsa |
+| "Um salário muito alto isolado puxa a média para cima, e a mediana, que é o valor do meio, não é afetada por isso." | Correta |
+| "Os salários estão concentrados em poucos valores, então a mediana reflete bem a maioria dos funcionários." | Parcial |
+| "A mediana é o valor que mais se repete na lista, por isso ela representa bem toda a equipe." | Erro: confunde com moda |
+| "A média usa todos os dados da folha, então é sempre a medida mais justa, completa e confiável." | Erro: ignora outliers |
+| "A mediana é mais fácil de calcular, porque basta ordenar a lista e olhar para o valor do meio." | Irrelevante |
+| "Os outliers puxam a mediana tanto quanto puxam a média, então as duas se movem juntas." | Afirmação falsa |
 
 ### 4.5 Progressão e reforço
 

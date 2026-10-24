@@ -103,6 +103,7 @@ Cenários e eventos são dados; o conteúdo é validado como código.
 
 - `validarCenario` em todo cenário, com várias seeds (já existe), incluindo `dificuldade` de 1 a 3 e ao menos um cenário por nível.
 - Regras: exatamente 5 opções e 1 correta, 6 a 8 justificativas e exatamente 1 `correta`, todo `equivoco` com feedback, opção errada com equivoco, tipos de justificativa válidos, setor válido, placeholders existentes, marcadores de revelação com valor.
+- **Tamanho das justificativas** (`tests/scenarios.test.js`): assimetria e curtose próximas de zero (distribuição normal), a certa sem destoar do pool (z médio e fração de cenários em que é a maior) e nenhum tipo de justificativa com tamanho médio muito diferente do geral.
 - **Testes negativos** do validador: uma regra violada por vez, cada uma gerando exatamente um erro (em `tests/scenarios.test.js`; a regra de `equivoco` obrigatório em justificativa `erro_conceitual`/`afirmacao_falsa` não existe no validador, ver decisões em aberto).
 - Ids de cenário e de evento únicos (`tests/scenarios.test.js` confere o conteúdo das 41 cartas e que o valor esperado de participar fica perto de zero); todo evento tem setor válido, `tipo` válido (`boa`, `ruim` ou `troll`), dinheiro e reputação numéricos, e lição nas cartas boas e ruins.
 - **Coerência pedagógica:** `cenario.opcoes[correta]` corresponde ao gabarito calculado a partir dos dados (por exemplo, a opção correta do cenário 1 é a mediana, e o valor mostrado vem de `resumo`).
