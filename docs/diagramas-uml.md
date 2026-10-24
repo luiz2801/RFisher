@@ -55,6 +55,9 @@ classDiagram
         +List~HistoricoDecisao~ historico
         +List~Investimento~ investimentos
         +PerfilBot bot
+        +string diretoria
+        +List~string~ papeis
+        +Map habilidadeUsos
     }
 
     class Sequencia {
@@ -312,6 +315,7 @@ stateDiagram-v2
         
         state FluxoDecisao {
             ESCOLHER_METRICA --> ESCOLHER_METRICA : ABRIR_DICA (só iniciante; marca dicaUsada e reduz o bônus de confiança)
+            ESCOLHER_METRICA --> ESCOLHER_METRICA : USAR_HABILIDADE(diretoria) (Plano B, Dashboard ou Treinamento; 2 usos por partida e 1 por cenário)
             ESCOLHER_METRICA --> ESCOLHER_JUSTIFICATIVA : METRICA(id) (só pessoa, cenário comum)
             ESCOLHER_METRICA --> INFORMAR_VALOR : METRICA(id) (só pessoa, cenário de cálculo)
             INFORMAR_VALOR --> ESCOLHER_JUSTIFICATIVA : VALOR(número ou texto pt-BR)
@@ -449,6 +453,8 @@ graph TD
         DIFICULDADE["dificuldade.js<br/>(Sorteio por dificuldade)"]
         BOT["bot.js<br/>(Rival do modo solo)"]
         INVEST["investimentos.js<br/>(Oferta, consultoria e apuração do Mercado)"]
+        HABILIDADES["habilidades.js<br/>(Habilidades ativas das diretorias)"]
+        PAPEIS["papeis.js<br/>(Diretorias, habilidades e passivos)"]
         SCORING["scoring.js<br/>(Cálculo de Pontos)"]
         CALCULO["calculo.js<br/>(Margem e valor dos cenários de cálculo)"]
         DESEMPENHO["desempenho.js<br/>(Perfil por conceito e relatório de fim de jogo)"]
@@ -484,6 +490,10 @@ graph TD
     MACHINE --> DIFICULDADE
     MACHINE --> BOT
     MACHINE --> INVEST
+    MACHINE --> HABILIDADES
+    HABILIDADES --> STATE
+    STATE --> PAPEIS
+    VIEWS --> HABILIDADES
     INVEST --> CONFIG
     INVEST --> CONTENT
     VIEWS --> INVEST
@@ -526,6 +536,7 @@ graph TD
 | **`src/engine/state.js`** | Fábrica inicial do estado (`novoJogo`, que aceita `turnos` (1 a 64), `dinheiroInicial` (R$ 10.000 a R$ 1.000.000) e `reputacaoInicial` (10 a 100), todos limitados, e `soConceitual`, para excluir os cenários de cálculo, e os atalhos de teste do menu: casa forçada e baralho restrito, ver `fisher.md` 5.8.1) e `diretoria` e `papeis` por jogador (a partir da escolha de setor no menu; `atribuirPapeis(n, escolhas)` em `papeis.js`) e funções seletoras puras (`jogadorAtual`, `dinheiroInicialDe`, `ehBot`, `ehFalido`, `empresaFalida`, `jogadoresAtivos`, `classificacao`, `vencedores`, `progressoDoJogador`). Falência (`fisher.md` 3.12): `continuar` em `machine.js` marca `falido` (ou `falencia` no cooperativo) quando o caixa fecha negativo uma jogada que passou pelo Balanço; `julgarBalanco` (em `state.js`) decide quem perde entre os negativados, adiando o veredito se um rival com saldo pior ainda não passou pelo Balanço; `classificacao` e `vencedores` põem o falido por último. |
 | **`src/engine/bot.js`** | Rival do modo solo: acerta métrica e justificativa com a probabilidade do perfil (menor nos cenários difíceis), escolhe distratores ao errar e deriva a confiança de uma certeza interna ruidosa. Perfis em `config.js`, calibração em `scripts/simular-bot.mjs` (`fisher.md` 3.11). |
 | **`src/engine/investimentos.js`** | Investimentos do Mercado (`fisher.md` 3.14): porte da empresa pela reputação (`porteDaReputacao`), oferta sem repetir no ciclo e com a chance de sucesso sorteada em torno da do catálogo (`sortearOferta`), retorno com a penalidade da consultoria, reduzida à metade no cooperativo (`ganhoComConsultoria`, `honorarioDaConsultoria`), valor esperado, sorteio do desfecho e crédito de cada aporte (`liquidar`, `liquidarTodos`) e o total em custódia. A máquina o chama ao cair no Mercado, no Balanço e no fim da partida; as empresas ficam em `scenarios/content/investimentos.js`. |
+| **`src/engine/habilidades.js`** | Habilidades ativas das diretorias (`fisher.md` 3.16), válidas nos três modos: contagem de usos por diretoria (`usosRestantes`, `registrarUso`, com `habilidadeUsos` antigo valendo `{}`), motivo de a habilidade não poder ser usada agora (`motivoIndisponivel`) e o resumo do Dashboard (`resumoDoDashboard`, sem as colunas ocultas até o resultado). A máquina aplica o efeito na ação `USAR_HABILIDADE`; `state.js` diz quem tem cada diretoria (`diretoriasDe`, `diretoriasAtivas`, `temDiretoria`) e `papeis.js` guarda os textos da habilidade e da passiva de cada uma. |
 | **`src/engine/machine.js` (Eventos)** | Casa de Evento (`fisher.md` 3.15): `sacarMao` tira uma carta de cada tipo (`boa`, `ruim`, `troll`) do `baralhoEventos`, que não repete carta dentro do ciclo de cada tipo, e as embaralha; `PARTICIPAR` põe as cartas na mesa, `ESCOLHER_CARTA` registra a primeira escolha e revela uma das outras, nunca a boa (`cartaParaRevelar`, que só usa o rng da partida quando a escolhida é a boa), `MANTER` ou `TROCAR` aplicam o efeito da carta final (`revelarCarta`, com o amortecimento do cooperativo e a crise de imagem) e `RECUSAR` passa a vez. O rival do solo passa sem participar. As cartas ficam em `scenarios/content/eventos.js`. |
 | **`src/engine/dificuldade.js`** | Dificuldade-alvo a partir do progresso do jogador e da progressão escolhida no menu, e sorteio ponderado de cenários do baralho. |
 | **`src/engine/rng.js`** | Gerador pseudo-aleatório determinístico baseado no algoritmo `mulberry32` com estado serializável em 32-bits. |

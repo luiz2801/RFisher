@@ -7,6 +7,7 @@ import { valorEsperado, ehCalculo } from '../src/engine/calculo.js';
 import { obterCenario } from '../src/scenarios/loader.js';
 import { DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, REPUTACAO_INICIAL_MIN, REPUTACAO_INICIAL_MAX, TURNOS_PADRAO } from '../src/engine/config.js';
 import { CONFIANCA } from '../src/engine/scoring.js';
+import { diretoriaDoSetor } from '../src/engine/papeis.js';
 import { viewJogo } from '../src/ui/views.js';
 
 const jogadores = (...niveis) => niveis.map((nivel, i) => ({ nome: `J${i + 1}`, nivel }));
@@ -675,12 +676,15 @@ test('competitivo: prejuízo de evento não é amortecido', () => {
   assert.equal(e.jogadores[0].dinheiro, DINHEIRO_INICIAL - 5000);
 });
 
-test('amortecimento vale para toda carta de evento: só prejuízo, só no cooperativo, sempre à centena', () => {
+test('amortecimento vale para toda carta de evento: só prejuízo, sempre à centena, e no competitivo só no setor da diretoria de quem joga', () => {
+  const amortecido = (carta) => Math.round((carta.dinheiro * (1 - REDUCAO_PREJUIZO_PASSIVA)) / 100) * 100;
   for (const carta of EVENTOS) {
     const coopE = comEvento('cooperativo', carta.id);
     const compE = comEvento('competitivo', carta.id);
-    assert.equal(compE.eventoAtual.dinheiro, carta.dinheiro, `competitivo ${carta.id}`);
-    const esperado = carta.dinheiro < 0 ? Math.round((carta.dinheiro * (1 - REDUCAO_PREJUIZO_PASSIVA)) / 100) * 100 : carta.dinheiro;
+    // Sem setor escolhido, o primeiro jogador fica com Operações (mesmo rodízio do cargo exibido).
+    const dele = carta.dinheiro < 0 && diretoriaDoSetor(carta.setor) === 'operacoes';
+    assert.equal(compE.eventoAtual.dinheiro, dele ? amortecido(carta) : carta.dinheiro, `competitivo ${carta.id}`);
+    const esperado = carta.dinheiro < 0 ? amortecido(carta) : carta.dinheiro;
     assert.equal(coopE.eventoAtual.dinheiro, esperado, `cooperativo ${carta.id}`);
     assert.equal(Math.abs(coopE.eventoAtual.dinheiro) % 100, 0, `centena ${carta.id}`);
     if (carta.dinheiro < 0) assert.ok(coopE.eventoAtual.dinheiro > carta.dinheiro, `${carta.id} deveria perder menos`);

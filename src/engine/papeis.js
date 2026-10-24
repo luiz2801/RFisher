@@ -1,13 +1,22 @@
-// Diretorias do modo cooperativo. Cada cenário e evento pertence a um setor, e cada setor a uma diretoria.
+// Diretorias. Cada cenário e evento pertence a um setor, e cada setor a uma diretoria. Cada diretoria tem uma habilidade
+// ativa (usada na decisão, ver habilidades.js) e uma passiva (eventos do setor e, em Pessoas e Finanças, a consultoria).
 export const DIRETORIAS = {
-  operacoes: { nome: 'Operações', cargo: 'Diretor(a) de Operações', icone: '📦', foco: 'SLA de entregas, giro de estoque e linhas fabris', setores: ['logistica', 'producao'] },
-  tecnologia: { nome: 'Tecnologia', cargo: 'Diretor(a) de Tecnologia', icone: '💻', foco: 'Testes A/B, engajamento digital e algoritmos', setores: ['dados', 'produto'] },
+  operacoes: { nome: 'Operações', cargo: 'Diretor(a) de Operações', icone: '📦', foco: 'SLA de entregas, giro de estoque e linhas fabris', setores: ['logistica', 'producao'],
+    habilidade: { nome: 'Plano B', descricao: 'remove uma métrica incorreta da lista' },
+    passivo: { nome: 'Cadeia protegida', descricao: 'perde 30% menos dinheiro nos eventos de logística e produção' },
+  },
+  tecnologia: { nome: 'Tecnologia', cargo: 'Diretor(a) de Tecnologia', icone: '💻', foco: 'Testes A/B, engajamento digital e algoritmos', setores: ['dados', 'produto'],
+    habilidade: { nome: 'Dashboard', descricao: 'mostra n, mínimo, quartis e máximo dos dados do cenário' },
+    passivo: { nome: 'Dados sob controle', descricao: 'perde 30% menos dinheiro nos eventos de dados e produto' },
+  },
   pessoas_financas: {
     nome: 'Pessoas e Finanças',
     cargo: 'Diretor(a) de Pessoas e Finanças',
     icone: '🧑‍💼',
     foco: 'Equidade salarial, suporte ao cliente e controle financeiro',
     setores: ['rh', 'atendimento', 'financeiro'],
+    habilidade: { nome: 'Treinamento', descricao: 'abre a dica do cenário sem reduzir o bônus de confiança' },
+    passivo: { nome: 'Caixa negociador', descricao: 'perde 30% menos dinheiro nos eventos de RH, atendimento e financeiro e paga a consultoria pela metade do preço' },
   },
 };
 

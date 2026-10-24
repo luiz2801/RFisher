@@ -7,7 +7,7 @@ import {
 } from './config.js';
 import { resolverDecisao, receitaBalanco, justificativaConta, atualizarSequencia, CONFIANCA } from './scoring.js';
 import {
-  jogadorAtual, sequenciaDe, dinheiroInicialDe, carteira, ehCooperativo, ehBot, ehFalido, jogadoresAtivos, julgarBalanco, distanciaPercorrida, progressoDoJogador,
+  jogadorAtual, temDiretoria, sequenciaDe, dinheiroInicialDe, carteira, ehCooperativo, ehBot, ehFalido, jogadoresAtivos, julgarBalanco, distanciaPercorrida, progressoDoJogador,
 } from './state.js';
 import { decidirBot } from './bot.js';
 import { ehCalculo, avaliarCalculo } from './calculo.js';
@@ -15,6 +15,7 @@ import { lerNumero } from '../stats/format.js';
 import { escolherPorDificuldade } from './dificuldade.js';
 import { equivocosDaEscolha } from './desempenho.js';
 import { diretoriaDoSetor } from './papeis.js';
+import { motivoIndisponivel, registrarUso } from './habilidades.js';
 import { OPCOES_DIAGNOSTICO, sortearOferta, ganhoComConsultoria, honorarioDaConsultoria, liquidarTodos, investimentosDe } from './investimentos.js';
 import { instanciar, obterCenario, idsCenarios } from '../scenarios/loader.js';
 import { EVENTOS, TIPOS_CARTA, eventosDoTipo } from '../scenarios/content/eventos.js';
@@ -87,9 +88,11 @@ function sacarCarta(e, tipo, rng) {
 // As três cartas viradas da casa de Evento: uma de cada tipo, em posições embaralhadas (fisher.md 3.15).
 const sacarMao = (e, rng) => rng.embaralhar(TIPOS_CARTA.map((tipo) => sacarCarta(e, tipo, rng)));
 
-// Prejuízo de evento do setor de uma diretoria é amortecido (todo setor tem diretor no cooperativo).
+// Passivo das diretorias, nos três modos: o prejuízo de um evento do setor de uma diretoria de quem joga é amortecido
+// (no cooperativo todo setor tem diretor).
 export function dinheiroDoEvento(e, carta) {
-  if (!ehCooperativo(e) || carta.dinheiro >= 0 || !diretoriaDoSetor(carta.setor)) return carta.dinheiro;
+  const diretoria = diretoriaDoSetor(carta.setor);
+  if (carta.dinheiro >= 0 || !diretoria || !temDiretoria(e, diretoria)) return carta.dinheiro;
   return Math.round((carta.dinheiro * (1 - REDUCAO_PREJUIZO_PASSIVA)) / 100) * 100;
 }
 
@@ -120,6 +123,10 @@ const TRANSICOES = {
           ordemJustificativas: rng.embaralhar(def.justificativas.map((x) => x.id)),
           confianca: null,
           dicaUsada: false,
+          dicaLivre: false,
+          dashboard: false,
+          opcaoRemovida: null,
+          habilidades: [],
           metricaId: null,
           valorInformado: null,
           justificativaId: null,
@@ -149,13 +156,33 @@ const TRANSICOES = {
     // Só quem joga no nível iniciante e cujo cenário tem dica pode abri-la; o bônus de confiança cai (3.4).
     ABRIR_DICA(e) {
       const j = jogadorAtual(e);
-      if (ehBot(j) || j.nivel !== 'iniciante' || !obterCenario(e.cenarioAtual.id).dica) return e;
+      if (ehBot(j) || j.nivel !== 'iniciante' || !obterCenario(e.cenarioAtual.id).dica || e.cenarioAtual.dicaLivre) return e;
       e.cenarioAtual.dicaUsada = true;
+      return e;
+    },
+    // Habilidade ativa da diretoria (habilidades.js), antes de escolher a métrica. Cada uma vale uma vez por cenário.
+    USAR_HABILIDADE(e, { valor }) {
+      const j = jogadorAtual(e);
+      const c = e.cenarioAtual;
+      const def = obterCenario(c.id);
+      if (ehBot(j) || motivoIndisponivel(e, j, c, def, valor)) return e;
+      if (valor === 'operacoes') {
+        const rng = criarRng(e.rng);
+        const erradas = def.opcoes.filter((o) => !o.correta);
+        c.opcaoRemovida = erradas[rng.inteiro(0, erradas.length - 1)].id;
+        e.rng = rng.estado;
+      } else if (valor === 'tecnologia') {
+        c.dashboard = true;
+      } else {
+        c.dicaLivre = true;
+      }
+      c.habilidades = [...(c.habilidades ?? []), valor];
+      registrarUso(j, valor);
       return e;
     },
     METRICA(e, { valor }) {
       if (ehBot(jogadorAtual(e))) return e;
-      if (!obterCenario(e.cenarioAtual.id).opcoes.some((o) => o.id === valor)) return e;
+      if (valor === e.cenarioAtual.opcaoRemovida || !obterCenario(e.cenarioAtual.id).opcoes.some((o) => o.id === valor)) return e;
       e.cenarioAtual.metricaId = valor;
       e.fase = ehCalculo(obterCenario(e.cenarioAtual.id)) ? 'INFORMAR_VALOR' : 'ESCOLHER_JUSTIFICATIVA';
       return e;
@@ -227,15 +254,15 @@ function decidirMercado(e, decisao, aporte = null) {
         porte: m.porte,
         valor: aporte,
         prob: m.prob,
-        ganho: m.consultoria ? ganhoComConsultoria(m.ganho, ehCooperativo(e)) : m.ganho,
+        ganho: m.consultoria ? ganhoComConsultoria(m.ganho, temDiretoria(e, 'pessoas_financas')) : m.ganho,
         perda: m.perda,
         consultoria: m.consultoria,
-        honorario: honorarioDaConsultoria(m.consultoria, ehCooperativo(e)),
+        honorario: honorarioDaConsultoria(m.consultoria, temDiretoria(e, 'pessoas_financas')),
         turnoAporte: e.turnoAtual,
       },
     ];
   } else if (m.consultoria) {
-    m.honorarioPago = honorarioDaConsultoria(true, ehCooperativo(e));
+    m.honorarioPago = honorarioDaConsultoria(true, temDiretoria(e, 'pessoas_financas'));
     w.dinheiro -= m.honorarioPago;
   }
   if (m.diagnostico) {
@@ -362,7 +389,7 @@ function resolverEscolhas(e) {
     justificativaCorreta: justificativaConta(just.tipo),
     confianca: c.confianca,
     impacto: def.impacto,
-    dicaUsada: c.dicaUsada === true,
+    dicaUsada: c.dicaUsada === true && c.dicaLivre !== true,
     sequencia: sequenciaDe(j),
   });
   j.sequencia = atualizarSequencia(r.categoria, sequenciaDe(j));
@@ -374,7 +401,8 @@ function resolverEscolhas(e) {
     metricaId: metrica.id,
     justificativaId: just.id,
     confianca: c.confianca,
-    dicaUsada: c.dicaUsada === true,
+    dicaUsada: c.dicaUsada === true && c.dicaLivre !== true,
+    habilidades: c.habilidades ?? [],
     metricaCorreta: metrica.correta,
     justificativaCorreta: just.tipo === 'correta',
     ...(calculo && { valorCorreto: calculo.dentro, calculo }),

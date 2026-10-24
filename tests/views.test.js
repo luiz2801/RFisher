@@ -10,6 +10,7 @@ import { obterEmpresa, FALACIAS } from '../src/scenarios/content/investimentos.j
 import { APORTES } from '../src/engine/config.js';
 import { EVENTOS } from '../src/scenarios/content/eventos.js';
 import { brlSinal } from '../src/stats/format.js';
+import { DIRETORIAS } from '../src/engine/papeis.js';
 
 test('o menu renderiza, com e sem partida salva', () => {
   assert.match(viewMenu(), /Nova partida/);
@@ -439,4 +440,24 @@ test('menu: tela inicial é a introdução e a configuração fica num assistent
   assert.match(html, /data-nav="anterior"/);
   assert.match(html, /data-nav="proximo"/);
   assert.equal((html.match(/data-etapa/g) ?? []).length, 13);
+});
+
+test('o menu apresenta a habilidade ativa e a passiva de cada diretoria', () => {
+  const html = viewMenu();
+  for (const d of Object.values(DIRETORIAS)) {
+    assert.ok(html.includes(esc(d.habilidade.nome)), `ativa de ${d.nome}`);
+    assert.ok(html.includes(esc(d.passivo.nome)), `passiva de ${d.nome}`);
+  }
+});
+
+test('a decisão oferece a habilidade da diretoria, mostra o efeito e esconde a métrica removida', () => {
+  const novo = (diretoria) => reduzir(novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'avancado', diretoria }, { nome: 'Bia', nivel: 'avancado' }], seed: 11, teste: { casa: 'decisao', cenarios: ['cenario_01_salarios'] } }), { tipo: 'ROLAR' });
+  const antes = viewJogo(novo('tecnologia'));
+  assert.match(antes, /data-acao="USAR_HABILIDADE" data-valor="tecnologia"/);
+  assert.doesNotMatch(antes, /data-valor="operacoes"/, 'só a habilidade da própria diretoria');
+  assert.match(viewJogo(reduzir(novo('tecnologia'), { tipo: 'USAR_HABILIDADE', valor: 'tecnologia' })), /Dashboard: resumo dos dados/);
+  assert.match(viewJogo(reduzir(novo('pessoas_financas'), { tipo: 'USAR_HABILIDADE', valor: 'pessoas_financas' })), /Dica \(Treinamento\)/);
+  const plano = reduzir(novo('operacoes'), { tipo: 'USAR_HABILIDADE', valor: 'operacoes' });
+  const opcoes = (h) => [...h.matchAll(/data-acao="METRICA"/g)].length;
+  assert.equal(opcoes(viewJogo(plano)), opcoes(viewJogo(novo('operacoes'))) - 1);
 });

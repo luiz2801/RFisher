@@ -475,7 +475,7 @@ test('save antigo, sem os campos de investimento, segue funcionando', () => {
   assert.equal(ateOFim(investiu).fase, 'FIM_DE_JOGO');
 });
 
-test('cooperativo: a consultoria sai pela metade do preço (25% do retorno, R$ 7.500)', () => {
+test('cooperativo: a consultoria sai pela metade do preço (25% do retorno, R$ 7.500), pois todo setor tem responsável', () => {
   const coop = () => novoJogo({ jogadores: DOIS, seed: 21, modo: 'cooperativo', teste: { casa: 'mercado' } });
   const o = reduzir(coop(), { tipo: 'ROLAR' });
   const consultado = agir(o, 'ABRIR_CONSULTORIA');
@@ -485,4 +485,11 @@ test('cooperativo: a consultoria sai pela metade do preço (25% do retorno, R$ 7
   const recusou = agir(consultado, 'RECUSAR');
   assert.equal(recusou.mercadoAtual.honorarioPago, CONSULTORIA_HONORARIO_RH);
   assert.equal(recusou.empresa.dinheiro, o.empresa.dinheiro - CONSULTORIA_HONORARIO_RH);
+});
+
+test('a consultoria com desconto vale em qualquer modo para quem tem Pessoas e Finanças, e só para essa diretoria', () => {
+  const com = reduzir(novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante', diretoria: 'pessoas_financas' }, { nome: 'Bia', nivel: 'iniciante', diretoria: 'tecnologia' }], seed: 7, teste: { casa: 'mercado' } }), { tipo: 'ROLAR' });
+  assert.equal(agir(agir(com, 'ABRIR_CONSULTORIA'), 'RECUSAR').mercadoAtual.honorarioPago, CONSULTORIA_HONORARIO_RH);
+  const sem = reduzir(novoJogo({ jogadores: [{ nome: 'Ana', nivel: 'iniciante', diretoria: 'tecnologia' }, { nome: 'Bia', nivel: 'iniciante', diretoria: 'pessoas_financas' }], seed: 7, teste: { casa: 'mercado' } }), { tipo: 'ROLAR' });
+  assert.equal(agir(agir(sem, 'ABRIR_CONSULTORIA'), 'RECUSAR').mercadoAtual.honorarioPago, CONSULTORIA_HONORARIO_FRACASSO);
 });

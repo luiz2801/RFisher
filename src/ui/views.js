@@ -3,13 +3,14 @@ import { esc } from './html.js';
 import { grafico, calcularDominio } from './components/grafico.js';
 import { parDadosHtml } from './components/dado.js';
 import { CASAS, NUM_CASAS, ROTULO_CASA, coordenadas } from '../engine/board.js';
-import { jogadorAtual, carteira, classificacao, vencedores, ehCooperativo, ehBot, ehFalido, empresaFalida, julgarBalanco, classificarEmpresa, dinheiroInicialDe, reputacaoInicialDe, sequenciaDe } from '../engine/state.js';
+import { jogadorAtual, diretoriasDe, temDiretoria, carteira, classificacao, vencedores, ehCooperativo, ehBot, ehFalido, empresaFalida, julgarBalanco, classificarEmpresa, dinheiroInicialDe, reputacaoInicialDe, sequenciaDe } from '../engine/state.js';
 import { DIRETORIAS } from '../engine/papeis.js';
+import { motivoIndisponivel, usosRestantes, resumoDoDashboard } from '../engine/habilidades.js';
 import { metaTrimestral, dinheiroDoEvento } from '../engine/machine.js';
 import { relatorioDesempenho } from '../engine/desempenho.js';
 import { CONFIANCA, ROTULO_CONFIANCA, NIVEL, confiancaEfetiva, multiplicadorSequencia } from '../engine/scoring.js';
 import { totalInvestido, ganhoComConsultoria, honorarioDaConsultoria, penalidadeDaConsultoria, honorarioFixoDaConsultoria } from '../engine/investimentos.js';
-import { MAX_JOGADORES, APORTES, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL_PASSO, REPUTACAO_INICIAL, REPUTACAO_INICIAL_MIN, REPUTACAO_INICIAL_MAX, REPUTACAO_INICIAL_PASSO, PERFIS_BOT, PROGRESSOES, PROGRESSAO_PADRAO, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
+import { MAX_JOGADORES, APORTES, HABILIDADE_USOS, ANALISE_BONUS_REPUTACAO, ANALISE_PENALIDADE_REPUTACAO, TURNOS_PADRAO, TURNOS_MIN, TURNOS_MAX, DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, DINHEIRO_INICIAL_PASSO, REPUTACAO_INICIAL, REPUTACAO_INICIAL_MIN, REPUTACAO_INICIAL_MAX, REPUTACAO_INICIAL_PASSO, PERFIS_BOT, PROGRESSOES, PROGRESSAO_PADRAO, MARGEM_CALCULO_LIMITE, MARGEM_CALCULO_UNIDADES_PCT, MARGEM_CALCULO_CENTENAS_PCT } from '../engine/config.js';
 import { obterCenario, todosCenarios, preencher, valorDoMarcador } from '../scenarios/loader.js';
 import { EVENTOS } from '../scenarios/content/eventos.js';
 import { PORTES, FALACIAS, obterEmpresa } from '../scenarios/content/investimentos.js';
@@ -57,7 +58,7 @@ function opcoes(nome, itens, padrao, classe = '', attrs = '') {
 
 export function viewMenu({ salvo } = {}) {
   const linhas = Array.from({ length: MAX_JOGADORES }, (_, i) => {
-    const setores = Object.entries(DIRETORIAS).map(([id, d]) => [id, d.nome, d.foco, d.icone]);
+    const setores = Object.entries(DIRETORIAS).map(([id, d]) => [id, d.nome, `${d.foco}. Ativa: ${d.habilidade.nome}. Passiva: ${d.passivo.nome}.`, d.icone]);
     return `<fieldset data-jogador="${i}" data-etapa ${i >= 2 ? 'data-pula' : ''} class="etapa-menu secao-config">
       <legend>Jogador ${i + 1}</legend>
       <label class="campo-nome">Nome do(a) CEO <input name="nome_${i}" value="Jogador ${i + 1}" maxlength="20" required></label>
@@ -83,7 +84,9 @@ export function viewMenu({ salvo } = {}) {
   ];
   const cartoesDivisoes = Object.values(DIRETORIAS).map(
     (d) => `<li><span class="divisao-icone" aria-hidden="true">${d.icone}</span>
-      <div><div class="divisao-nome">${esc(d.nome)}</div><div class="divisao-foco">${esc(d.foco)}</div></div></li>`,
+      <div><div class="divisao-nome">${esc(d.nome)}</div><div class="divisao-foco">${esc(d.foco)}</div>
+        <div class="divisao-habilidade"><strong>Ativa · ${esc(d.habilidade.nome)}:</strong> ${esc(d.habilidade.descricao)} (${HABILIDADE_USOS} usos por partida)</div>
+        <div class="divisao-habilidade"><strong>Passiva · ${esc(d.passivo.nome)}:</strong> ${esc(d.passivo.descricao)}</div></div></li>`,
   ).join('');
 
   return `<main class="menu">
@@ -539,7 +542,26 @@ function tabelaSeries(def, c, revelar) {
       return {def, html: `<h2>${esc(def.titulo)}</h2><p class="contexto">${esc(preencher(def.contexto, c.vars))}</p>${ehCalculo(def) ? tabelaDados(def, c) : ''}${graficos}` };
 }
 
-      function viewDecisao(e) {
+// Habilidades ativas das diretorias de quem decide (habilidades.js) e o que as já usadas mostram neste cenário.
+function blocoHabilidades(e, j, c, def) {
+  const ids = diretoriasDe(e, j);
+  if (!ids.length) return '';
+  const botoes = ids.map((id) => {
+    const d = DIRETORIAS[id];
+    const motivo = motivoIndisponivel(e, j, c, def, id);
+    const usada = c.habilidades?.includes(id);
+    return `<button class="discreto habilidade" data-acao="USAR_HABILIDADE" data-valor="${id}"${motivo ? ` disabled title="${esc(motivo)}"` : ''}>${d.icone} ${esc(d.habilidade.nome)}: ${esc(d.habilidade.descricao)} (restam ${usosRestantes(j, id)} de ${HABILIDADE_USOS})</button>${motivo && !usada ? `<small class="ajuda">${esc(motivo)}</small>` : ''}`;
+  }).join('');
+  const fmt = (i, v) => esc(formatar(def.dados.formatos?.[i] ?? def.dados.formato, v));
+  const dashboard = c.dashboard
+    ? `<table class="tabela-dados"><caption>Dashboard: resumo dos dados</caption>
+      <thead><tr><th scope="col">Série</th><th scope="col">n</th><th scope="col">Mín.</th><th scope="col">Q1</th><th scope="col">Mediana</th><th scope="col">Q3</th><th scope="col">Máx.</th></tr></thead>
+      <tbody>${resumoDoDashboard(def, c).map((r) => `<tr><td>${esc(r.nome)}</td><td>${r.n}</td><td>${fmt(r.indice, r.minimo)}</td><td>${fmt(r.indice, r.q1)}</td><td>${fmt(r.indice, r.mediana)}</td><td>${fmt(r.indice, r.q3)}</td><td>${fmt(r.indice, r.maximo)}</td></tr>`).join('')}</tbody></table>`
+    : '';
+  return `<div class="habilidades">${botoes}</div>${dashboard}`;
+}
+
+function viewDecisao(e) {
   const j = jogadorAtual(e);
       const c = e.cenarioAtual;
       const {def, html} = blocoCenario(e);
@@ -553,11 +575,13 @@ function tabelaSeries(def, c, revelar) {
   }
 
       if (e.fase === 'ESCOLHER_METRICA') {
-    const dica = j.nivel !== 'iniciante' || !def.dica ? ''
+    const dica = c.dicaLivre && def.dica ? `<p class="dica"><strong>Dica (Treinamento):</strong> ${esc(def.dica)}</p>`
+      : j.nivel !== 'iniciante' || !def.dica ? ''
       : c.dicaUsada ? `<p class="dica"><strong>Dica:</strong> ${esc(def.dica)}</p>`
       : '<button class="discreto" data-acao="ABRIR_DICA">Mostrar dica (reduz pela metade o bônus de confiança)</button>';
-      passo = `<h3>1. Qual métrica você escolhe?</h3>${dica}
+      passo = `<h3>1. Qual métrica você escolhe?</h3>${dica}${blocoHabilidades(e, j, c, def)}
       <div class="opcoes">${c.ordemOpcoes
+        .filter((id) => id !== c.opcaoRemovida)
         .map((id) => def.opcoes.find((o) => o.id === id))
         .map((o) => `<button class="opcao" data-acao="METRICA" data-valor="${o.id}">${esc(preencher(o.texto, c.vars))}</button>`)
         .join('')}</div>`;
@@ -645,7 +669,8 @@ function tabelaSeries(def, c, revelar) {
     if (!r.justificativaCorreta) gabarito.push(`<li>Justificativa certa: ${esc(preencher(justCerta.texto, vars))}</li>`);
 
     const rep = r.deltaReputacao ? ` · Reputação ${r.deltaReputacao > 0 ? '+' : '−'}${Math.abs(r.deltaReputacao)}` : '';
-    const usouDica = r.dicaUsada ? ' · Dica usada: bônus de confiança reduzido pela metade' : '';
+    const usouDica = (r.dicaUsada ? ' · Dica usada: bônus de confiança reduzido pela metade' : '')
+      + (r.habilidades?.length ? ` · Habilidades usadas: ${r.habilidades.map((id) => DIRETORIAS[id].habilidade.nome).join(', ')}` : '');
     const x = (v) => v.toFixed(2).replace('.', ',');
     const mult = r.multiplicador !== 1 ? ` (bônus de reputação ×${x(r.multiplicador)})` : '';
     const favoravel = (r.categoria === 'sucesso') === (r.multiplicadorSequencia > 1);
@@ -782,7 +807,7 @@ function viewMercado(e) {
   const porte = PORTES[m.porte];
   const caixa = carteira(e).dinheiro;
   const aberta = !m.decisao;
-  const desconto = ehCooperativo(e);
+  const desconto = temDiretoria(e, 'pessoas_financas');
   const ganho = m.consultoria ? ganhoComConsultoria(m.ganho, desconto) : m.ganho;
   const honorario = honorarioDaConsultoria(m.consultoria, desconto);
 

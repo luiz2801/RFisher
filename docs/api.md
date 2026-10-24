@@ -31,7 +31,7 @@ acao = { tipo: string, valor?: any }
 | Fase | Quem está na tela | Ações aceitas |
 | --- | --- | --- |
 | `ROLAR_DADO` | Tabuleiro, botão Jogar | `ROLAR` |
-| `ESCOLHER_METRICA` | Pergunta da casa de Decisão | `ABRIR_DICA`, `METRICA`, `DECIDIR_BOT` |
+| `ESCOLHER_METRICA` | Pergunta da casa de Decisão | `ABRIR_DICA`, `USAR_HABILIDADE`, `METRICA`, `DECIDIR_BOT` |
 | `INFORMAR_VALOR` | Campo do valor (só cenário de cálculo) | `VALOR` |
 | `ESCOLHER_JUSTIFICATIVA` | Lista de justificativas | `JUSTIFICATIVA` |
 | `ESCOLHER_CONFIANCA` | Escala de confiança | `CONFIANCA` |
@@ -46,8 +46,9 @@ acao = { tipo: string, valor?: any }
 | Fase | `tipo` | `valor` | Efeito |
 | --- | --- | --- | --- |
 | `ROLAR_DADO` | `ROLAR` | — | Rola dois dados (`rng`), avança o peão e grava `dado`, `dados`, `distancia`, `posicao` e, se passou pela casa inicial, `balanco`. Vai para a fase da casa: `ESCOLHER_METRICA` (Decisão), `MOSTRAR_EVENTO`, `MOSTRAR_MERCADO` ou `MOSTRAR_BALANCO`. |
-| `ESCOLHER_METRICA` | `ABRIR_DICA` | — | Liga `dicaUsada` (só iniciante, cenário com dica, jogador humano). Não muda a fase. |
-| `ESCOLHER_METRICA` | `METRICA` | `string`: id de uma opção do cenário | Grava `metricaId`. Vai para `INFORMAR_VALOR` se o cenário é de cálculo, senão para `ESCOLHER_JUSTIFICATIVA`. |
+| `ESCOLHER_METRICA` | `ABRIR_DICA` | — | Liga `dicaUsada` (só iniciante, cenário com dica, jogador humano; sem efeito depois do Treinamento). Não muda a fase. |
+| `ESCOLHER_METRICA` | `USAR_HABILIDADE` | id da diretoria (`operacoes`, `tecnologia`, `pessoas_financas`) | Usa a habilidade ativa da diretoria de quem joga (`fisher.md` 3.16): Plano B grava `opcaoRemovida`, Dashboard liga `dashboard` e Treinamento liga `dicaLivre`. Gasta um uso (`habilidadeUsos`). Ignorada sem a diretoria, sem usos (2 por partida), se já usada no cenário, para o rival, no Dashboard em cenário de cálculo e no Treinamento sem dica ou com a dica paga aberta. Não muda a fase. |
+| `ESCOLHER_METRICA` | `METRICA` | `string`: id de uma opção do cenário | Grava `metricaId` (ignora a opção removida pelo Plano B). Vai para `INFORMAR_VALOR` se o cenário é de cálculo, senão para `ESCOLHER_JUSTIFICATIVA`. |
 | `ESCOLHER_METRICA` | `DECIDIR_BOT` | — | Só o rival do modo solo. Decide métrica, valor, justificativa e confiança de uma vez, com o `rng` da partida, e pontua (vai para `MOSTRAR_RESULTADO`). |
 | `INFORMAR_VALOR` | `VALOR` | `number` ou `string` em pt-BR (`"5.000,50"`, `"R$ 3.200"`) | Lê o número com `lerNumero`; se for inválido, a ação é ignorada. Vai para `ESCOLHER_JUSTIFICATIVA`. |
 | `ESCOLHER_JUSTIFICATIVA` | `JUSTIFICATIVA` | `string`: id de uma justificativa do cenário | Grava `justificativaId`. Vai para `ESCOLHER_CONFIANCA`. |

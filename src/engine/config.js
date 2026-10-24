@@ -52,6 +52,9 @@ export const CORTE_ORCAMENTO = 8000;
 export const CORTE_ORCAMENTO_REPUTACAO = 5;
 export const REDUCAO_PREJUIZO_PASSIVA = 0.3; // fração do prejuízo de eventos do setor da diretoria
 
+// Habilidades das diretorias (docs/modo-cooperativo.md seção 2), válidas nos três modos.
+export const HABILIDADE_USOS = 2; // usos de cada habilidade ativa por jogador na partida
+
 // Modo solo: rival controlado pelo computador (fisher.md 3.11). `acerto` é a chance de acertar a métrica
 // e, de forma independente, a justificativa num cenário de dificuldade 1. Calibrado com scripts/simular-bot.mjs
 // para que um jogador de acerto 0,6 vença 70%, 50% e 30% das partidas de 10 turnos.
