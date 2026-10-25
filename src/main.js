@@ -2,6 +2,10 @@ import { novoJogo, jogadorAtual, ehBot } from './engine/state.js';
 import { reduzir } from './engine/machine.js';
 import { salvar, carregar, limpar } from './storage/persist.js';
 import { viewMenu, QTD_SEMENTES, viewJogo, tabelaTsv, posicaoCss } from './ui/views.js';
+import { viewModalMultiplayer } from './ui/views-multi.js';
+import { criarAnfitriao } from './net/anfitriao.js';
+import { criarConvidado } from './net/convidado.js';
+import { criarPedido, responderPedido } from './net/transporte.js';
 import { obterCenario, todosCenarios } from './scenarios/loader.js';
 import { MAX_JOGADORES, PERFIS_BOT } from './engine/config.js';
 import { NUM_CASAS } from './engine/board.js';
@@ -13,13 +17,57 @@ import { calcularOperacao, formatarResultadoCalculadora } from './engine/calculo
 
 const app = document.getElementById('app');
 let estado = null;
+let sessaoRede = null;
+let estadoUiMulti = null;
 const semMovimento = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+function encerrarSessaoRede() {
+  if (!sessaoRede) return;
+  if (sessaoRede.tickTimer) clearInterval(sessaoRede.tickTimer);
+  if (sessaoRede.timerDiag) clearInterval(sessaoRede.timerDiag);
+  if (sessaoRede.tipo === 'anfitriao') {
+    sessaoRede.instancia.encerrar();
+  } else if (sessaoRede.tipo === 'convidado') {
+    sessaoRede.instancia.sair();
+  } else if (sessaoRede.pedidoPendente?.transporte) {
+    try {
+      sessaoRede.pedidoPendente.transporte.fechar();
+    } catch {
+      /* já fechado */
+    }
+  }
+  sessaoRede = null;
+}
+
 function render({ focar = false } = {}) {
+  let papelRede = null;
+  let meuId = null;
+  let sem = [];
+  let avisoRede = null;
+
+  if (sessaoRede?.tipo === 'anfitriao') {
+    const v = sessaoRede.instancia.visao();
+    papelRede = 'anfitriao';
+    meuId = v.meuId;
+    sem = v.sem ?? [];
+    avisoRede = v.aviso;
+  } else if (sessaoRede?.tipo === 'convidado') {
+    const v = sessaoRede.instancia.visao();
+    papelRede = 'convidado';
+    meuId = v.meuId;
+    sem = v.sem ?? [];
+    avisoRede = v.aviso;
+  }
+
   // Cada jogador tem um tema próprio (style.css, body[data-vez]); a troca de vez muda as cores da tela.
   if (estado && estado.fase !== 'FIM_DE_JOGO') document.body.dataset.vez = String(estado.jogadorAtual);
   else delete document.body.dataset.vez;
-  app.innerHTML = estado ? viewJogo(estado) : viewMenu({ salvo: carregar() });
+
+  let html = estado ? viewJogo(estado, { meuId, sem, papelRede, avisoRede }) : viewMenu({ salvo: carregar() });
+  if (estadoUiMulti) {
+    html += viewModalMultiplayer(estadoUiMulti);
+  }
+  app.innerHTML = html;
   if (focar) (document.getElementById('painel') ?? app.querySelector('.cta-jogar'))?.focus({ preventScroll: true });
 }
 
@@ -28,12 +76,20 @@ function aplicarEstado(novo) {
   // O rival decide assim que cai numa casa de Decisão; a pessoa vê direto o resultado dele.
   if (estado.fase === 'ESCOLHER_METRICA' && ehBot(jogadorAtual(estado))) estado = reduzir(estado, { tipo: 'DECIDIR_BOT' });
   if (estado.fase === 'FIM_DE_JOGO') limpar();
-  else salvar(estado);
+  else if (!sessaoRede) salvar(estado);
   render({ focar: true });
   window.scrollTo({ top: 0 });
 }
 
 function despachar(acao) {
+  if (sessaoRede?.tipo === 'anfitriao') {
+    sessaoRede.instancia.jogar(acao);
+    return;
+  }
+  if (sessaoRede?.tipo === 'convidado') {
+    sessaoRede.instancia.acao(acao);
+    return;
+  }
   const novo = reduzir(estado, acao);
   if (novo === estado) return;
   aplicarEstado(novo);
@@ -202,12 +258,160 @@ async function copiarTabela(botao) {
   setTimeout(() => { aviso.hidden = true; }, 2500);
 }
 
+async function copiarTexto(texto, avisoEl) {
+  if (!texto) return;
+  try {
+    await navigator.clipboard.writeText(texto);
+  } catch {
+    const area = document.createElement('textarea');
+    area.value = texto;
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand('copy');
+    area.remove();
+  }
+  if (avisoEl) {
+    avisoEl.hidden = false;
+    setTimeout(() => { avisoEl.hidden = true; }, 2500);
+  }
+}
+
+async function gerarPedidoConvidado(nome) {
+  try {
+    const { codigo, transporte, aplicarResposta } = await criarPedido(nome);
+    sessaoRede = {
+      tipo: 'convidado_pendente',
+      pedidoPendente: { codigo, transporte, aplicarResposta, nome },
+      timerDiag: null,
+    };
+    estadoUiMulti = {
+      tela: 'entrar_passo2',
+      codigoPedido: codigo,
+      conectando: false,
+      tempoDecorrido: 0,
+      erro: null,
+    };
+    render();
+  } catch (err) {
+    estadoUiMulti.erro = `Não foi possível gerar código de pedido: ${err.message}`;
+    render();
+  }
+}
+
+async function conectarRespostaConvidado(codigoResposta) {
+  if (!sessaoRede?.pedidoPendente) return;
+  const { transporte, aplicarResposta } = sessaoRede.pedidoPendente;
+  estadoUiMulti.conectando = true;
+  estadoUiMulti.tempoDecorrido = 0;
+  estadoUiMulti.erro = null;
+  render();
+
+  const inicioConexao = Date.now();
+  const timerDiag = setInterval(() => {
+    if (estadoUiMulti?.tela === 'entrar_passo2') {
+      estadoUiMulti.tempoDecorrido = Math.floor((Date.now() - inicioConexao) / 1000);
+      render();
+    }
+  }, 1000);
+  sessaoRede.timerDiag = timerDiag;
+
+  try {
+    await aplicarResposta(codigoResposta);
+    const convidado = criarConvidado({
+      transporte,
+      aoMudar: (visao) => {
+        if (visao.encerrada) {
+          const msg = visao.motivo === 'dono' ? 'A sala foi encerrada pelo anfitrião.' : 'A conexão com o anfitrião foi perdida.';
+          encerrarSessaoRede();
+          estado = null;
+          estadoUiMulti = { tela: 'escolha', erro: msg };
+          render();
+          return;
+        }
+        if (visao.estado) {
+          estado = visao.estado;
+          estadoUiMulti = null;
+        } else {
+          estado = null;
+          estadoUiMulti = { tela: 'lobby_convidado', visaoConvidado: visao };
+        }
+        render();
+      },
+    });
+    clearInterval(timerDiag);
+    const tickTimer = setInterval(() => convidado.tick(), 2000);
+    sessaoRede = { tipo: 'convidado', instancia: convidado, tickTimer };
+    estadoUiMulti = { tela: 'lobby_convidado', visaoConvidado: convidado.visao() };
+    render();
+  } catch (err) {
+    clearInterval(timerDiag);
+    estadoUiMulti.conectando = false;
+    estadoUiMulti.erro = err.message || 'Código de resposta inválido.';
+    render();
+  }
+}
+
+async function aceitarPedidoHost(codigoPedido) {
+  if (sessaoRede?.tipo !== 'anfitriao') return;
+  try {
+    const { nome, codigoResposta, transporte } = await responderPedido(codigoPedido);
+    const id = sessaoRede.instancia.receberPedido({ nome, transporte });
+    if (id === null) {
+      estadoUiMulti.erro = 'A sala já está cheia ou não pode receber mais participantes.';
+      render();
+      return;
+    }
+    sessaoRede.respostaGerada = { codigo: codigoResposta, nome };
+    estadoUiMulti.respostaGerada = sessaoRede.respostaGerada;
+    estadoUiMulti.erro = null;
+    render();
+  } catch (err) {
+    estadoUiMulti.erro = err.message || 'Código de pedido inválido.';
+    render();
+  }
+}
+
+function atualizarPerfilDonoPelaUi(elemento) {
+  if (sessaoRede?.tipo !== 'anfitriao') return;
+  const container = elemento.closest('.modal-multi') || elemento.closest('.painel');
+  if (!container) return;
+  const nome = container.querySelector('[name="dono_nome"]')?.value;
+  const nivel = container.querySelector('[name="dono_nivel"]:checked')?.value;
+  const diretoria = container.querySelector('[name="dono_diretoria"]:checked')?.value;
+  sessaoRede.instancia.definirPerfilDono({ nome, nivel, diretoria });
+}
+
+function atualizarConfigSalaPelaUi(elemento) {
+  if (sessaoRede?.tipo !== 'anfitriao') return;
+  const container = elemento.closest('.modal-multi') || elemento.closest('.painel');
+  if (!container) return;
+  const modo = container.querySelector('[name="config_modo"]:checked')?.value;
+  const vagas = Number(container.querySelector('[name="config_vagas"]:checked')?.value ?? 2);
+  const turnos = Number(container.querySelector('[name="config_turnos"]:checked')?.value ?? 5);
+  const progressao = container.querySelector('[name="config_progressao"]:checked')?.value ?? 'tradicional';
+  sessaoRede.instancia.definirConfig({ vagas, config: { modo, turnos, progressao } });
+}
+
+function atualizarPerfilConvidadoPelaUi(elemento) {
+  if (sessaoRede?.tipo !== 'convidado') return;
+  const container = elemento.closest('.modal-multi') || elemento.closest('.painel');
+  if (!container) return;
+  const nome = container.querySelector('[name="convidado_nome"]')?.value;
+  const nivel = container.querySelector('[name="convidado_nivel"]:checked')?.value;
+  const diretoria = container.querySelector('[name="convidado_diretoria"]:checked')?.value;
+  sessaoRede.instancia.perfil({ nome, nivel, diretoria });
+}
+
 app.addEventListener('click', (ev) => {
   const botao = ev.target.closest('[data-acao]');
   if (!botao) return;
   const { acao, valor } = botao.dataset;
   if (acao === 'ROLAR') {
-    rolarComAnimacao(botao, acao);
+    if (sessaoRede) {
+      despachar({ tipo: 'ROLAR' });
+    } else {
+      rolarComAnimacao(botao, acao);
+    }
   } else if (acao === 'NOVA') {
     if (estado && estado.fase !== 'FIM_DE_JOGO' && !confirm('Abandonar a partida atual?')) return;
     limpar();
@@ -222,6 +426,73 @@ app.addEventListener('click', (ev) => {
   } else if (acao === 'CONTINUAR_SALVA') {
     estado = carregar();
     render({ focar: true });
+  } else if (acao === 'ABRIR_MULTIPLAYER') {
+    estadoUiMulti = { tela: 'escolha' };
+    render();
+  } else if (acao === 'FECHAR_MODAL_MULTI') {
+    estadoUiMulti = null;
+    render();
+  } else if (acao === 'VOLTAR_ESCOLHA_MULTI') {
+    encerrarSessaoRede();
+    estadoUiMulti = { tela: 'escolha' };
+    render();
+  } else if (acao === 'ABRIR_CRIAR_SALA') {
+    encerrarSessaoRede();
+    const host = criarAnfitriao({
+      nomeDono: 'Jogador 1',
+      vagas: 2,
+      aoMudar: (visao) => {
+        if (visao.encerrada) {
+          encerrarSessaoRede();
+          estadoUiMulti = null;
+          render();
+          return;
+        }
+        if (visao.estado) {
+          estado = visao.estado;
+          estadoUiMulti = null;
+        } else {
+          estado = null;
+          estadoUiMulti = {
+            tela: 'lobby_dono',
+            visaoHost: visao,
+            respostaGerada: sessaoRede?.respostaGerada ?? null,
+          };
+        }
+        render();
+      },
+    });
+    const tickTimer = setInterval(() => host.tick(), 2000);
+    sessaoRede = { tipo: 'anfitriao', instancia: host, tickTimer, respostaGerada: null };
+    estadoUiMulti = { tela: 'lobby_dono', visaoHost: host.visao(), respostaGerada: null };
+    render();
+  } else if (acao === 'ABRIR_ENTRAR_SALA') {
+    encerrarSessaoRede();
+    estadoUiMulti = { tela: 'entrar_passo1', nome: 'Jogador 2' };
+    render();
+  } else if (acao === 'COPIAR_CODIGO_PEDIDO') {
+    const el = app.querySelector('textarea[data-alvo="pedido"]');
+    const aviso = app.querySelector('[data-copiado="pedido"]');
+    if (el) copiarTexto(el.value, aviso);
+  } else if (acao === 'COPIAR_RESPOSTA') {
+    const el = app.querySelector('textarea[data-alvo="resposta"]');
+    const aviso = app.querySelector('[data-copiado="resposta"]');
+    if (el) copiarTexto(el.value, aviso);
+  } else if (acao === 'REMOVER_CONVIDADO') {
+    sessaoRede?.instancia?.removerConvidado(botao.dataset.chave);
+  } else if (acao === 'INICIAR_SALA') {
+    const r = sessaoRede?.instancia?.iniciar();
+    if (r && !r.ok) {
+      estadoUiMulti.erro = r.erro;
+      render();
+    }
+  } else if (acao === 'ENCERRAR_SALA' || acao === 'SAIR_SALA') {
+    encerrarSessaoRede();
+    estado = null;
+    estadoUiMulti = null;
+    render();
+  } else if (acao === 'REVANCHE') {
+    sessaoRede?.instancia?.revanche();
   } else {
     despachar({ tipo: acao, valor });
   }
@@ -285,6 +556,18 @@ app.addEventListener('submit', (ev) => {
   } else if (ev.target.dataset.form === 'valor') {
     ev.preventDefault();
     informarValor(ev.target);
+  } else if (ev.target.dataset.form === 'multi-pedido') {
+    ev.preventDefault();
+    const nome = String(ev.target.elements.nome_convidado?.value || '').trim() || 'Jogador';
+    gerarPedidoConvidado(nome);
+  } else if (ev.target.dataset.form === 'multi-resposta') {
+    ev.preventDefault();
+    const resposta = String(ev.target.elements.codigo_resposta?.value || '').trim();
+    conectarRespostaConvidado(resposta);
+  } else if (ev.target.dataset.form === 'host-aceitar-pedido') {
+    ev.preventDefault();
+    const pedido = String(ev.target.elements.codigo_pedido?.value || '').trim();
+    aceitarPedidoHost(pedido);
   }
 });
 
@@ -358,6 +641,18 @@ app.addEventListener('change', (ev) => {
     ev.target.form.querySelector('[data-erro-setor]').hidden = true;
     return;
   }
+  if (ev.target.dataset.altera === 'perfil_dono') {
+    atualizarPerfilDonoPelaUi(ev.target);
+    return;
+  }
+  if (ev.target.dataset.altera === 'config_sala') {
+    atualizarConfigSalaPelaUi(ev.target);
+    return;
+  }
+  if (ev.target.dataset.altera === 'perfil_convidado') {
+    atualizarPerfilConvidadoPelaUi(ev.target);
+    return;
+  }
   if (nome !== 'n' && nome !== 'modo') return;
   const form = ev.target.form;
   const solo = form.elements.modo.value === 'solo';
@@ -371,6 +666,13 @@ app.addEventListener('input', (ev) => {
   const campo = ev.target;
   if (campo.type !== 'number' || !campo.form?.querySelector(`[data-alvo="${campo.name}"]`)) return;
   campo.form.querySelectorAll(`[data-alvo="${campo.name}"]`).forEach((r) => { r.checked = r.value === campo.value; });
+});
+
+window.addEventListener('beforeunload', (ev) => {
+  if (sessaoRede) {
+    ev.preventDefault();
+    ev.returnValue = '';
+  }
 });
 
 render();

@@ -48,7 +48,7 @@ const MSG_JUSTIFICATIVA = {
 // ---------- menu ----------
 
 // Grupo de opções em cartões (radio): a pessoa vê todas as alternativas e toca numa.
-function opcoes(nome, itens, padrao, classe = '', attrs = '') {
+export function opcoes(nome, itens, padrao, classe = '', attrs = '') {
   return `<div class="opcoes ${classe}" role="radiogroup">${itens
     .map(([valor, titulo, desc, icone]) => `<label class="opcao"><input type="radio" name="${nome}" value="${esc(String(valor))}" ${attrs} ${String(valor) === String(padrao) ? 'checked' : ''}>
       <span class="opcao-corpo">${icone ? `<span class="opcao-icone" aria-hidden="true">${icone}</span>` : ''}<strong>${esc(titulo)}</strong>${desc ? `<small>${esc(desc)}</small>` : ''}</span></label>`)
@@ -97,7 +97,10 @@ export function viewMenu({ salvo } = {}) {
              <button class="primario" data-acao="CONTINUAR_SALVA">Continuar partida salva</button></div>`
           : ''
       }
-      <button class="primario cta-grande" id="btn-comecar" data-acao="ABRIR_CONFIG" aria-haspopup="dialog">Iniciar →</button>
+      <div class="cta-grupo">
+        <button class="primario cta-grande" id="btn-comecar" data-acao="ABRIR_CONFIG" aria-haspopup="dialog">Iniciar →</button>
+        <button class="secundario cta-grande" id="btn-multiplayer" data-acao="ABRIR_MULTIPLAYER" aria-haspopup="dialog">🌐 Multiplayer (rede local)</button>
+      </div>
     </section>
 
     <div class="modal" id="modal-menu" hidden>
@@ -240,25 +243,77 @@ const cargoDe = (e, j) => {
   const ids = Object.keys(DIRETORIAS);
   return DIRETORIAS[j.diretoria ?? ids[j.id % ids.length]].cargo;
 };
-// Textos da decisão em segunda pessoa para quem joga, em terceira para o rival do computador.
-const autor = (e) =>
-  ehBot(jogadorAtual(e))
-    ? { metrica: 'Métrica do rival', justificativa: 'Justificativa do rival', valor: 'Cálculo do rival', passou: 'O rival passou' }
-    : { metrica: 'Sua métrica', justificativa: 'Sua justificativa', valor: 'Seu cálculo', passou: 'Você passou' };
+// Textos da decisão em segunda pessoa para quem joga, em terceira para o rival do computador ou espectadores.
+const autor = (e, meuId = null) => {
+  const j = jogadorAtual(e);
+  if (ehBot(j)) {
+    return {
+      metrica: 'Métrica do rival',
+      justificativa: 'Justificativa do rival',
+      valor: 'Cálculo do rival',
+      seuValor: 'Valor do rival',
+      passou: 'O rival passou',
+    };
+  }
+  if (meuId !== null && meuId !== undefined && meuId !== j.id) {
+    return {
+      metrica: `Métrica de ${esc(j.nome)}`,
+      justificativa: `Justificativa de ${esc(j.nome)}`,
+      valor: `Cálculo de ${esc(j.nome)}`,
+      seuValor: `Valor de ${esc(j.nome)}`,
+      passou: `${esc(j.nome)} passou`,
+    };
+  }
+  return {
+    metrica: 'Sua métrica',
+    justificativa: 'Sua justificativa',
+    valor: 'Seu cálculo',
+    seuValor: 'Seu valor',
+    passou: 'Você passou',
+  };
+};
 
-export function viewJogo(e) {
+export function viewJogo(e, opts = {}) {
+  const { meuId = null, sem = [], papelRede = null, avisoRede = null } = opts;
   const turno = Math.min(e.turnoAtual, e.turnosPorJogador);
+  const jAtual = jogadorAtual(e);
+  const minhaVez = meuId === null || meuId === undefined || meuId === e.jogadorAtual;
+
+  let bannerTopoRede = '';
+  if (meuId !== null && meuId !== undefined && e.fase !== 'FIM_DE_JOGO') {
+    if (sem.includes(e.jogadorAtual)) {
+      bannerTopoRede = `<div class="banner-vez alerta" role="alert">⚠️ <strong>${esc(jAtual.nome)}</strong> está sem conexão… aguardando retorno.</div>`;
+    } else if (minhaVez) {
+      bannerTopoRede = '<div class="banner-vez sua-vez" role="status">🎲 <strong>É a sua vez!</strong> Faça a sua jogada.</div>';
+    } else {
+      bannerTopoRede = `<div class="banner-vez espectador" role="status">👀 Vez de <strong>${esc(jAtual.nome)}</strong> — você está acompanhando em tempo real.</div>`;
+    }
+  }
+  if (avisoRede?.texto) {
+    bannerTopoRede += `<div class="banner-aviso-conexao" role="status">${esc(avisoRede.texto)}</div>`;
+  }
+
+  const seloRede = papelRede ? `<span class="selo-multi">🌐 Sala Local (${papelRede === 'anfitriao' ? 'Anfitrião' : 'Convidado'})</span>` : '';
+  const botaoSair = papelRede ? '<button data-acao="SAIR_SALA" class="discreto">Sair da sala</button>' : '<button data-acao="NOVA" class="discreto">Nova partida</button>';
+
   // O tabuleiro ocupa a tela; a pergunta (e qualquer outra etapa depois da rolagem) aparece sobre ele.
   const sobreposto = e.fase !== 'ROLAR_DADO'
-    ? `<div class="modal"><section class="painel" id="painel" role="dialog" aria-modal="true" aria-label="Decisão da rodada" tabindex="-1" aria-live="polite">${painel(e)}</section></div>`
+    ? `<div class="modal"><section class="painel ${!minhaVez ? 'espectador' : ''}" id="painel" role="dialog" aria-modal="true" aria-label="Decisão da rodada" tabindex="-1" aria-live="polite">
+        ${bannerTopoRede}
+        <div class="conteudo-painel ${!minhaVez ? 'area-espectador' : ''}">
+          ${painel(e, opts)}
+        </div>
+      </section></div>`
     : '';
   return `<header class="topo">
       <strong>Tabuleiro do CEO · Fisher S.A.</strong>
       <span>Trimestre ${turno} de ${e.turnosPorJogador}</span>
       ${e.teste ? '<span class="selo-teste" title="Casa ou cenários forçados pelos atalhos de teste">Partida de teste</span>' : ''}
-      <button data-acao="NOVA" class="discreto">Nova partida</button>
+      ${seloRede}
+      ${botaoSair}
     </header>
-    <div class="jogo">${tabuleiro(e)}</div>${sobreposto}`;
+    ${e.fase === 'ROLAR_DADO' ? bannerTopoRede : ''}
+    <div class="jogo">${tabuleiro(e, opts)}</div>${sobreposto}`;
 }
 
 // Posição da casa nas duas orientações (grade 9x7 deitada, 7x9 em pé); o CSS escolhe pela tela.
@@ -268,7 +323,7 @@ export function posicaoCss(i) {
   return `--l:${d.linha};--c:${d.coluna};--lp:${p.linha};--cp:${p.coluna}`;
 }
 
-function tabuleiro(e) {
+function tabuleiro(e, opts = {}) {
   const casas = CASAS.map((tipo, i) => {
     const pos = posicaoCss(i);
     const peoes = e.jogadores
@@ -282,7 +337,7 @@ function tabuleiro(e) {
   const vez = e.fase === 'FIM_DE_JOGO' ? 'Fim de jogo' : `Vez de ${esc(jogadorAtual(e).nome)}`;
   const dados = e.dados ? parDadosHtml(e.dados[0], e.dados[1], e.dado) : '';
   return `<div class="tabuleiro" role="group" aria-label="Tabuleiro com ${NUM_CASAS} casas">
-    ${casas}<div class="centro"><strong class="vez">${vez}</strong>${dados}${e.fase === 'ROLAR_DADO' ? viewRolar(e) : ''}${placar(e)}${contextoRapido(e)}</div>
+    ${casas}<div class="centro"><strong class="vez">${vez}</strong>${dados}${e.fase === 'ROLAR_DADO' ? viewRolar(e, opts) : ''}${placar(e)}${contextoRapido(e)}</div>
   </div>`;
 }
 
@@ -344,24 +399,24 @@ function placar(e) {
     .join('')}</ul>`;
 }
 
-      function painel(e) {
+function painel(e, opts = {}) {
   switch (e.fase) {
-      case 'ESCOLHER_CONFIANCA':
-      case 'ESCOLHER_METRICA':
-      case 'INFORMAR_VALOR':
-      case 'ESCOLHER_JUSTIFICATIVA':
-      return viewDecisao(e);
-      case 'MOSTRAR_RESULTADO':
-      return avisoFalencia(e) + viewResultado(e);
-      case 'MOSTRAR_EVENTO':
-      return avisoFalencia(e) + viewEvento(e);
-      case 'MOSTRAR_MERCADO':
-      return avisoFalencia(e) + viewMercado(e);
-      case 'MOSTRAR_BALANCO':
-      return avisoFalencia(e) + viewBalanco(e);
-      case 'FIM_DE_JOGO':
-      return viewFim(e);
-      default:
+    case 'ESCOLHER_CONFIANCA':
+    case 'ESCOLHER_METRICA':
+    case 'INFORMAR_VALOR':
+    case 'ESCOLHER_JUSTIFICATIVA':
+      return viewDecisao(e, opts);
+    case 'MOSTRAR_RESULTADO':
+      return avisoFalencia(e) + viewResultado(e, opts);
+    case 'MOSTRAR_EVENTO':
+      return avisoFalencia(e) + viewEvento(e, opts);
+    case 'MOSTRAR_MERCADO':
+      return avisoFalencia(e) + viewMercado(e, opts);
+    case 'MOSTRAR_BALANCO':
+      return avisoFalencia(e) + viewBalanco(e, opts);
+    case 'FIM_DE_JOGO':
+      return viewFim(e, opts);
+    default:
       return '';
   }
 }
@@ -399,22 +454,36 @@ const linhaInvestimento = (r) => `<li><strong>${esc(r.nome)}</strong> (aporte de
 const listaInvestimentos = (itens = []) =>
   itens.length ? `<div class="aviso"><strong>Retorno dos investimentos</strong><ul class="investimentos">${itens.map(linhaInvestimento).join('')}</ul></div>` : '';
 
-const bannerBalanco = (e) =>
-      e.balanco && e.fase !== 'MOSTRAR_BALANCO'
-      ? `<p class="aviso">${ehCooperativo(e) ? 'A empresa passou' : autor(e).passou} pelo Balanço: ${brlSinal(e.balanco.liquido)} (receita ${brl(e.balanco.receita)}, custos ${brl(e.balanco.custos)}).${metaTexto(e.balanco)}</p>${listaInvestimentos(e.balanco.investimentos)}`
-      : '';
+const bannerBalanco = (e, meuId = null) =>
+  e.balanco && e.fase !== 'MOSTRAR_BALANCO'
+    ? `<p class="aviso">${ehCooperativo(e) ? 'A empresa passou' : autor(e, meuId).passou} pelo Balanço: ${brlSinal(e.balanco.liquido)} (receita ${brl(e.balanco.receita)}, custos ${brl(e.balanco.custos)}).${metaTexto(e.balanco)}</p>${listaInvestimentos(e.balanco.investimentos)}`
+    : '';
 
-      const botaoContinuar = '<button class="primario" data-acao="CONTINUAR">Próximo jogador</button>';
+const botaoContinuar = '<button class="primario" data-acao="CONTINUAR">Próximo jogador</button>';
+
+function btnContinuar(e, opts = {}) {
+  const { meuId = null } = opts;
+  const j = jogadorAtual(e);
+  const minhaVez = meuId === null || meuId === undefined || meuId === j.id;
+  if (!minhaVez) {
+    return `<button class="primario" data-acao="CONTINUAR" disabled>Aguardando ${esc(j.nome)} avançar...</button>`;
+  }
+  return '<button class="primario" data-acao="CONTINUAR">Próximo jogador</button>';
+}
 
 // Controle no centro do tabuleiro: o botão de jogar (ou de ver a jogada do rival).
-function viewRolar(e) {
+function viewRolar(e, opts = {}) {
+  const { meuId = null } = opts;
   const j = jogadorAtual(e);
   const inaugural =
     e.turnoAtual === 1 && j.posicao === 0 && e.jogadores.every((x) => x.historico.length === 0)
       ? `<p class="briefing-inaugural"><strong>🏛️ Assembleia Inaugural do Conselho.</strong> Cada CEO assume sua divisão com <strong>R$ 50.000</strong> em caixa e <strong>50 pontos</strong> de reputação. Jogue os dados para liderar o primeiro trimestre!</p>`
       : '';
   const extra = e.jogadaExtra ? '<p class="briefing-inaugural"><strong>🎲 Dados iguais!</strong> Jogue de novo: este lance não gasta um trimestre.</p>' : '';
-  const botao = ehBot(j)
+  const minhaVez = meuId === null || meuId === undefined || meuId === j.id;
+  const botao = !minhaVez
+    ? `<p class="ajuda status-espera-vez">⏳ Aguardando <strong>${esc(j.nome)}</strong> jogar os dados...</p>`
+    : ehBot(j)
     ? '<button class="primario cta-jogar" data-acao="ROLAR">Ver a jogada do rival</button>'
     : '<button class="primario cta-jogar" data-acao="ROLAR">🎲 Jogar</button>';
   return `${inaugural}${extra}<p class="ajuda">${esc(cargoDe(e, j))} · casa ${j.posicao + 1}${ehBot(j) ? ' · o rival decide sozinho e você acompanha' : ''}</p>${botao}`;
@@ -539,130 +608,144 @@ function tabelaSeries(def, c, revelar) {
       return {def, html: `<h2>${esc(def.titulo)}</h2><p class="contexto">${esc(preencher(def.contexto, c.vars))}</p>${ehCalculo(def) ? tabelaDados(def, c) : ''}${graficos}` };
 }
 
-      function viewDecisao(e) {
+      function viewDecisao(e, opts = {}) {
+  const { meuId = null } = opts;
   const j = jogadorAtual(e);
-      const c = e.cenarioAtual;
-      const {def, html} = blocoCenario(e);
-      const calculo = ehCalculo(def);
-      let passo;
-      let avisoCalculadora = '';
+  const c = e.cenarioAtual;
+  const { def, html } = blocoCenario(e);
+  const calculo = ehCalculo(def);
+  const minhaVez = meuId === null || meuId === undefined || meuId === j.id;
+  const nomeJ = esc(j.nome);
+  let passo;
+  let avisoCalculadora = '';
 
-      // Normalmente o main.js já despacha DECIDIR_BOT; o botão cobre uma partida retomada nesta fase.
-      if (ehBot(j)) {
-    return `${bannerBalanco(e)}${html}<button class="primario" data-acao="DECIDIR_BOT">Ver a decisão do rival</button>`;
+  // Normalmente o main.js já despacha DECIDIR_BOT; o botão cobre uma partida retomada nesta fase.
+  if (ehBot(j)) {
+    return `${bannerBalanco(e, meuId)}${html}<button class="primario" data-acao="DECIDIR_BOT">Ver a decisão do rival</button>`;
   }
 
-      if (e.fase === 'ESCOLHER_METRICA') {
+  if (e.fase === 'ESCOLHER_METRICA') {
     const dica = j.nivel !== 'iniciante' || !def.dica ? ''
       : c.dicaUsada ? `<p class="dica"><strong>Dica:</strong> ${esc(def.dica)}</p>`
-      : '<button class="discreto" data-acao="ABRIR_DICA">Mostrar dica (reduz pela metade o bônus de confiança)</button>';
-      passo = `<h3>1. Qual métrica você escolhe?</h3>${dica}
-      <div class="opcoes">${c.ordemOpcoes
+      : minhaVez ? '<button class="discreto" data-acao="ABRIR_DICA">Mostrar dica (reduz pela metade o bônus de confiança)</button>' : '';
+    const tituloPasso = minhaVez ? '1. Qual métrica você escolhe?' : `1. Qual métrica ${nomeJ} escolhe?`;
+    passo = `<h3>${tituloPasso}</h3>${dica}
+      <div class="opcoes ${!minhaVez ? 'opcoes-desabilitadas' : ''}" ${!minhaVez ? 'inert' : ''}>${c.ordemOpcoes
         .map((id) => def.opcoes.find((o) => o.id === id))
-        .map((o) => `<button class="opcao" data-acao="METRICA" data-valor="${o.id}">${esc(preencher(o.texto, c.vars))}</button>`)
+        .map((o) => `<button class="opcao" data-acao="METRICA" data-valor="${o.id}" ${!minhaVez ? 'disabled' : ''}>${esc(preencher(o.texto, c.vars))}</button>`)
         .join('')}</div>`;
   } else if (e.fase === 'INFORMAR_VALOR') {
     avisoCalculadora = AVISO_CALCULADORA;
     const escolhida = def.opcoes.find((o) => o.id === c.metricaId);
     const un = unidade(def.dados.formato);
     const nota = notaDeMetodo(escolhida.chave);
-    passo = `<h3>2. Qual valor você calculou?</h3>
+    const tituloPasso = minhaVez ? '2. Qual valor você calculou?' : `2. Qual valor ${nomeJ} calculou?`;
+    passo = `<h3>${tituloPasso}</h3>
       ${calculadoraHtml()}
-      <p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong></p>
+      <p class="ajuda">${autor(e, meuId).metrica}: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong></p>
       <p class="ajuda">Calcule com os dados da tabela. Aceitamos uma <strong>margem de erro de ±${MARGEM_CALCULO_UNIDADES_PCT}%</strong> para valores abaixo de ${MARGEM_CALCULO_LIMITE} e de <strong>±${MARGEM_CALCULO_CENTENAS_PCT}%</strong> a partir de ${MARGEM_CALCULO_LIMITE}, sobre o valor correto, então arredondamentos pequenos não são problema.${nota ? ` ${esc(nota)}` : ''}</p>
-      <form class="form-valor" data-form="valor" novalidate>
+      <form class="form-valor" data-form="valor" novalidate ${!minhaVez ? 'inert' : ''}>
         <label>Valor calculado${un ? ` (em ${esc(un)})` : ''}
-          <input name="valor" type="text" inputmode="decimal" autocomplete="off" required aria-describedby="erro-valor" placeholder="ex.: 1234,5">
+          <input name="valor" type="text" inputmode="decimal" autocomplete="off" required aria-describedby="erro-valor" placeholder="ex.: 1234,5" ${!minhaVez ? 'disabled' : ''}>
         </label>
-        <button class="primario" type="submit">Confirmar valor</button>
+        <button class="primario" type="submit" ${!minhaVez ? 'disabled' : ''}>${minhaVez ? 'Confirmar valor' : `Aguardando ${nomeJ}...`}</button>
         <p class="erro-campo" id="erro-valor" role="alert" hidden>Digite só o número, por exemplo 1234,5.</p>
       </form>`;
   } else if (e.fase === 'ESCOLHER_JUSTIFICATIVA') {
     const escolhida = def.opcoes.find((o) => o.id === c.metricaId);
-      passo = `<h3>${calculo ? 3 : 2}. Por que essa é a melhor decisão?</h3>
-      <p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong>${calculo ? ` · Seu valor: <strong>${esc(formatar(def.dados.formato, c.valorInformado))}</strong>` : ''}</p>
-      <div class="opcoes">${c.ordemJustificativas
+    const tituloPasso = minhaVez
+      ? `<h3>${calculo ? 3 : 2}. Por que essa é a melhor decisão?</h3>`
+      : `<h3>${calculo ? 3 : 2}. Qual justificativa ${nomeJ} escolhe?</h3>`;
+    passo = `${tituloPasso}
+      <p class="ajuda">${autor(e, meuId).metrica}: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong>${calculo ? ` · ${autor(e, meuId).seuValor}: <strong>${esc(formatar(def.dados.formato, c.valorInformado))}</strong>` : ''}</p>
+      <div class="opcoes ${!minhaVez ? 'opcoes-desabilitadas' : ''}" ${!minhaVez ? 'inert' : ''}>${c.ordemJustificativas
         .map((id) => def.justificativas.find((x) => x.id === id))
-        .map((x) => `<button class="opcao" data-acao="JUSTIFICATIVA" data-valor="${x.id}">${esc(preencher(x.texto, c.vars))}</button>`)
+        .map((x) => `<button class="opcao" data-acao="JUSTIFICATIVA" data-valor="${x.id}" ${!minhaVez ? 'disabled' : ''}>${esc(preencher(x.texto, c.vars))}</button>`)
         .join('')}</div>`;
   } else {
     const V = def.valor_base * NIVEL[j.nivel];
     const linha = (chave) => {
       const f = CONFIANCA[chave];
       const fGanho = confiancaEfetiva(f, c.dicaUsada);
-      return `<button class="opcao" data-acao="CONFIANCA" data-valor="${chave}">
+      return `<button class="opcao" data-acao="CONFIANCA" data-valor="${chave}" ${!minhaVez ? 'disabled' : ''}>
         <strong>${ROTULO_CONFIANCA[chave]} (×${String(f).replace('.', ',')})</strong>
         <span>Acerto total: até ${brlSinal(V * fGanho)} · Erro total: ${brlSinal(-0.5 * V * f)}</span>
       </button>`;
     };
     const escolhida = def.opcoes.find((o) => o.id === c.metricaId);
     const justEscolhida = def.justificativas.find((x) => x.id === c.justificativaId);
-      const resumo = escolhida && justEscolhida
-      ? `<p class="ajuda">Sua métrica: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong>${calculo ? `<br>Seu valor: <strong>${esc(formatar(def.dados.formato, c.valorInformado))}</strong>` : ''}<br>Sua justificativa: <strong>${esc(preencher(justEscolhida.texto, c.vars))}</strong></p>`
+    const resumo = escolhida && justEscolhida
+      ? `<p class="ajuda">${autor(e, meuId).metrica}: <strong>${esc(preencher(escolhida.texto, c.vars))}</strong>${calculo ? `<br>${autor(e, meuId).seuValor}: <strong>${esc(formatar(def.dados.formato, c.valorInformado))}</strong>` : ''}<br>${autor(e, meuId).justificativa}: <strong>${esc(preencher(justEscolhida.texto, c.vars))}</strong></p>`
       : '';
-      passo = `<h3>${calculo ? 4 : 3}. Quão confiante você está na sua resposta?</h3>
+    const tituloPasso = minhaVez
+      ? `<h3>${calculo ? 4 : 3}. Quão confiante você está na sua resposta?</h3>`
+      : `<h3>${calculo ? 4 : 3}. Quão confiante ${nomeJ} está na resposta?</h3>`;
+    passo = `${tituloPasso}
       ${resumo}
       <p class="ajuda">Aposte: quanto maior a confiança, maior o ganho e a perda.</p>
-      <div class="opcoes">${Object.keys(CONFIANCA).map(linha).join('')}</div>`;
+      <div class="opcoes ${!minhaVez ? 'opcoes-desabilitadas' : ''}" ${!minhaVez ? 'inert' : ''}>${Object.keys(CONFIANCA).map(linha).join('')}</div>`;
   }
-      const fimContexto = html.indexOf('</p>') + 4; // título + contexto
-      return `${bannerBalanco(e)}${html.slice(0, fimContexto)}${avisoCalculadora}${html.slice(fimContexto)}${passo}`;
+  const fimContexto = html.indexOf('</p>') + 4; // título + contexto
+  return `${bannerBalanco(e, meuId)}${html.slice(0, fimContexto)}${avisoCalculadora}${html.slice(fimContexto)}${passo}`;
 }
 
-      function viewResultado(e) {
+function viewResultado(e, opts = {}) {
+  const { meuId = null } = opts;
   const r = e.resultado;
-      const c = e.cenarioAtual;
-      const def = obterCenario(r.cenarioId);
-      const vars = c.vars;
+  const c = e.cenarioAtual;
+  const def = obterCenario(r.cenarioId);
+  const vars = c.vars;
   const escolhida = def.opcoes.find((o) => o.id === r.metricaId);
   const certa = def.opcoes.find((o) => o.correta);
   const just = def.justificativas.find((x) => x.id === r.justificativaId);
   const justCerta = def.justificativas.find((x) => x.tipo === 'correta');
-      const fb = def.feedback;
+  const fb = def.feedback;
 
-      const marcadores = fb.revelacao.marcadores;
-      const {html} = blocoCenario(e, marcadores);
-      const titulo = html.slice(0, html.indexOf('</p>') + 4); // título + contexto
-    const graficos = html.slice(titulo.length);
+  const marcadores = fb.revelacao.marcadores;
+  const { html } = blocoCenario(e, marcadores);
+  const titulo = html.slice(0, html.indexOf('</p>') + 4); // título + contexto
+  const graficos = html.slice(titulo.length);
 
-    const quem = autor(e);
-    // A decisão do rival não aparece em nenhuma etapa anterior, então o resultado a mostra.
-    const escolhasRival = ehBot(jogadorAtual(e))
-      ? `<p class="ajuda">${quem.metrica}: <strong>${esc(preencher(escolhida.texto, vars))}</strong>${r.calculo ? `<br>Valor do rival: <strong>${esc(formatar(def.dados.formato, r.calculo.informado))}</strong>` : ''}<br>${quem.justificativa}: <strong>${esc(preencher(just.texto, vars))}</strong><br>Confiança: <strong>${ROTULO_CONFIANCA[r.confianca]}</strong></p>`
-      : '';
-    const explicacoes = [`<p>${esc(preencher(fb.explicacao_correta, vars))}</p>`];
-    if (!escolhida.correta) {
-      explicacoes.push(`<p><strong>${quem.metrica}:</strong> ${esc(preencher(fb.por_equivoco[escolhida.equivoco], vars))}</p>`);
+  const quem = autor(e, meuId);
+  // A decisão do rival ou de outro jogador no multiplayer:
+  const escolhasRival = ehBot(jogadorAtual(e))
+    ? `<p class="ajuda">${quem.metrica}: <strong>${esc(preencher(escolhida.texto, vars))}</strong>${r.calculo ? `<br>Valor do rival: <strong>${esc(formatar(def.dados.formato, r.calculo.informado))}</strong>` : ''}<br>${quem.justificativa}: <strong>${esc(preencher(just.texto, vars))}</strong><br>Confiança: <strong>${ROTULO_CONFIANCA[r.confianca]}</strong></p>`
+    : meuId !== null && meuId !== undefined && meuId !== jogadorAtual(e).id
+    ? `<p class="ajuda">${quem.metrica}: <strong>${esc(preencher(escolhida.texto, vars))}</strong>${r.calculo ? `<br>${quem.valor}: <strong>${esc(formatar(def.dados.formato, r.calculo.informado))}</strong>` : ''}<br>${quem.justificativa}: <strong>${esc(preencher(just.texto, vars))}</strong><br>Confiança: <strong>${ROTULO_CONFIANCA[r.confianca]}</strong></p>`
+    : '';
+  const explicacoes = [`<p>${esc(preencher(fb.explicacao_correta, vars))}</p>`];
+  if (!escolhida.correta) {
+    explicacoes.push(`<p><strong>${quem.metrica}:</strong> ${esc(preencher(fb.por_equivoco[escolhida.equivoco], vars))}</p>`);
   }
-    if (r.calculo) explicacoes.push(blocoCalculo(def, r, escolhida, certa, c, quem));
-    if (!r.justificativaCorreta) {
+  if (r.calculo) explicacoes.push(blocoCalculo(def, r, escolhida, certa, c, quem));
+  if (!r.justificativaCorreta) {
     const msg = fb.por_equivoco[just.equivoco] ?? MSG_JUSTIFICATIVA[just.tipo];
     explicacoes.push(`<p><strong>${quem.justificativa}:</strong> ${esc(preencher(msg, vars))}</p>`);
   }
 
-    const gabarito = [];
-    if (!escolhida.correta) gabarito.push(`<li>Métrica certa: ${esc(preencher(certa.texto, vars))}</li>`);
-    if (!r.justificativaCorreta) gabarito.push(`<li>Justificativa certa: ${esc(preencher(justCerta.texto, vars))}</li>`);
+  const gabarito = [];
+  if (!escolhida.correta) gabarito.push(`<li>Métrica certa: ${esc(preencher(certa.texto, vars))}</li>`);
+  if (!r.justificativaCorreta) gabarito.push(`<li>Justificativa certa: ${esc(preencher(justCerta.texto, vars))}</li>`);
 
-    const rep = r.deltaReputacao ? ` · Reputação ${r.deltaReputacao > 0 ? '+' : '−'}${Math.abs(r.deltaReputacao)}` : '';
-    const usouDica = r.dicaUsada ? ' · Dica usada: bônus de confiança reduzido pela metade' : '';
-    const x = (v) => v.toFixed(2).replace('.', ',');
-    const mult = r.multiplicador !== 1 ? ` (bônus de reputação ×${x(r.multiplicador)})` : '';
-    const favoravel = (r.categoria === 'sucesso') === (r.multiplicadorSequencia > 1);
-    const seq = r.multiplicadorSequencia !== 1 ? ` · ${favoravel ? 'Bônus' : 'Ônus'} de sequência ×${x(r.multiplicadorSequencia)}` : '';
-    const sequencia = r.sequencia?.erros ? `Sequência: ${r.sequencia.erros} erro${r.sequencia.erros > 1 ? 's' : ''} seguido${r.sequencia.erros > 1 ? 's' : ''}; os ganhos caem e as perdas crescem.`
-      : r.sequencia?.acertos ? `Sequência: ${r.sequencia.acertos} sucesso${r.sequencia.acertos > 1 ? 's' : ''} absoluto${r.sequencia.acertos > 1 ? 's' : ''} seguido${r.sequencia.acertos > 1 ? 's' : ''}; os ganhos crescem e as perdas diminuem.` : '';
+  const rep = r.deltaReputacao ? ` · Reputação ${r.deltaReputacao > 0 ? '+' : '−'}${Math.abs(r.deltaReputacao)}` : '';
+  const usouDica = r.dicaUsada ? ' · Dica usada: bônus de confiança reduzido pela metade' : '';
+  const x = (v) => v.toFixed(2).replace('.', ',');
+  const mult = r.multiplicador !== 1 ? ` (bônus de reputação ×${x(r.multiplicador)})` : '';
+  const favoravel = (r.categoria === 'sucesso') === (r.multiplicadorSequencia > 1);
+  const seq = r.multiplicadorSequencia !== 1 ? ` · ${favoravel ? 'Bônus' : 'Ônus'} de sequência ×${x(r.multiplicadorSequencia)}` : '';
+  const sequencia = r.sequencia?.erros ? `Sequência: ${r.sequencia.erros} erro${r.sequencia.erros > 1 ? 's' : ''} seguido${r.sequencia.erros > 1 ? 's' : ''}; os ganhos caem e as perdas crescem.`
+    : r.sequencia?.acertos ? `Sequência: ${r.sequencia.acertos} sucesso${r.sequencia.acertos > 1 ? 's' : ''} absoluto${r.sequencia.acertos > 1 ? 's' : ''} seguido${r.sequencia.acertos > 1 ? 's' : ''}; os ganhos crescem e as perdas diminuem.` : '';
 
-    return `${bannerBalanco(e)}${titulo}${escolhasRival}
-    <div class="resultado ${r.categoria}">
-      <h3>${tituloResultado(r)}</h3>
-      <p class="delta">${r.delta === 0 ? 'Nenhuma variação de dinheiro' : brlSinal(r.delta)}${mult}${rep}${usouDica}</p>
-      ${r.crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}
-    </div>
-    ${explicacoes.join('')}
-    ${gabarito.length ? `<ul class="gabarito">${gabarito.join('')}</ul>` : ''}
-    ${graficos}
-    ${botaoContinuar}`;
+  return `${bannerBalanco(e, meuId)}${titulo}${escolhasRival}
+  <div class="resultado ${r.categoria}">
+    <h3>${tituloResultado(r)}</h3>
+    <p class="delta">${r.delta === 0 ? 'Nenhuma variação de dinheiro' : brlSinal(r.delta)}${mult}${rep}${usouDica}</p>
+    ${r.crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}
+  </div>
+  ${explicacoes.join('')}
+  ${gabarito.length ? `<ul class="gabarito">${gabarito.join('')}</ul>` : ''}
+  ${graficos}
+  ${btnContinuar(e, opts)}`;
 }
 
 // Confronto entre o valor informado e o valor exato, com a margem aceita e a explicação do cálculo.
@@ -708,29 +791,38 @@ function cartaRevelada(e, carta, dinheiro, crise) {
     </div>`;
 }
 
-function viewEvento(e) {
+function viewEvento(e, opts = {}) {
+  const { meuId = null } = opts;
+  const j = jogadorAtual(e);
+  const minhaVez = meuId === null || meuId === undefined || meuId === j.id;
+  const nomeJ = esc(j.nome);
   const ev = e.eventoAtual;
-  const cabecalho = bannerBalanco(e);
+  const cabecalho = bannerBalanco(e, meuId);
   if (!ev.cartas && ev.decisao !== 'recusou') {
     const carta = EVENTOS.find((x) => x.id === ev.id);
-    return `${cabecalho}${cartaRevelada(e, carta, ev.dinheiro ?? carta.dinheiro, ev.crise)}${botaoContinuar}`;
+    return `${cabecalho}${cartaRevelada(e, carta, ev.dinheiro ?? carta.dinheiro, ev.crise)}${btnContinuar(e, opts)}`;
   }
   if (ev.decisao === 'recusou') {
-    return `${cabecalho}<h2>Evento</h2><p>O rival passou pelo Evento e não participou.</p>${botaoContinuar}`;
+    const quemRecusou = ehBot(j) ? 'O rival' : nomeJ;
+    return `${cabecalho}<h2>Evento</h2><p>${quemRecusou} passou pelo Evento e não participou.</p>${btnContinuar(e, opts)}`;
   }
   if (ev.decisao === null) {
+    const avisoVez = !minhaVez ? `<p class="ajuda status-espera-vez">⏳ Aguardando <strong>${nomeJ}</strong> decidir se participa ou passa...</p>` : '';
     return `${cabecalho}<h2>Evento: arriscar ou passar?</h2>
-      <p>Há três cartas viradas na mesa: uma <strong>oportunidade</strong>, um <strong>revés</strong> e uma carta <strong>troll</strong>. Se participar, você escolhe uma sem saber qual é qual. O jogo então revela uma das outras e você decide se mantém a sua ou troca. Só depois o efeito vale.</p>
+      <p>Há três cartas viradas na mesa: uma <strong>oportunidade</strong>, um <strong>revés</strong> e uma carta <strong>troll</strong>. Se participar, ${minhaVez ? 'você escolhe' : `${nomeJ} escolhe`} uma sem saber qual é qual. O jogo então revela uma das outras e ${minhaVez ? 'você decide se mantém a sua ou troca' : `${nomeJ} decide se mantém ou troca`}. Só depois o efeito vale.</p>
       <p class="ajuda">Passar não custa nada. Participar é uma aposta de sorte: o que há de bom pode vir com o que há de ruim.</p>
-      <div class="opcoes">
-        <button class="primario" data-acao="PARTICIPAR">Participar e escolher uma carta</button>
-        <button class="discreto" data-acao="RECUSAR">Passar sem participar</button>
+      ${avisoVez}
+      <div class="opcoes ${!minhaVez ? 'opcoes-desabilitadas' : ''}" ${!minhaVez ? 'inert' : ''}>
+        <button class="primario" data-acao="PARTICIPAR" ${!minhaVez ? 'disabled' : ''}>Participar e escolher uma carta</button>
+        <button class="discreto" data-acao="RECUSAR" ${!minhaVez ? 'disabled' : ''}>Passar sem participar</button>
       </div>`;
   }
   if (ev.decisao === 'escolhendo') {
+    const avisoVez = !minhaVez ? `<p class="ajuda status-espera-vez">⏳ Aguardando <strong>${nomeJ}</strong> escolher uma carta...</p>` : '';
     return `${cabecalho}<h2>Escolha uma carta</h2>
       <p class="ajuda">Uma é oportunidade, outra é revés e outra é troll. Qual é qual, só virando.</p>
-      <div class="cartas">${ev.cartas.map((_, i) => `<button class="carta-virada" data-acao="ESCOLHER_CARTA" data-valor="${i}" aria-label="Carta ${i + 1}, virada">
+      ${avisoVez}
+      <div class="cartas ${!minhaVez ? 'cartas-desabilitadas' : ''}" ${!minhaVez ? 'inert' : ''}>${ev.cartas.map((_, i) => `<button class="carta-virada" data-acao="ESCOLHER_CARTA" data-valor="${i}" aria-label="Carta ${i + 1}, virada" ${!minhaVez ? 'disabled' : ''}>
         <span aria-hidden="true">?</span><small>Carta ${i + 1}</small></button>`).join('')}</div>`;
   }
   if (ev.decisao === 'trocando') {
@@ -741,25 +833,29 @@ function viewEvento(e) {
           <strong>${ROTULO_CARTA[aberta.tipo]}</strong><span>${esc(aberta.titulo)}</span><span>${efeitosDaCarta(aberta, dinheiroDoEvento(e, aberta))}</span></div>`;
       }
       const minha = i === ev.primeira;
-      return `<button class="carta-virada${minha ? ' minha' : ''}" data-acao="${minha ? 'MANTER' : 'TROCAR'}" aria-label="${minha ? `Manter a carta ${i + 1}, a sua` : `Trocar pela carta ${i + 1}`}">
-        <span aria-hidden="true">?</span><small>${minha ? `Manter a carta ${i + 1} (a sua)` : `Trocar pela carta ${i + 1}`}</small></button>`;
+      const rotuloBotao = minha ? (minhaVez ? `Manter a carta ${i + 1} (a sua)` : `Manter carta ${i + 1} (${nomeJ})`) : `Trocar pela carta ${i + 1}`;
+      return `<button class="carta-virada${minha ? ' minha' : ''}" data-acao="${minha ? 'MANTER' : 'TROCAR'}" aria-label="${rotuloBotao}" ${!minhaVez ? 'disabled' : ''}>
+        <span aria-hidden="true">?</span><small>${rotuloBotao}</small></button>`;
     });
+    const avisoVez = !minhaVez ? `<p class="ajuda status-espera-vez">⏳ Aguardando <strong>${nomeJ}</strong> decidir se mantém ou troca...</p>` : '';
     return `${cabecalho}<h2>Manter ou trocar?</h2>
-      <p>O jogo revelou uma das cartas que você não escolheu, e ela <strong>nunca é a oportunidade</strong>. Você pode manter a sua carta ou trocar pela que sobrou na mesa.</p>
-      <div class="cartas">${slots.join('')}</div>`;
+      <p>O jogo revelou uma das cartas que ${minhaVez ? 'você' : nomeJ} não escolheu, e ela <strong>nunca é a oportunidade</strong>. ${minhaVez ? 'Você pode manter a sua carta ou trocar' : `${nomeJ} pode manter a carta ou trocar`} pela que sobrou na mesa.</p>
+      ${avisoVez}
+      <div class="cartas ${!minhaVez ? 'cartas-desabilitadas' : ''}" ${!minhaVez ? 'inert' : ''}>${slots.join('')}</div>`;
   }
   const outras = ev.cartas
     .map((id, i) => ({ carta: EVENTOS.find((x) => x.id === id), i }))
     .filter(({ i }) => i !== ev.escolhida);
+  const pronomeTrocou = minhaVez ? (ev.trocou ? 'Você trocou de carta.' : 'Você manteve a sua carta.') : (ev.trocou ? `${nomeJ} trocou de carta.` : `${nomeJ} manteve a carta.`);
   const montyHall = ev.trocou === undefined
     ? ''
-    : `<p class="ajuda">Você ${ev.trocou ? 'trocou de carta' : 'manteve a sua carta'}.</p>
+    : `<p class="ajuda">${pronomeTrocou}</p>
       <p class="licao"><strong>Lição (problema de Monty Hall):</strong> a carta revelada nunca é a oportunidade, então ela carrega informação. Sua primeira escolha tinha 1 chance em 3 de ser a oportunidade, e a carta que sobrou herda as outras 2 em 3. Trocar leva à oportunidade em 2 de cada 3 vezes.</p>`;
   const escolhida = EVENTOS.find((x) => x.id === ev.id);
   return `${cabecalho}${cartaRevelada(e, escolhida, ev.dinheiro, ev.crise)}${montyHall}
     <div class="cartas-restantes"><h3>As outras cartas eram</h3><ul>${outras
       .map(({ carta }) => `<li class="${CLASSE_CARTA[carta.tipo]}"><strong>${ROTULO_CARTA[carta.tipo]}: ${esc(carta.titulo)}</strong> <span>${efeitosDaCarta(carta, dinheiroDoEvento(e, carta))}</span></li>`)
-      .join('')}</ul></div>${botaoContinuar}`;
+      .join('')}</ul></div>${btnContinuar(e, opts)}`;
 }
 
 // ---------- mercado (investimentos, fisher.md 3.14) ----------
@@ -773,10 +869,15 @@ function historicoEmpresa(def) {
     <tbody><tr>${def.historico.map((v) => `<td>${esc(formatar('decimal', v))}</td>`).join('')}</tr></tbody></table>`;
 }
 
-function viewMercado(e) {
+function viewMercado(e, opts = {}) {
+  const { meuId = null } = opts;
+  const j = jogadorAtual(e);
+  const minhaVez = meuId === null || meuId === undefined || meuId === j.id;
+  const nomeJ = esc(j.nome);
   const m = e.mercadoAtual;
   if (!m.empresaId) {
-    return `${bannerBalanco(e)}<h2>Mercado</h2><p>O rival passou pelo Mercado e não fez nenhum aporte.</p>${botaoContinuar}`;
+    const quemPassou = ehBot(j) ? 'O rival' : nomeJ;
+    return `${bannerBalanco(e, meuId)}<h2>Mercado</h2><p>${quemPassou} passou pelo Mercado e não fez nenhum aporte.</p>${btnContinuar(e, opts)}`;
   }
   const def = obterEmpresa(m.empresaId);
   const porte = PORTES[m.porte];
@@ -801,62 +902,86 @@ function viewMercado(e) {
     : '';
 
   const consultoria = !m.consultoria && aberta
-    ? `<button class="discreto" data-acao="ABRIR_CONSULTORIA">Contratar consultoria (relatório com a chance exata e os retornos possíveis; se você investir, ela cobra ${pctMercado(CONSULTORIA_PENALIDADE)} do retorno quando der certo e ${brl(CONSULTORIA_HONORARIO_FRACASSO)} quando der errado; se não investir, cobra ${brl(CONSULTORIA_HONORARIO_FRACASSO)} na hora)</button>`
+    ? (minhaVez
+        ? `<button class="discreto" data-acao="ABRIR_CONSULTORIA">Contratar consultoria (relatório com a chance exata e os retornos possíveis; se você investir, ela cobra ${pctMercado(CONSULTORIA_PENALIDADE)} do retorno quando der certo e ${brl(CONSULTORIA_HONORARIO_FRACASSO)} quando der errado; se não investir, cobra ${brl(CONSULTORIA_HONORARIO_FRACASSO)} na hora)</button>`
+        : '')
     : '';
 
   let diagnostico = '';
   if (aberta && !m.diagnostico) {
     diagnostico = `<h3>Diagnóstico do argumento (opcional)</h3>
-      <p class="ajuda">O argumento do fundador tem alguma falha estatística? Acertar rende +${ANALISE_BONUS_REPUTACAO} de reputação e errar custa ${ANALISE_PENALIDADE_REPUTACAO}. A resposta aparece depois da sua decisão.</p>
-      <div class="opcoes">${Object.entries(FALACIAS).map(([id, f]) => `<button class="opcao" data-acao="DIAGNOSTICAR" data-valor="${id}">${esc(f.nome)}</button>`).join('')}</div>`;
+      <p class="ajuda">O argumento do fundador tem alguma falha estatística? Acertar rende +${ANALISE_BONUS_REPUTACAO} de reputação e errar custa ${ANALISE_PENALIDADE_REPUTACAO}. A resposta aparece depois da decisão.</p>
+      <div class="opcoes ${!minhaVez ? 'opcoes-desabilitadas' : ''}" ${!minhaVez ? 'inert' : ''}>${Object.entries(FALACIAS).map(([id, f]) => `<button class="opcao" data-acao="DIAGNOSTICAR" data-valor="${id}" ${!minhaVez ? 'disabled' : ''}>${esc(f.nome)}</button>`).join('')}</div>`;
   } else if (aberta) {
-    diagnostico = `<p class="ajuda">Seu diagnóstico: <strong>${esc(FALACIAS[m.diagnostico].nome)}</strong>. Ele será conferido quando você decidir.</p>`;
+    const quemDiag = minhaVez ? 'Seu diagnóstico' : `Diagnóstico de ${nomeJ}`;
+    diagnostico = `<p class="ajuda">${quemDiag}: <strong>${esc(FALACIAS[m.diagnostico].nome)}</strong>. Ele será conferido após a decisão.</p>`;
   }
 
   let decisao;
   if (aberta) {
+    const avisoVez = !minhaVez ? `<p class="ajuda status-espera-vez">⏳ Aguardando <strong>${nomeJ}</strong> decidir o aporte...</p>` : '';
     decisao = `<h3>Quanto investir?</h3>
-      <p class="ajuda">O dinheiro fica em custódia até você passar pelo Balanço, quando o resultado é sorteado. Caixa disponível: ${brl(caixa)}.</p>
-      <div class="opcoes">${APORTES.map((a) => `<button class="opcao" data-acao="INVESTIR" data-valor="${a}"${a > caixa ? ' disabled' : ''}>
+      <p class="ajuda">O dinheiro fica em custódia até passar pelo Balanço, quando o resultado é sorteado. Caixa disponível: ${brl(caixa)}.</p>
+      ${avisoVez}
+      <div class="opcoes ${!minhaVez ? 'opcoes-desabilitadas' : ''}" ${!minhaVez ? 'inert' : ''}>${APORTES.map((a) => `<button class="opcao" data-acao="INVESTIR" data-valor="${a}"${a > caixa || !minhaVez ? ' disabled' : ''}>
         <strong>Investir ${brl(a)}</strong>
         ${m.consultoria ? `<span>Se der certo: ${brlSinal(a * ganho)} · Se der errado: ${brlSinal(-a * m.perda - honorario)}</span>` : ''}
       </button>`).join('')}</div>
-      <button class="discreto" data-acao="RECUSAR">Não investir${m.consultoria ? ` (a consultoria cobra ${brl(honorario)} na hora)` : ''}</button>`;
+      <button class="discreto" data-acao="RECUSAR" ${!minhaVez ? 'disabled' : ''}>Não investir${m.consultoria ? ` (a consultoria cobra ${brl(honorario)} na hora)` : ''}</button>`;
   } else {
     const a = m.analise;
+    const quemInvestiu = minhaVez ? 'Você' : nomeJ;
     const feito = m.decisao === 'investiu'
-      ? `<h3>Você investiu ${brl(m.aporte)} na ${esc(def.nome)}</h3><p>O resultado sai quando você passar pelo Balanço. Até lá o dinheiro fica em custódia.</p>`
-      : `<h3>Você não investiu</h3>${m.honorarioPago ? `<p>A consultoria cobrou ${brl(m.honorarioPago)} de honorários, debitados agora do caixa.</p>` : ''}`;
+      ? `<h3>${quemInvestiu} investiu ${brl(m.aporte)} na ${esc(def.nome)}</h3><p>O resultado sai quando passar pelo Balanço. Até lá o dinheiro fica em custódia.</p>`
+      : `<h3>${quemInvestiu} não investiu</h3>${m.honorarioPago ? `<p>A consultoria cobrou ${brl(m.honorarioPago)} de honorários, debitados do caixa.</p>` : ''}`;
     const falha = def.falha ? esc(FALACIAS[def.falha].nome) : 'nenhuma, o argumento se sustenta';
+    const diagRotulo = minhaVez ? 'Seu diagnóstico' : `Diagnóstico de ${nomeJ}`;
     const veredito = a
-      ? `<p><strong>Seu diagnóstico:</strong> ${esc(FALACIAS[m.diagnostico].nome)}. ${a.correta ? '✔ Acertou' : '✖ Errou'} (reputação ${a.deltaReputacao > 0 ? '+' : '−'}${Math.abs(a.deltaReputacao)}).</p>${a.crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}`
+      ? `<p><strong>${diagRotulo}:</strong> ${esc(FALACIAS[m.diagnostico].nome)}. ${a.correta ? '✔ Acertou' : '✖ Errou'} (reputação ${a.deltaReputacao > 0 ? '+' : '−'}${Math.abs(a.deltaReputacao)}).</p>${a.crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}`
       : '';
     decisao = `<div class="resultado">${feito}${veredito}
-      <p class="licao"><strong>O argumento do fundador:</strong> falha — ${falha}. ${esc(def.explicacao)}</p></div>${botaoContinuar}`;
+      <p class="licao"><strong>O argumento do fundador:</strong> falha — ${falha}. ${esc(def.explicacao)}</p></div>${btnContinuar(e, opts)}`;
   }
 
-  return `${bannerBalanco(e)}<h2>Mercado: oportunidade de investimento</h2>
+  return `${bannerBalanco(e, meuId)}<h2>Mercado: oportunidade de investimento</h2>
     <p class="ajuda">Empresas do porte: ${esc(porte.nome)} (reputação ${porte.reputacao}).</p>
     ${ficha}${relatorio}${consultoria}${diagnostico}${decisao}`;
 }
 
-    function viewBalanco(e) {
+function viewBalanco(e, opts = {}) {
   const b = e.balanco;
-    return `<h2>Balanço da empresa</h2>
-    <table class="balanco">
-      <tr><td>Receita (ajustada pela reputação)</td><td>${brlSinal(b.receita)}</td></tr>
-      <tr><td>Custos</td><td>${brlSinal(-b.custos)}</td></tr>
-      <tr class="total"><td>Resultado</td><td>${brlSinal(b.liquido)}</td></tr>
-      ${
-        b.meta
-          ? `<tr><td>Meta de caixa: ${brl(b.meta.valor)} (${b.meta.cumprida ? 'cumprida: bônus de investidor' : 'não cumprida: corte de orçamento'})</td><td>${brlSinal(b.meta.dinheiro)} · Rep. ${b.meta.reputacao > 0 ? '+' : '−'}${Math.abs(b.meta.reputacao)}</td></tr>
-      <tr><td>Pessoas e Finanças: treinamento da equipe</td><td>Rep. +${b.bonusRh}</td></tr>`
-          : ''
-      }
-    </table>${listaInvestimentos(b.investimentos)}${b.meta?.crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}${botaoContinuar}`;
+  return `<h2>Balanço da empresa</h2>
+  <table class="balanco">
+    <tr><td>Receita (ajustada pela reputação)</td><td>${brlSinal(b.receita)}</td></tr>
+    <tr><td>Custos</td><td>${brlSinal(-b.custos)}</td></tr>
+    <tr class="total"><td>Resultado</td><td>${brlSinal(b.liquido)}</td></tr>
+    ${
+      b.meta
+        ? `<tr><td>Meta de caixa: ${brl(b.meta.valor)} (${b.meta.cumprida ? 'cumprida: bônus de investidor' : 'não cumprida: corte de orçamento'})</td><td>${brlSinal(b.meta.dinheiro)} · Rep. ${b.meta.reputacao > 0 ? '+' : '−'}${Math.abs(b.meta.reputacao)}</td></tr>
+    <tr><td>Pessoas e Finanças: treinamento da equipe</td><td>Rep. +${b.bonusRh}</td></tr>`
+        : ''
+    }
+  </table>${listaInvestimentos(b.investimentos)}${b.meta?.crise ? '<p class="alerta">Crise de imagem! Reputação em zero: multa de R$ 10.000.</p>' : ''}${btnContinuar(e, opts)}`;
 }
 
-    function viewFimCooperativo(e) {
+function botoesFim(opts = {}) {
+  const { papelRede = null } = opts;
+  if (papelRede === 'anfitriao') {
+    return `<div class="botoes-fim">
+      <button class="primario" data-acao="REVANCHE">Jogar revanche no lobby</button>
+      <button class="discreto" data-acao="ENCERRAR_SALA">Encerrar sala</button>
+    </div>`;
+  }
+  if (papelRede === 'convidado') {
+    return `<div class="botoes-fim">
+      <p class="ajuda">Aguardando o anfitrião iniciar uma revanche ou encerrar a sala...</p>
+      <button class="discreto" data-acao="SAIR_SALA">Sair da sala</button>
+    </div>`;
+  }
+  return '<button class="primario" data-acao="NOVA">Jogar de novo</button>';
+}
+
+function viewFimCooperativo(e, opts = {}) {
   const faixa = classificarEmpresa(e.empresa, dinheiroInicialDe(e));
   return `<h2>Fim de jogo</h2><p class="vencedor">A Fisher S.A. terminou em: ${esc(faixa.nome)}</p>
     ${empresaFalida(e) ? '<p class="alerta">O caixa ficou negativo e a empresa faliu antes do fim dos trimestres.</p>' : ''}
@@ -867,28 +992,28 @@ function viewMercado(e) {
         return `<li><strong>${esc(j.nome)}</strong> (${esc(nomesPapeis(j))}): ${acertos} de ${j.historico.length} decisões com sucesso absoluto</li>`;
       })
       .join('')}</ol>
-    ${apuracaoFinal(e)}${relatorios(e)}
-    <button class="primario" data-acao="NOVA">Jogar de novo</button>`;
+    ${apuracaoFinal(e)}${relatorios(e, opts)}
+    ${botoesFim(opts)}`;
 }
 
-function viewFim(e) {
-  if (ehCooperativo(e)) return viewFimCooperativo(e);
+function viewFim(e, opts = {}) {
+  if (ehCooperativo(e)) return viewFimCooperativo(e, opts);
   const ganhadores = vencedores(e);
-    const titulo =
+  const titulo =
     ganhadores.length === 0
-    ? 'Todos faliram: ninguém venceu'
-    : ganhadores.length === 1
-    ? `${esc(ganhadores[0].nome)} é o grande CEO!`
-    : `Empate entre ${ganhadores.map((g) => esc(g.nome)).join(' e ')}`;
-    return `<h2>Fim de jogo</h2><p class="vencedor">${titulo}</p>
+      ? 'Todos faliram: ninguém venceu'
+      : ganhadores.length === 1
+      ? `${esc(ganhadores[0].nome)} é o grande CEO!`
+      : `Empate entre ${ganhadores.map((g) => esc(g.nome)).join(' e ')}`;
+  return `<h2>Fim de jogo</h2><p class="vencedor">${titulo}</p>
     <ol class="ranking">${classificacao(e)
       .map((j) => {
         const acertos = j.historico.filter((h) => h.resultado === 'sucesso').length;
         return `<li><strong>${esc(j.nome)}</strong>: ${ehFalido(j) ? 'FALIDO · ' : ''}${brl(j.dinheiro)} · Rep. ${j.reputacao} · ${acertos} de ${j.historico.length} decisões com sucesso absoluto</li>`;
       })
       .join('')}</ol>
-    ${apuracaoFinal(e)}${relatorios(e)}
-    <button class="primario" data-acao="NOVA">Jogar de novo</button>`;
+    ${apuracaoFinal(e)}${relatorios(e, opts)}
+    ${botoesFim(opts)}`;
 }
 
 // Aportes que ainda esperavam um Balanço quando os trimestres acabaram (fisher.md 3.14).
@@ -964,13 +1089,30 @@ function relatorioJogador(j) {
 }
 
 // Um relatório por pessoa; o rival do computador não estuda.
-function relatorios(e) {
+function relatorios(e, opts = {}) {
+  const { meuId = null } = opts;
   const pessoas = e.jogadores.filter((j) => !ehBot(j));
   if (!pessoas.length) return '';
+
+  let htmlRelatorios = '';
+  if (meuId !== null && meuId !== undefined) {
+    const meu = pessoas.find((j) => j.id === meuId);
+    const outros = pessoas.filter((j) => j.id !== meuId);
+
+    if (meu) {
+      htmlRelatorios += relatorioJogador(meu);
+    }
+    for (const outro of outros) {
+      htmlRelatorios += `<details class="relatorio-outro"><summary><strong>Relatório de ${esc(outro.nome)}</strong></summary>${relatorioJogador(outro)}</details>`;
+    }
+  } else {
+    htmlRelatorios = pessoas.map(relatorioJogador).join('');
+  }
+
   return `<section class="relatorios" aria-labelledby="titulo-relatorios">
     <h2 id="titulo-relatorios">Relatório de desempenho</h2>
     <p class="ajuda">A partida salva é apagada no fim de jogo: imprima ou salve em PDF para guardar o relatório.</p>
-    ${pessoas.map(relatorioJogador).join('')}
+    ${htmlRelatorios}
     <button class="discreto" data-acao="IMPRIMIR">Imprimir relatório</button>
   </section>`;
 }
