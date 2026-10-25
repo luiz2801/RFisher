@@ -1,38 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { novoJogo, jogadorAtual, ehBot } from '../src/engine/state.js';
+import { jogadorAtual, ehBot } from '../src/engine/state.js';
 import { reduzir } from '../src/engine/machine.js';
-import { valorEsperado, ehCalculo } from '../src/engine/calculo.js';
-import { obterCenario, todosCenarios } from '../src/scenarios/loader.js';
+import { ehCalculo } from '../src/engine/calculo.js';
+import { todosCenarios } from '../src/scenarios/loader.js';
 import { substituirPorBot } from '../src/net/sala.js';
 import { avancarBot, avancarBotsAteUmaPessoa } from '../src/net/piloto.js';
+import { jogo, acaoHumana } from './helpers/partida.js';
 
 const CALCULO = todosCenarios().filter(ehCalculo).map((c) => c.id);
-const DIRS = ['operacoes', 'tecnologia', 'pessoas_financas'];
-
-const jogo = ({ n = 2, modo = 'competitivo', seed = 1, teste = null } = {}) =>
-  novoJogo({
-    jogadores: Array.from({ length: n }, (_, i) => ({ nome: `P${i + 1}`, nivel: 'iniciante', diretoria: DIRS[i] })),
-    turnos: 3, modo, seed, teste,
-  });
-
-// A pessoa acerta tudo e participa de todo evento (passando por 'escolhendo' e 'trocando').
-function acaoHumana(e) {
-  const def = e.cenarioAtual && obterCenario(e.cenarioAtual.id);
-  const ev = e.eventoAtual;
-  if (e.fase === 'MOSTRAR_EVENTO' && ev?.cartas) {
-    if (ev.decisao === null) return { tipo: 'PARTICIPAR' };
-    if (ev.decisao === 'escolhendo') return { tipo: 'ESCOLHER_CARTA', valor: 0 };
-    if (ev.decisao === 'trocando') return { tipo: 'TROCAR' };
-  }
-  return ({
-    ROLAR_DADO: { tipo: 'ROLAR' },
-    ESCOLHER_METRICA: def && { tipo: 'METRICA', valor: def.opcoes.find((o) => o.correta).id },
-    INFORMAR_VALOR: def && { tipo: 'VALOR', valor: valorEsperado(def, e.cenarioAtual) },
-    ESCOLHER_JUSTIFICATIVA: def && { tipo: 'JUSTIFICATIVA', valor: def.justificativas.find((j) => j.tipo === 'correta').id },
-    ESCOLHER_CONFIANCA: { tipo: 'CONFIANCA', valor: 'certeza' },
-  })[e.fase] ?? { tipo: 'CONTINUAR' };
-}
 
 // Um passo da partida: o bot joga se for a vez dele; senão a pessoa joga.
 function passo(e) {

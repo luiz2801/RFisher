@@ -113,6 +113,9 @@ test('protocolo: convidado não consegue se passar pelo dono (estado, sala, ence
 
 test('protocolo: mensagens do dono', () => {
   assert.deepEqual(validarMensagem('{"tipo":"encerrada"}', 'dono'), { tipo: 'encerrada' });
+  assert.equal(validarMensagem('{"tipo":"sala","sala":{"pessoas":[]},"voce":"c1"}', 'dono').voce, 'c1');
+  assert.equal(validarMensagem('{"tipo":"sala","sala":{"pessoas":[]}}', 'dono'), null);
+  assert.equal(validarMensagem('{"tipo":"sala","sala":{},"voce":"c1"}', 'dono'), null);
   assert.equal(validarMensagem('{"tipo":"estado","estado":{"fase":"ROLAR_DADO","jogadores":[]},"meuId":1}', 'dono').meuId, 1);
   assert.equal(validarMensagem('{"tipo":"estado","estado":{"fase":1}}', 'dono'), null);
   assert.equal(validarMensagem('{"tipo":"acao","acao":{"tipo":"ROLAR"}}', 'dono'), null);

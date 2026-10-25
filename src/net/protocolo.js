@@ -7,6 +7,8 @@ import { NOME_MAX } from './codigo.js';
 export const MAX_DO_DONO = 512 * 1024;
 export const MAX_DO_CONVIDADO = 2 * 1024;
 export const VALOR_MAX = 64;
+// Silêncio, em ms, a partir do qual a interface avisa "sem conexão" (vale para dono e convidados).
+export const SEM_SINAL_AVISO_MS = 8000;
 
 // Ações da máquina de estados que um convidado pode pedir. `DECIDIR_BOT` fica de fora: só o dono controla os bots.
 export const ACOES_REMOTAS = [
@@ -35,7 +37,8 @@ const DO_CONVIDADO = {
 };
 
 const DO_DONO = {
-  sala: (m) => (ehObjeto(m.sala) ? { tipo: 'sala', sala: m.sala, meuId: Number.isInteger(m.meuId) ? m.meuId : null } : null),
+  // `voce` é a chave da vaga do convidado na sala; `sala.pessoas` traz nome, nível e setor de todos.
+  sala: (m) => (ehObjeto(m.sala) && Array.isArray(m.sala.pessoas) && ehTexto(m.voce, 16) ? { tipo: 'sala', sala: m.sala, voce: m.voce } : null),
   estado: (m) => (ehObjeto(m.estado) && Array.isArray(m.estado.jogadores) && typeof m.estado.fase === 'string'
     ? { tipo: 'estado', estado: m.estado, meuId: Number.isInteger(m.meuId) ? m.meuId : null, sem: Array.isArray(m.sem) ? m.sem.filter(Number.isInteger) : [] }
     : null),
