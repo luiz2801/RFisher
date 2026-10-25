@@ -69,8 +69,32 @@ Linha do tempo do que foi desenvolvido, reconstruída a partir do histórico do 
 | #10, #11, #12 | Mercado, consultoria, reputação inicial e eventos com escolha de carta |
 | #16 | Cenários 26 a 30 |
 
+## 25/10/2026 — Multiplayer em rede local (LAN via WebRTC)
+
+- **Código de convite e protocolo** (`src/net/codigo.js`, `src/net/protocolo.js`):
+  - Sinalização WebRTC manual sem servidor (oferta/resposta SDP comprimidas com `deflate-raw` e Base64url com prefixos `CEO1P.` e `CEO1R.`);
+  - Validação de mensagens, tipagem e limites de payload (`MAX_DO_DONO` e `MAX_DO_CONVIDADO`).
+- **Regras da sala e lobby** (`src/net/sala.js`):
+  - Suporte a 2 ou 3 jogadores em aparelhos separados na mesma rede local;
+  - Configuração de regras (modo cooperativo/competitivo, trimestres, dificuldade);
+  - Garantia de diretorias não repetidas e transição limpa para revanche (`voltarAoLobby`).
+- **Piloto automático de bots e resiliência** (`src/net/piloto.js`):
+  - Detecção de quedas e desconexões por heartbeat a cada 2 segundos;
+  - Substituição automática de jogador ausente por bot no mesmo nível técnico após 60 segundos de silêncio, mantendo a partida fluida sem travamento.
+- **Sessões de anfitrião e convidado** (`src/net/anfitriao.js`, `src/net/convidado.js`, `src/net/transporte.js`):
+  - Anfitrião autoritativo (roda `reduzir` centralizado e transmite os estados);
+  - Convidado cliente com despacho de intenções de ação na sua vez.
+- **Telas e fluxo de multiplayer** (`src/ui/views-multi.js`, `src/ui/views.js`, `src/main.js`, `style.css`):
+  - Modal de multiplayer com criação ou entrada na sala;
+  - Lobbies dedicados para anfitrião e convidados com personalização de perfil;
+  - Modo espectador em tempo real com textos em terceira pessoa e botões inertes;
+  - Mensagem de diagnóstico de rede (aviso de AP isolation / Wi-Fi de visitantes após 15 segundos de tentativa de conexão);
+  - Botão de revanche ao final da partida e relatórios de desempenho colapsados.
+- **Documentação e ADR**:
+  - `docs/adr/0008-multiplayer-lan-webrtc-sem-servidor.md`, atualização de `docs/adr/README.md`, `fisher.md`, `docs/diagramas-uml.md`, `docs/modo-cooperativo.md`, `docs/testes.md`, `README.md`.
+
 ## Estado atual (resumo)
 
-- 3 modos (competitivo, cooperativo, solo), trilha de 28 casas, 30 cenários e 41 cartas de eventos.
+- 3 modos (competitivo, cooperativo, solo) em hot-seat ou multiplayer LAN (WebRTC serverless), trilha de 28 casas, 30 cenários e 41 cartas de eventos.
 - Quatro tipos de casa: Decisão, Evento, Mercado e Balanço. Duelo e Auditoria ficam para a Fase 2.
 - Pontos a calibrar no playtest: dificuldade dos cenários, margem de cálculo, fatores das sequências, valores do Mercado e das cartas, e balanceamento com caixas fora do padrão.

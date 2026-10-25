@@ -15,6 +15,7 @@ Decisões de **regra de jogo** (pontuação, balanceamento, mecânicas) não fic
 | [0005](0005-persistencia-localstorage-sem-backend.md) | Persistência só em `localStorage`, sem backend | Aceita |
 | [0006](0006-cenarios-como-dados.md) | Cenários como dados, sem lógica | Aceita |
 | [0007](0007-partida-reproduzivel-por-seed.md) | Partida reproduzível por seed | Aceita |
+| [0008](0008-multiplayer-lan-webrtc-sem-servidor.md) | Multiplayer em rede local via WebRTC sem servidor | Aceita |
 
 ## Modelo
 

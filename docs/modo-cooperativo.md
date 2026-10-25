@@ -12,7 +12,7 @@
 
 Os jogadores são a diretoria de **uma só empresa**. O caixa e a reputação são compartilhados, então a empresa ganha ou perde junto. Cada jogador comanda um setor e tem mérito individual.
 
-O modo competitivo continua disponível. A escolha entre os dois fica no estado do jogo (`modo: 'cooperativo' | 'competitivo'`).
+O modo competitivo continua disponível. A escolha entre os dois fica no estado do jogo (`modo: 'cooperativo' | 'competitivo'`). Ambos os modos são suportados tanto em partidas locais no mesmo aparelho (hot-seat) quanto no multiplayer em rede local (LAN via WebRTC, ADR 0008), onde 2 ou 3 participantes representam diretorias distintas sem repetição, acompanhando o caixa compartilhado em tempo real em seus próprios dispositivos.
 
 ---
 
