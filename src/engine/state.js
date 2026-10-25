@@ -49,11 +49,12 @@ export function novoJogo({ jogadores, turnos = TURNOS_PADRAO, dinheiroInicial = 
       sequencia: { erros: 0, acertos: 0 },
       // Perfil do rival controlado pelo computador (modo solo), ou null para uma pessoa.
       bot: Object.hasOwn(PERFIS_BOT, j.bot ?? '') ? j.bot : null,
-      // Setor (diretoria) escolhido no menu. No competitivo é só o cargo; no cooperativo vale `papeis`. Ausente em saves antigos.
+      // Setor (diretoria) escolhido no menu. Nos modos competitivo e solo é a diretoria de quem joga; no cooperativo vale `papeis`. Ausente em saves antigos.
       diretoria: Object.hasOwn(DIRETORIAS, j.diretoria ?? '') ? j.diretoria : null,
       papeis: cooperativo ? papeis[id] : [],
       merito: 0,
-      habilidadeUsos: 0,
+      // Usos de cada habilidade ativa, por diretoria (`{ tecnologia: 1 }`). Saves antigos guardam 0: vale `{}`.
+      habilidadeUsos: {},
       // Aportes do Mercado aguardando o próximo Balanço (fisher.md 3.14). Ausente em saves antigos (vale `[]`).
       investimentos: [],
     })),
@@ -101,6 +102,23 @@ export const sequenciaDe = (j) => ({ erros: j?.sequencia?.erros ?? 0, acertos: j
 export const ehBot = (j) => Boolean(j?.bot);
 
 // Quem recebe dinheiro e reputação: a empresa (cooperativo) ou o jogador da vez.
+// Diretorias de quem decide: o rival do computador não tem; no cooperativo vêm dos `papeis`; nos demais modos é o setor
+// escolhido no menu (saves antigos sem setor seguem o mesmo rodízio do cargo exibido).
+export function diretoriasDe(e, j) {
+  if (!j || j.bot) return [];
+  if (ehCooperativo(e)) return j.papeis ?? [];
+  const ids = Object.keys(DIRETORIAS);
+  return [j.diretoria ?? ids[j.id % ids.length]];
+}
+
+// Diretorias que valem para os efeitos passivos da jogada: as do jogador da vez, ou todas as da empresa no cooperativo.
+export function diretoriasAtivas(e) {
+  if (!ehCooperativo(e)) return diretoriasDe(e, jogadorAtual(e));
+  return [...new Set(e.jogadores.flatMap((j) => diretoriasDe(e, j)))];
+}
+
+export const temDiretoria = (e, id) => diretoriasAtivas(e).includes(id);
+
 export const carteira = (e) => (ehCooperativo(e) ? e.empresa : jogadorAtual(e));
 
 // Falência (fisher.md 3.12): caixa negativo ao fim de uma jogada que passou pelo Balanço. No competitivo e no solo o jogador sai da disputa

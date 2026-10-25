@@ -79,7 +79,7 @@ Para um cenário em que a pessoa **calcula** o valor, siga o passo a passo acima
 | `conceito` | Obrigatório, id de `CONCEITOS` em [src/scenarios/content/conceitos.js](../src/scenarios/content/conceitos.js). Diz o que o cenário avalia; o perfil de desempenho do fim de jogo agrega erros e acertos por conceito (`fisher.md` 4.6). Reutilize um conceito existente se o cenário treina a mesma ideia; para um novo, acrescente id e nome ao catálogo e, em [src/scenarios/content/materiais.js](../src/scenarios/content/materiais.js), o que revisar e os links de estudo sugeridos no relatório de fim de jogo (um teste exige materiais para todo conceito). |
 | `dificuldade` | Obrigatório, inteiro de 1 a 3 (`DIFICULDADE_MAX`). Ver [Dificuldade](#dificuldade). |
 | `contexto` | Narrativa e pergunta. Pode usar placeholders. |
-| `dica` | Opcional. Só para jogadores de nível iniciante, e oculta por padrão: o jogador precisa pedir ("Mostrar dica"), e isso reduz pela metade o bônus de confiança nos ganhos daquela decisão (`fisher.md` 3.4). |
+| `dica` | Opcional. Só para jogadores de nível iniciante (ou para quem usa o Treinamento de Pessoas e Finanças, em qualquer nível, sem custo, `fisher.md` 3.16), e oculta por padrão: o jogador precisa pedir ("Mostrar dica"), e isso reduz pela metade o bônus de confiança nos ganhos daquela decisão (`fisher.md` 3.4). |
 | `valor_base` | V da matriz de pontuação (`fisher.md` 3.5). Hoje todos usam 20.000; o nível avançado multiplica por 1,5. |
 | `dados.formato` | Define a formatação de todos os placeholders numéricos. |
 | `tipo` | Opcional. `'calculo'` para um cenário em que a pessoa calcula e informa o valor (ver [Cenários de cálculo](#cenários-de-cálculo)). Ausente é um cenário comum. |
@@ -125,6 +125,8 @@ De **6 a 8**, com **exatamente uma** `correta`. Tipos aceitos:
 | `irrelevante` | Verdadeira ou não, mas sem relação com a decisão. | Não | Não |
 
 Um pool típico tem 1 `correta`, 1 `parcial`, 2 `erro_conceitual`, 1 `irrelevante` e 1 `afirmacao_falsa`, como nos cenários existentes.
+
+**O tamanho não pode denunciar a certa.** Os textos de todos os cenários seguem uma distribuição aproximadamente normal, com média de cerca de 105 caracteres e desvio de cerca de 20 (a maioria entre 65 e 145). A `correta` não deve ser a mais longa por hábito, nem as `irrelevante` ou `afirmacao_falsa` as mais curtas: sorteie a posição da certa entre os tamanhos do pool, encurtando a explicação dela ou alongando as erradas com detalhes plausíveis. Um placeholder conta como cerca de 6 caracteres. `tests/scenarios.test.js` confere isso.
 
 A justificativa é avaliada **separadamente** da métrica. Por isso é possível acertar a métrica por sorte (justificativa errada) ou ter a justificativa certa com a métrica errada. Escreva as erradas para que, de fato, não sustentem a métrica correta.
 
@@ -353,7 +355,8 @@ Em `investimentos.js`, acrescente um objeto a `EMPRESAS` (regras em `fisher.md` 
 - **A falha e o valor esperado andam juntos.** Empresa com `falha` é uma furada e precisa de valor esperado negativo, `prob × ganho − (1 − prob) × perda < 0`. Empresa com `falha: null` precisa de argumento realmente sólido (dados completos, inclusive os casos ruins) e de valor esperado positivo. Isso vale mesmo no pior sorteio da chance: a cada oferta `prob` varia até ±0,04 (`SORTEIO_PROBABILIDADE`).
 - **A pista precisa estar no texto do `fundador`** (ou no `historico`), sem nomear a falácia. Quem lê deve poder descobrir; a `explicacao` só aparece depois da decisão.
 - **Mantenha a proporção:** cada porte com ao menos 2 empresas sólidas e 2 furadas, e cada falácia em ao menos uma empresa. O investimento às cegas deve ficar perto de zero em média (o teste confere por porte), senão o chute passa a compensar.
-- A consultoria cobra 50% do ganho e R$ 15.000 no fracasso (ou na hora, se a pessoa não investir), então quase nenhuma empresa tem valor esperado positivo depois dela; isso é intencional (ela é informação cara). Não ajuste o catálogo para compensar.
+- A consultoria cobra 50% do ganho e R$ 15.000 no fracasso (ou na hora, se a pessoa não investir; no cooperativo, 25% e R$ 7.500), então quase nenhuma empresa tem valor esperado positivo depois dela; isso é intencional (ela é informação cara). Não ajuste o catálogo para compensar.
+- A habilidade Treinamento (Pessoas e Finanças, `fisher.md` 3.16) só atua em cenário com `dica`, o Dashboard mostra o resumo de todas as `series` visíveis (menos as de `ocultas_ate_resultado`) e não vale em cenário de cálculo, e o Plano B sorteia uma opção com `correta: false`.
 - O `historico` é sempre visível na ficha; `prob`, `ganho` e `perda` só aparecem no relatório da consultoria. A pista da falácia deve estar no texto do `fundador` ou no `historico`.
 - Empresas novas entram no baralho de seu porte no próximo ciclo. Não renomeie nem remova um `id`: aportes salvos referenciam o id (a apuração tolera id ausente, mas perde a narrativa).
 - Narrativas de sucesso e fracasso são exibidas no Balanço ao apurar; escreva-as de modo a fazer sentido para qualquer um dos dois desfechos, sem citar números.
@@ -385,7 +388,7 @@ O validador **não** confere que a opção marcada `correta` é de fato a corret
 ## Checklist antes de concluir
 
 - [ ] `id` único; `setor` válido; `conceito` do catálogo; `dificuldade` de 1 a 3.
-- [ ] 5 opções (1 correta); 6–8 justificativas (1 `correta`).
+- [ ] 5 opções (1 correta); 6–8 justificativas (1 `correta`), com tamanhos variados e sem a certa sempre a mais longa.
 - [ ] Todo `equivoco` tem feedback.
 - [ ] Nenhum número de dado escrito à mão; só placeholders.
 - [ ] O invariante prova o ponto pedagógico e passa em 1.000 seeds.

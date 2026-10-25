@@ -1,4 +1,4 @@
-import { FAIXAS_MERCADO, CONSULTORIA_PENALIDADE, CONSULTORIA_HONORARIO_FRACASSO, SORTEIO_PROBABILIDADE } from './config.js';
+import { FAIXAS_MERCADO, CONSULTORIA_PENALIDADE, CONSULTORIA_HONORARIO_FRACASSO, CONSULTORIA_PENALIDADE_RH, CONSULTORIA_HONORARIO_RH, SORTEIO_PROBABILIDADE } from './config.js';
 import { EMPRESAS, FALACIAS, obterEmpresa } from '../scenarios/content/investimentos.js';
 
 // Investimentos do Mercado (fisher.md 3.14): oferta por porte, retorno com consultoria e liquidação no Balanço.
@@ -16,8 +16,11 @@ export const porteDaReputacao = (reputacao) => [...FAIXAS_MERCADO].reverse().fin
 export const valorEsperado = ({ prob, ganho, perda }) => prob * ganho - (1 - prob) * perda;
 
 // Quem investe depois do relatório da consultoria paga metade do retorno do sucesso e, no fracasso, um honorário fixo.
-export const ganhoComConsultoria = (ganho) => ganho * (1 - CONSULTORIA_PENALIDADE);
-export const honorarioDaConsultoria = (consultoria) => (consultoria ? CONSULTORIA_HONORARIO_FRACASSO : 0);
+// No cooperativo (`desconto`), Pessoas e Finanças reduz os dois pela metade.
+export const penalidadeDaConsultoria = (desconto = false) => (desconto ? CONSULTORIA_PENALIDADE_RH : CONSULTORIA_PENALIDADE);
+export const honorarioFixoDaConsultoria = (desconto = false) => (desconto ? CONSULTORIA_HONORARIO_RH : CONSULTORIA_HONORARIO_FRACASSO);
+export const ganhoComConsultoria = (ganho, desconto = false) => ganho * (1 - penalidadeDaConsultoria(desconto));
+export const honorarioDaConsultoria = (consultoria, desconto = false) => (consultoria ? honorarioFixoDaConsultoria(desconto) : 0);
 
 // Saves antigos não têm `investimentos`.
 export const investimentosDe = (j) => j?.investimentos ?? [];

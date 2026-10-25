@@ -1075,9 +1075,18 @@ table.balanco .total td {
   font-size: .92rem;
 }
 
-.divisao-foco {
+.divisao-foco,
+.divisao-habilidade {
   font-size: .8rem;
   color: var(--suave);
+}
+
+.habilidades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+  margin: .5rem 0;
 }
 
 .briefing-inaugural {
@@ -1567,7 +1576,7 @@ fieldset.secao-config {
 #form-menu input[type="number"], #form-menu input:not([type]), #form-menu select { font-size: 1.1rem; padding: .6rem; }
 #form-menu .campo-outro { font-size: 1rem; }
 #form-menu .indicadores strong { font-size: 1.5rem; }
-#form-menu .indicadores span, #form-menu .divisao-foco { font-size: 1rem; }
+#form-menu .indicadores span, #form-menu .divisao-foco, #form-menu .divisao-habilidade { font-size: 1rem; }
 #form-menu .divisao-nome, #form-menu .passos strong { font-size: 1.2rem; }
 #form-menu .passos p { font-size: 1.05rem; }
 #form-menu .frase-efeito { font-size: 1.1rem; }

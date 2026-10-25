@@ -36,6 +36,9 @@ export const APORTES = [10000, 25000, 50000];
 // metade do retorno, se der certo, ou um honorário fixo, se der errado.
 export const CONSULTORIA_PENALIDADE = 0.5; // fração do retorno do sucesso cobrada pela consultoria
 export const CONSULTORIA_HONORARIO_FRACASSO = 15000; // cobrado a mais quando o investimento dá errado
+// Cooperativo: a diretoria de Pessoas e Finanças negocia a consultoria pela metade do preço.
+export const CONSULTORIA_PENALIDADE_RH = 0.25;
+export const CONSULTORIA_HONORARIO_RH = 7500;
 export const SORTEIO_PROBABILIDADE = 0.04; // a chance de sucesso de cada oferta varia até ±0,04 em torno da do catálogo
 export const ANALISE_BONUS_REPUTACAO = 3; // diagnóstico certo do argumento do fundador
 export const ANALISE_PENALIDADE_REPUTACAO = 2; // diagnóstico errado
@@ -48,7 +51,9 @@ export const BONUS_INVESTIDOR_REPUTACAO = 3;
 export const CORTE_ORCAMENTO = 8000;
 export const CORTE_ORCAMENTO_REPUTACAO = 5;
 export const REDUCAO_PREJUIZO_PASSIVA = 0.3; // fração do prejuízo de eventos do setor da diretoria
-export const REPUTACAO_BALANCO_RH = 2;
+
+// Habilidades das diretorias (docs/modo-cooperativo.md seção 2), válidas nos três modos.
+export const HABILIDADE_USOS = 2; // usos de cada habilidade ativa por jogador na partida
 
 // Modo solo: rival controlado pelo computador (fisher.md 3.11). `acerto` é a chance de acertar a métrica
 // e, de forma independente, a justificativa num cenário de dificuldade 1. Calibrado com scripts/simular-bot.mjs

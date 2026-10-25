@@ -7,6 +7,7 @@ import { valorEsperado, ehCalculo } from '../src/engine/calculo.js';
 import { obterCenario } from '../src/scenarios/loader.js';
 import { DINHEIRO_INICIAL, DINHEIRO_INICIAL_MIN, DINHEIRO_INICIAL_MAX, REPUTACAO_INICIAL_MIN, REPUTACAO_INICIAL_MAX, TURNOS_PADRAO } from '../src/engine/config.js';
 import { CONFIANCA } from '../src/engine/scoring.js';
+import { diretoriaDoSetor } from '../src/engine/papeis.js';
 import { viewJogo } from '../src/ui/views.js';
 
 const jogadores = (...niveis) => niveis.map((nivel, i) => ({ nome: `J${i + 1}`, nivel }));
@@ -549,7 +550,7 @@ test('falência: o aviso aparece na tela antes de continuar e o placar marca o f
 
 import {
   MULTA_CRISE, REPUTACAO_POS_CRISE, REPUTACAO_INICIAL, CUSTOS_BALANCO, BONUS_INVESTIDOR, BONUS_INVESTIDOR_REPUTACAO,
-  CORTE_ORCAMENTO, CORTE_ORCAMENTO_REPUTACAO, REDUCAO_PREJUIZO_PASSIVA, REPUTACAO_BALANCO_RH,
+  CORTE_ORCAMENTO, CORTE_ORCAMENTO_REPUTACAO, REDUCAO_PREJUIZO_PASSIVA,
 } from '../src/engine/config.js';
 import { receitaBalanco } from '../src/engine/scoring.js';
 import { EVENTOS, TIPOS_CARTA, eventosDoTipo } from '../src/scenarios/content/eventos.js';
@@ -578,17 +579,15 @@ function comEvento(modo, idCarta, { dinheiro, reputacao, posicao = 0 } = {}) {
   return reduzir(reduzir(reduzir(rolado, { tipo: 'PARTICIPAR' }), { tipo: 'ESCOLHER_CARTA', valor: 0 }), { tipo: 'MANTER' });
 }
 
-test('cooperativo: o Balanço dá o bônus do RH à reputação da empresa e o expõe em balanco.bonusRh', () => {
-  assert.equal(REPUTACAO_BALANCO_RH, 2);
-  // Meta cumprida: reputação = inicial + RH + bônus do investidor.
+test('cooperativo: o Balanço aplica só a meta à reputação da empresa, sem bônus fixo do RH', () => {
+  // Meta cumprida: reputação = inicial + bônus do investidor.
   const ok = reduzir(noBalanco('cooperativo', { dinheiro: 10 * DINHEIRO_INICIAL }), { tipo: 'ROLAR' });
   assert.equal(ok.fase, 'MOSTRAR_BALANCO');
-  assert.equal(ok.balanco.bonusRh, REPUTACAO_BALANCO_RH);
-  assert.equal(ok.empresa.reputacao, REPUTACAO_INICIAL + REPUTACAO_BALANCO_RH + BONUS_INVESTIDOR_REPUTACAO);
-  // Meta falha: o RH entra antes do corte.
+  assert.equal(ok.balanco.bonusRh, undefined);
+  assert.equal(ok.empresa.reputacao, REPUTACAO_INICIAL + BONUS_INVESTIDOR_REPUTACAO);
+  // Meta falha: só o corte.
   const falha = reduzir(noBalanco('cooperativo', { dinheiro: 0 }), { tipo: 'ROLAR' });
-  assert.equal(falha.balanco.bonusRh, REPUTACAO_BALANCO_RH);
-  assert.equal(falha.empresa.reputacao, REPUTACAO_INICIAL + REPUTACAO_BALANCO_RH - CORTE_ORCAMENTO_REPUTACAO);
+  assert.equal(falha.empresa.reputacao, REPUTACAO_INICIAL - CORTE_ORCAMENTO_REPUTACAO);
   // Os jogadores não ganham o bônus: ele é da empresa.
   assert.equal(ok.jogadores[0].reputacao, REPUTACAO_INICIAL);
 });
@@ -677,12 +676,15 @@ test('competitivo: prejuízo de evento não é amortecido', () => {
   assert.equal(e.jogadores[0].dinheiro, DINHEIRO_INICIAL - 5000);
 });
 
-test('amortecimento vale para toda carta de evento: só prejuízo, só no cooperativo, sempre à centena', () => {
+test('amortecimento vale para toda carta de evento: só prejuízo, sempre à centena, e no competitivo só no setor da diretoria de quem joga', () => {
+  const amortecido = (carta) => Math.round((carta.dinheiro * (1 - REDUCAO_PREJUIZO_PASSIVA)) / 100) * 100;
   for (const carta of EVENTOS) {
     const coopE = comEvento('cooperativo', carta.id);
     const compE = comEvento('competitivo', carta.id);
-    assert.equal(compE.eventoAtual.dinheiro, carta.dinheiro, `competitivo ${carta.id}`);
-    const esperado = carta.dinheiro < 0 ? Math.round((carta.dinheiro * (1 - REDUCAO_PREJUIZO_PASSIVA)) / 100) * 100 : carta.dinheiro;
+    // Sem setor escolhido, o primeiro jogador fica com Operações (mesmo rodízio do cargo exibido).
+    const dele = carta.dinheiro < 0 && diretoriaDoSetor(carta.setor) === 'operacoes';
+    assert.equal(compE.eventoAtual.dinheiro, dele ? amortecido(carta) : carta.dinheiro, `competitivo ${carta.id}`);
+    const esperado = carta.dinheiro < 0 ? amortecido(carta) : carta.dinheiro;
     assert.equal(coopE.eventoAtual.dinheiro, esperado, `cooperativo ${carta.id}`);
     assert.equal(Math.abs(coopE.eventoAtual.dinheiro) % 100, 0, `centena ${carta.id}`);
     if (carta.dinheiro < 0) assert.ok(coopE.eventoAtual.dinheiro > carta.dinheiro, `${carta.id} deveria perder menos`);
@@ -797,9 +799,9 @@ test('crise de imagem pelo Balanço cooperativo: o corte por meta falha leva a r
   assert.equal(e.empresa.dinheiro, receita - CUSTOS_BALANCO - CORTE_ORCAMENTO - MULTA_CRISE);
 });
 
-test('sem crise no Balanço cooperativo quando o bônus do RH segura a reputação acima de zero', () => {
-  // Reputação 4: +2 = 6, -5 = 1.
-  const e = reduzir(noBalanco('cooperativo', { dinheiro: 0, reputacao: 4 }), { tipo: 'ROLAR' });
+test('sem crise no Balanço cooperativo quando o corte deixa a reputação acima de zero', () => {
+  // Reputação 6: -5 = 1.
+  const e = reduzir(noBalanco('cooperativo', { dinheiro: 0, reputacao: 6 }), { tipo: 'ROLAR' });
   assert.equal(e.balanco.meta.crise, false);
   assert.equal(e.empresa.reputacao, 1);
 });
@@ -807,7 +809,7 @@ test('sem crise no Balanço cooperativo quando o bônus do RH segura a reputaç�
 test('crise de imagem pelo Balanço: meta cumprida nunca dispara crise', () => {
   const e = reduzir(noBalanco('cooperativo', { dinheiro: 10 * DINHEIRO_INICIAL, reputacao: 1 }), { tipo: 'ROLAR' });
   assert.equal(e.balanco.meta.crise, false);
-  assert.equal(e.empresa.reputacao, 1 + REPUTACAO_BALANCO_RH + BONUS_INVESTIDOR_REPUTACAO);
+  assert.equal(e.empresa.reputacao, 1 + BONUS_INVESTIDOR_REPUTACAO);
 });
 
 test('crise causando falência no cooperativo: a multa da crise leva o caixa a negativo no Balanço', () => {
@@ -826,10 +828,10 @@ test('crise causando falência no cooperativo: a multa da crise leva o caixa a n
 });
 
 test('crise de imagem sem a multa o caixa ficaria positivo: a empresa sobrevive ao Balanço', () => {
-  // Mesma situação, mas a reputação resiste (4 vira 1): sem multa, o caixa fecha em R$ 5.000 e a jogada segue.
-  const receita = receitaBalanco(4);
+  // Mesma situação, mas a reputação resiste (6 vira 1): sem multa, o caixa fecha em R$ 5.000 e a jogada segue.
+  const receita = receitaBalanco(6);
   const caixa = 5000 - (receita - CUSTOS_BALANCO - CORTE_ORCAMENTO);
-  const e = reduzir(reduzir(noBalanco('cooperativo', { dinheiro: caixa, reputacao: 4 }), { tipo: 'ROLAR' }), { tipo: 'CONTINUAR' });
+  const e = reduzir(reduzir(noBalanco('cooperativo', { dinheiro: caixa, reputacao: 6 }), { tipo: 'ROLAR' }), { tipo: 'CONTINUAR' });
   assert.equal(empresaFalida(e), false);
   assert.equal(e.empresa.dinheiro, 5000);
   assert.equal(e.fase, 'ROLAR_DADO');
