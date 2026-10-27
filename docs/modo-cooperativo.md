@@ -43,10 +43,10 @@ Cada cenário e evento ganha um campo `setor`.
 | Papel | Habilidade ativa | Efeito passivo |
 | --- | --- | --- |
 | Operações | **Plano B:** remove uma métrica incorreta da lista | −30% de prejuízo nos eventos de logística e produção |
-| Tecnologia | **Dashboard:** mostra n, mín., Q1, mediana, Q3 e máx. das séries do cenário (não vale em cenário de cálculo) | −30% de prejuízo nos eventos de dados e produto |
+| Tecnologia | **Teste A/B:** revela as duas métricas finalistas (a correta e uma errada), sem dizer qual é qual | −30% de prejuízo nos eventos de dados e produto |
 | Pessoas e Finanças | **Treinamento:** abre a `dica` do cenário sem reduzir o bônus de confiança | −30% de prejuízo nos eventos de RH, atendimento e financeiro e **consultoria pela metade do preço** (25% do retorno e R$ 7.500) |
 
-A **Rota alternativa** da proposta original (rolar o dado duas vezes) foi trocada pelo Plano B: o dado é o de movimento, então ela não atuaria na decisão. O +2 de reputação por Balanço de Pessoas e Finanças, da fase 1, foi retirado.
+O **Dashboard** (resumo estatístico dos dados) foi trocado pelo Teste A/B por repetir o que o gráfico já mostra. A **Rota alternativa** da proposta original (rolar o dado duas vezes) foi trocada pelo Plano B: o dado é o de movimento, então ela não atuaria na decisão. O +2 de reputação por Balanço de Pessoas e Finanças, da fase 1, foi retirado.
 
 **Eventos (`fisher.md` 3.15).** Na casa de Evento quem joga escolhe participar ou passar, e o grupo pode discutir antes. Ao participar, escolhe uma de três cartas viradas (uma boa, uma ruim e uma troll), o jogo revela uma das outras, e o grupo decide se mantém a carta ou troca (Monty Hall). O efeito da carta final vale para a empresa. O efeito passivo de prejuízo (−30%) vale para a carta escolhida e para o valor mostrado nas outras duas, reveladas ao final.
 

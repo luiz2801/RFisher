@@ -327,7 +327,7 @@ function informarValor(form) {
   despachar({ tipo: 'VALOR', valor });
 }
 
-// No cooperativo com 2 jogadores só o primeiro escolhe o setor (o segundo fica com os demais) e com 1 acumula todos.
+// Cada jogador escolhe o setor junto do nome. Só o cooperativo muda isso: com 2 jogadores só o primeiro escolhe (o segundo fica com os demais) e com 1 acumula todos.
 function ajustarCamposSetor(form) {
   const modo = form.elements.modo.value;
   const n = modo === 'solo' ? 1 : Number(form.elements.n.value);
@@ -335,7 +335,7 @@ function ajustarCamposSetor(form) {
   form.querySelectorAll('fieldset[data-jogador]').forEach((f) => {
     const i = Number(f.dataset.jogador);
     if (i >= n) f.dataset.pula = ''; else delete f.dataset.pula;
-    f.querySelector('[data-campo="diretoria"]').hidden = !coop || n === 1 || (n === 2 && i === 1);
+    f.querySelector('[data-campo="diretoria"]').hidden = coop && (n === 1 || (n === 2 && i === 1));
     f.querySelector('[data-campo="diretoria-resto"]').hidden = !coop || n !== 2 || i !== 1;
   });
   form.querySelector('[data-erro-setor]').hidden = true;

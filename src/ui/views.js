@@ -5,7 +5,7 @@ import { parDadosHtml } from './components/dado.js';
 import { CASAS, NUM_CASAS, ROTULO_CASA, coordenadas } from '../engine/board.js';
 import { jogadorAtual, diretoriasDe, temDiretoria, carteira, classificacao, vencedores, ehCooperativo, ehBot, ehFalido, empresaFalida, julgarBalanco, classificarEmpresa, dinheiroInicialDe, reputacaoInicialDe, sequenciaDe } from '../engine/state.js';
 import { DIRETORIAS } from '../engine/papeis.js';
-import { motivoIndisponivel, usosRestantes, resumoDoDashboard } from '../engine/habilidades.js';
+import { motivoIndisponivel, usosRestantes, testeAB } from '../engine/habilidades.js';
 import { metaTrimestral, dinheiroDoEvento } from '../engine/machine.js';
 import { relatorioDesempenho } from '../engine/desempenho.js';
 import { CONFIANCA, ROTULO_CONFIANCA, NIVEL, confiancaEfetiva, multiplicadorSequencia } from '../engine/scoring.js';
@@ -553,12 +553,14 @@ function blocoHabilidades(e, j, c, def) {
     return `<button class="discreto habilidade" data-acao="USAR_HABILIDADE" data-valor="${id}"${motivo ? ` disabled title="${esc(motivo)}"` : ''}>${d.icone} ${esc(d.habilidade.nome)}: ${esc(d.habilidade.descricao)} (restam ${usosRestantes(j, id)} de ${HABILIDADE_USOS})</button>${motivo && !usada ? `<small class="ajuda">${esc(motivo)}</small>` : ''}`;
   }).join('');
   const fmt = (i, v) => esc(formatar(def.dados.formatos?.[i] ?? def.dados.formato, v));
-  const dashboard = c.dashboard
-    ? `<table class="tabela-dados"><caption>Dashboard: resumo dos dados</caption>
-      <thead><tr><th scope="col">Série</th><th scope="col">n</th><th scope="col">Mín.</th><th scope="col">Q1</th><th scope="col">Mediana</th><th scope="col">Q3</th><th scope="col">Máx.</th></tr></thead>
-      <tbody>${resumoDoDashboard(def, c).map((r) => `<tr><td>${esc(r.nome)}</td><td>${r.n}</td><td>${fmt(r.indice, r.minimo)}</td><td>${fmt(r.indice, r.q1)}</td><td>${fmt(r.indice, r.mediana)}</td><td>${fmt(r.indice, r.q3)}</td><td>${fmt(r.indice, r.maximo)}</td></tr>`).join('')}</tbody></table>`
+  const testeABBloco = c.testeAB
+    ? (() => {
+        const [idA, idB] = c.testeAB;
+        const textoOpcao = (id) => esc(preencher(def.opcoes.find((o) => o.id === id).texto, c.vars));
+        return `<p class="dica"><strong>Teste A/B:</strong> as duas métricas finalistas são <strong>${textoOpcao(idA)}</strong> e <strong>${textoOpcao(idB)}</strong>. Uma é a certa — você decide qual.</p>`;
+      })()
     : '';
-  return `<div class="habilidades">${botoes}</div>${dashboard}`;
+  return `<div class="habilidades">${botoes}</div>${testeABBloco}`;
 }
 
 function viewDecisao(e) {

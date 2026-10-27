@@ -2,13 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { novoJogo, diretoriasDe, diretoriasAtivas } from '../src/engine/state.js';
 import { reduzir } from '../src/engine/machine.js';
-import { motivoIndisponivel, resumoDoDashboard, usosRestantes } from '../src/engine/habilidades.js';
+import { motivoIndisponivel, testeAB, usosRestantes } from '../src/engine/habilidades.js';
 import { HABILIDADE_USOS } from '../src/engine/config.js';
 import { obterCenario } from '../src/scenarios/loader.js';
 import { DIRETORIAS } from '../src/engine/papeis.js';
 
 const SIMPLES = 'cenario_01_salarios'; // histograma de uma série, com dica
-const CALCULO = 'cenario_26_bonus_vendas';
 
 const jogo = (modo, diretoria, cenario = SIMPLES, extra = {}) =>
   reduzir(novoJogo({
@@ -35,29 +34,41 @@ test('as diretorias de quem decide vêm do setor escolhido (competitivo e solo) 
   assert.deepEqual(diretoriasDe(comp, bot), [], 'o rival do computador não tem habilidades');
 });
 
-test('Dashboard (Tecnologia) mostra o resumo e gasta um uso, em qualquer modo', () => {
+test('Teste A/B (Tecnologia) revela duas métricas finalistas e gasta um uso, em qualquer modo', () => {
   for (const modo of ['competitivo', 'cooperativo']) {
     const e = usar(jogo(modo, 'tecnologia'), 'tecnologia');
-    assert.equal(e.cenarioAtual.dashboard, true, modo);
+    assert.ok(Array.isArray(e.cenarioAtual.testeAB) && e.cenarioAtual.testeAB.length === 2, modo);
     assert.deepEqual(e.cenarioAtual.habilidades, ['tecnologia']);
     assert.equal(usosRestantes(e.jogadores[0], 'tecnologia'), HABILIDADE_USOS - 1);
   }
   const e = jogo('competitivo', 'tecnologia');
-  const [r] = resumoDoDashboard(obterCenario(SIMPLES), e.cenarioAtual);
-  const v = [...e.cenarioAtual.series[0].valores];
-  assert.equal(r.n, v.length);
-  assert.equal(r.minimo, Math.min(...v));
-  assert.equal(r.maximo, Math.max(...v));
+  const def = obterCenario(SIMPLES);
+  const [idA, idB] = testeAB(def, e.cenarioAtual);
+  // Um dos dois é a opção correta
+  assert.ok([idA, idB].some((id) => def.opcoes.find((o) => o.id === id).correta), 'uma das duas deve ser a certa');
+  // O outro é uma distratora
+  assert.ok([idA, idB].some((id) => !def.opcoes.find((o) => o.id === id).correta), 'uma das duas deve ser errada');
+  // São diferentes entre si
+  assert.notEqual(idA, idB);
 });
 
-test('Dashboard não vale em cenário de cálculo nem mostra colunas ocultas até o resultado', () => {
-  const calc = jogo('competitivo', 'tecnologia', CALCULO);
-  assert.match(motivoIndisponivel(calc, calc.jogadores[0], calc.cenarioAtual, obterCenario(CALCULO), 'tecnologia'), /cálculo/);
-  assert.deepEqual(usar(calc, 'tecnologia'), calc, 'ação ignorada');
-  const id = 'cenario_22_simpson_rh';
-  const e = jogo('competitivo', 'tecnologia', id);
-  const def = obterCenario(id);
-  assert.equal(resumoDoDashboard(def, e.cenarioAtual).length, e.cenarioAtual.series.length - def.dados.ocultas_ate_resultado.length);
+test('Teste A/B não entrega a certa pela posição: segue a ordem da tela e a certa não fica sempre em primeiro', () => {
+  const def = obterCenario(SIMPLES);
+  const certa = def.opcoes.find((o) => o.correta).id;
+  const primeiras = new Set();
+  for (let seed = 1; seed <= 40; seed++) {
+    const e = jogo('competitivo', 'tecnologia', SIMPLES, { seed });
+    const finalistas = testeAB(def, e.cenarioAtual);
+    assert.deepEqual(finalistas, e.cenarioAtual.ordemOpcoes.filter((id) => finalistas.includes(id)));
+    primeiras.add(finalistas[0] === certa);
+  }
+  assert.equal(primeiras.size, 2, 'a certa aparece tanto em primeiro quanto em segundo');
+});
+
+test('Teste A/B é determinístico pela seed', () => {
+  const a = testeAB(obterCenario(SIMPLES), jogo('competitivo', 'tecnologia').cenarioAtual);
+  const b = testeAB(obterCenario(SIMPLES), jogo('competitivo', 'tecnologia').cenarioAtual);
+  assert.deepEqual(a, b);
 });
 
 test('Treinamento (Pessoas e Finanças) abre a dica sem reduzir o bônus, até no nível avançado', () => {

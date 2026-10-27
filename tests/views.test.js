@@ -455,7 +455,7 @@ test('a decisão oferece a habilidade da diretoria, mostra o efeito e esconde a 
   const antes = viewJogo(novo('tecnologia'));
   assert.match(antes, /data-acao="USAR_HABILIDADE" data-valor="tecnologia"/);
   assert.doesNotMatch(antes, /data-valor="operacoes"/, 'só a habilidade da própria diretoria');
-  assert.match(viewJogo(reduzir(novo('tecnologia'), { tipo: 'USAR_HABILIDADE', valor: 'tecnologia' })), /Dashboard: resumo dos dados/);
+  assert.match(viewJogo(reduzir(novo('tecnologia'), { tipo: 'USAR_HABILIDADE', valor: 'tecnologia' })), /Teste A\/B:/);
   assert.match(viewJogo(reduzir(novo('pessoas_financas'), { tipo: 'USAR_HABILIDADE', valor: 'pessoas_financas' })), /Dica \(Treinamento\)/);
   const plano = reduzir(novo('operacoes'), { tipo: 'USAR_HABILIDADE', valor: 'operacoes' });
   const opcoes = (h) => [...h.matchAll(/data-acao="METRICA"/g)].length;
