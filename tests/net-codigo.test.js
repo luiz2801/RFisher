@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { codificar, decodificar, tipoDoCodigo, PREFIXOS, enxugarSdp, hidratarSdp, extrairCodigo, montarLinkCodigo } from '../src/net/codigo.js';
+import { codificar, decodificar, tipoDoCodigo, PREFIXOS, enxugarSdp, hidratarSdp, extrairCodigo } from '../src/net/codigo.js';
 import { validarMensagem, serializar, ACOES_REMOTAS, MAX_DO_CONVIDADO } from '../src/net/protocolo.js';
 
 const SDP = 'v=0\r\no=- 4611731400430051336 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=candidate:1 1 udp 2113937151 abcd-1234.local 54321 typ host\r\n'.repeat(8);
@@ -171,30 +171,10 @@ test('codificar com SDP real gera código compacto e decodifica com fidelidade',
   assert.match(dec.sdp, /a=candidate:1 1 udp 2113937151 192.168.1.50 54321 typ host/);
 });
 
-test('resposta pode carregar nome do convidado', async () => {
-  const cod = await codificar('resposta', { nome: 'Bia', sdp: SDP_WEBRTC_REAL });
-  const dec = await decodificar('resposta', cod);
-  assert.equal(dec.nome, 'Bia');
-  assert.match(dec.sdp, /a=ice-ufrag:AbCd/);
-});
-
-test('extrairCodigo e montarLinkCodigo: lida com URLs, hashes e parâmetros', () => {
+test('extrairCodigo: limpa espaços e quebras de linha do código copiado', () => {
   const cod = 'CEO1P.eJyLzivNydFRyC';
-  const url = `http://localhost:8000/#${cod}`;
-  assert.equal(extrairCodigo(url), cod);
-  assert.equal(extrairCodigo(`https://game.io/sala?lang=pt#${cod}`), cod);
-  assert.equal(extrairCodigo(`  #${cod}  `), cod);
+  assert.equal(extrairCodigo(`  ${cod}  `), cod);
+  assert.equal(extrairCodigo('CEO1P.eJyL zivN ydFR yC'), cod);
   assert.equal(extrairCodigo(cod), cod);
-
-  const link = montarLinkCodigo(cod, 'http://192.168.1.15:8000/index.html');
-  assert.equal(link, `http://192.168.1.15:8000/index.html#${cod}`);
-});
-
-test('decodificar aceita URLs completas com hash', async () => {
-  const cod = await codificar('pedido', { nome: 'Daniel', sdp: SDP_WEBRTC_REAL });
-  const url = montarLinkCodigo(cod, 'http://192.168.1.15:8000');
-  const dec = await decodificar('pedido', url);
-  assert.equal(dec?.nome, 'Daniel');
-  assert.match(dec?.sdp, /a=ice-ufrag:AbCd/);
 });
 

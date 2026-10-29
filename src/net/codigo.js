@@ -1,6 +1,6 @@
 // Códigos de convite do multiplayer em rede local (docs/adr/0008). Sem servidor, o convidado e o dono trocam
-// dados de conexão WebRTC por fora do jogo (via link com hash, QR Code, ou copiar e colar).
-// Formato: prefixo + JSON comprimido (deflate-raw) em base64url, em blocos de 4 caracteres para facilitar leitura.
+// dois textos por fora do jogo (copiar e colar): o pedido (oferta WebRTC do convidado) e a resposta do dono.
+// Formato: prefixo + JSON comprimido (deflate-raw) em base64url, em blocos de 4 caracteres para facilitar a leitura.
 
 export const VERSAO_CODIGO = 1;
 export const PREFIXOS = { pedido: `CEO${VERSAO_CODIGO}P.`, resposta: `CEO${VERSAO_CODIGO}R.` };
@@ -23,7 +23,7 @@ async function transformar(bytes, Fluxo) {
 }
 
 // Enxuga um SDP padrão de webrtc-datachannel para manter apenas os parâmetros essenciais,
-// reduzindo em até 75% o tamanho do payload para gerar QR Codes leves e links curtos.
+// reduzindo em até 75% o tamanho do payload para gerar códigos compactos e fáceis de compartilhar.
 export function enxugarSdp(sdp) {
   if (typeof sdp !== 'string') return null;
   const u = sdp.match(/a=ice-ufrag:([^\r\n]+)/)?.[1]?.trim();
@@ -89,38 +89,25 @@ const CAMPOS = {
   },
   resposta: (d) => {
     if (!d) return null;
-    const nome = d.nome ? String(d.nome).trim().slice(0, NOME_MAX) : undefined;
-    if (typeof d.sdp === 'string' && d.sdp) return { ...(nome !== undefined ? { nome } : {}), sdp: d.sdp };
+    if (typeof d.sdp === 'string' && d.sdp) return { sdp: d.sdp };
     if (typeof d.u === 'string' && typeof d.p === 'string' && typeof d.f === 'string') {
-      return { ...(nome !== undefined ? { nome } : {}), u: d.u, p: d.p, f: d.f, s: d.s, c: Array.isArray(d.c) ? d.c : [] };
+      return { u: d.u, p: d.p, f: d.f, s: d.s, c: Array.isArray(d.c) ? d.c : [] };
     }
     return null;
   },
 };
 
-// Extrai o código CEO1... a partir de texto colado, hash ou URL completa.
+// Extrai o código CEO1... a partir de texto colado, tolerando espaços e quebras de linha.
 export function extrairCodigo(texto) {
   if (!texto) return '';
   const s = String(texto).trim();
-  const hashIdx = s.indexOf('#');
-  const alvo = hashIdx >= 0 ? s.slice(hashIdx + 1) : s;
   for (const pref of Object.values(PREFIXOS)) {
-    const idx = alvo.indexOf(pref);
+    const idx = s.indexOf(pref);
     if (idx >= 0) {
-      const trecho = alvo.slice(idx).split(/[?&]/)[0];
-      return trecho.replace(/\s+/g, '');
+      return s.slice(idx).replace(/\s+/g, '');
     }
   }
   return s.replace(/\s+/g, '');
-}
-
-// Monta um link direto com hash para abrir o jogo com o código já preenchido.
-export function montarLinkCodigo(codigo, urlBase = '') {
-  const limpo = extrairCodigo(codigo);
-  const base = urlBase
-    ? urlBase.split('#')[0]
-    : (typeof window !== 'undefined' ? window.location.href.split('#')[0] : '');
-  return `${base}#${limpo}`;
 }
 
 // `tipo`: 'pedido' ou 'resposta'. Devolve o texto pronto para copiar, ou lança se os dados forem inválidos.

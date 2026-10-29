@@ -5,8 +5,7 @@ import { viewMenu, QTD_SEMENTES, viewJogo, tabelaTsv, posicaoCss } from './ui/vi
 import { viewModalMultiplayer } from './ui/views-multi.js';
 import { criarAnfitriao } from './net/anfitriao.js';
 import { criarConvidado } from './net/convidado.js';
-import { criarPedido, responderPedido, criarConviteHospedeiro, aceitarConviteConvidado } from './net/transporte.js';
-import { extrairCodigo, montarLinkCodigo, tipoDoCodigo } from './net/codigo.js';
+import { criarPedido, responderPedido } from './net/transporte.js';
 import { obterCenario, todosCenarios } from './scenarios/loader.js';
 import { MAX_JOGADORES, PERFIS_BOT } from './engine/config.js';
 import { NUM_CASAS } from './engine/board.js';
@@ -20,54 +19,12 @@ const app = document.getElementById('app');
 let estado = null;
 let sessaoRede = null;
 let estadoUiMulti = null;
-let cameraStream = null;
-let cameraInterval = null;
-let canalBroadcast = null;
-try {
-  canalBroadcast = typeof BroadcastChannel === 'function' ? new BroadcastChannel('rfisher-multi') : null;
-} catch {
-  canalBroadcast = null;
-}
-
-if (canalBroadcast) {
-  canalBroadcast.onmessage = (ev) => {
-    const { tipo, codigo } = ev.data ?? {};
-    if (tipo === 'confirmacao-recebida' && sessaoRede?.tipo === 'anfitriao' && sessaoRede.conviteAtivo) {
-      conectarConfirmacaoHost(codigo);
-    }
-  };
-}
-
 const semMovimento = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-function fecharCamera() {
-  if (cameraInterval) {
-    clearInterval(cameraInterval);
-    cameraInterval = null;
-  }
-  if (cameraStream) {
-    cameraStream.getTracks().forEach((t) => t.stop());
-    cameraStream = null;
-  }
-  if (estadoUiMulti) {
-    estadoUiMulti.cameraAtiva = false;
-    estadoUiMulti.cameraErro = null;
-    render();
-  }
-}
-
 function encerrarSessaoRede() {
-  fecharCamera();
   if (!sessaoRede) return;
   if (sessaoRede.tickTimer) clearInterval(sessaoRede.tickTimer);
   if (sessaoRede.timerDiag) clearInterval(sessaoRede.timerDiag);
-  if (sessaoRede.conviteAtivo?.transporte) {
-    try {
-      sessaoRede.conviteAtivo.transporte.fechar();
-    } catch {
-      /* já fechado */
-    }
-  }
   if (sessaoRede.tipo === 'anfitriao') {
     sessaoRede.instancia.encerrar();
   } else if (sessaoRede.tipo === 'convidado') {
@@ -111,13 +68,6 @@ function render({ focar = false } = {}) {
     html += viewModalMultiplayer(estadoUiMulti);
   }
   app.innerHTML = html;
-  if (cameraStream) {
-    const video = document.getElementById('camera-preview');
-    if (video && video.srcObject !== cameraStream) {
-      video.srcObject = cameraStream;
-      video.play().catch(() => {});
-    }
-  }
   if (focar) (document.getElementById('painel') ?? app.querySelector('.cta-jogar'))?.focus({ preventScroll: true });
 }
 
@@ -326,234 +276,6 @@ async function copiarTexto(texto, avisoEl) {
   }
 }
 
-async function gerarConviteHost() {
-  if (sessaoRede?.tipo !== 'anfitriao') return;
-  const visao = sessaoRede.instancia.visao();
-  if (visao.vagasLivres <= 0) return;
-  try {
-    const donoNome = visao.sala.pessoas.find((p) => p.chave === 'dono')?.nome || 'Anfitrião';
-    const convite = await criarConviteHospedeiro(donoNome);
-    sessaoRede.conviteAtivo = convite;
-    if (estadoUiMulti?.tela === 'lobby_dono') {
-      estadoUiMulti.conviteAtivo = { codigo: convite.codigo, link: convite.link };
-      render();
-    }
-  } catch (err) {
-    if (estadoUiMulti) {
-      estadoUiMulti.erro = `Erro ao gerar convite da sala: ${err.message}`;
-      render();
-    }
-  }
-}
-
-async function conectarConfirmacaoHost(codigoResposta) {
-  if (sessaoRede?.tipo !== 'anfitriao' || !sessaoRede.conviteAtivo) return;
-  try {
-    const { nome } = await sessaoRede.conviteAtivo.aplicarResposta(codigoResposta);
-    const id = sessaoRede.instancia.receberPedido({
-      nome: nome || 'Convidado',
-      transporte: sessaoRede.conviteAtivo.transporte,
-    });
-    if (id === null) {
-      estadoUiMulti.erro = 'A sala já está cheia ou não pode receber mais participantes.';
-      render();
-      return;
-    }
-    sessaoRede.conviteAtivo = null;
-    if (estadoUiMulti?.tela === 'lobby_dono') {
-      estadoUiMulti.conviteAtivo = null;
-      estadoUiMulti.erro = null;
-      render();
-    }
-    if (sessaoRede.instancia.visao().vagasLivres > 0) {
-      await gerarConviteHost();
-    }
-  } catch (err) {
-    if (estadoUiMulti) {
-      estadoUiMulti.erro = err.message || 'Código de confirmação inválido.';
-      render();
-    }
-  }
-}
-
-async function aceitarConviteConvidadoDoHost(codigoConvite, nome) {
-  try {
-    const { nome: nomeFinal, codigoResposta, linkResposta, transporte } = await aceitarConviteConvidado(codigoConvite, nome);
-    sessaoRede = {
-      tipo: 'convidado_pendente',
-      transporte,
-      timerDiag: null,
-    };
-    estadoUiMulti = {
-      tela: 'entrar_confirmacao',
-      nome: nomeFinal,
-      confirmacaoAtiva: { codigo: codigoResposta, link: linkResposta },
-      tempoDecorrido: 0,
-      erro: null,
-    };
-    render();
-
-    const inicioConexao = Date.now();
-    const timerDiag = setInterval(() => {
-      if (estadoUiMulti?.tela === 'entrar_confirmacao') {
-        estadoUiMulti.tempoDecorrido = Math.floor((Date.now() - inicioConexao) / 1000);
-        render();
-      }
-    }, 1000);
-    sessaoRede.timerDiag = timerDiag;
-
-    const aoConectar = () => {
-      clearInterval(timerDiag);
-      const convidado = criarConvidado({
-        transporte,
-        aoMudar: (visao) => {
-          if (visao.encerrada) {
-            const msg = visao.motivo === 'dono' ? 'A sala foi encerrada pelo anfitrião.' : 'A conexão com o anfitrião foi perdida.';
-            encerrarSessaoRede();
-            estado = null;
-            estadoUiMulti = { tela: 'escolha', erro: msg };
-            render();
-            return;
-          }
-          if (visao.estado) {
-            estado = visao.estado;
-            estadoUiMulti = null;
-          } else {
-            estado = null;
-            estadoUiMulti = { tela: 'lobby_convidado', visaoConvidado: visao };
-          }
-          render();
-        },
-      });
-      const tickTimer = setInterval(() => convidado.tick(), 2000);
-      sessaoRede = { tipo: 'convidado', instancia: convidado, tickTimer };
-      estadoUiMulti = { tela: 'lobby_convidado', visaoConvidado: convidado.visao() };
-      render();
-    };
-
-    transporte.aoEstado((s) => {
-      if (s === 'conectado') aoConectar();
-    });
-    transporte.aoReceber(() => {
-      aoConectar();
-    });
-  } catch (err) {
-    if (estadoUiMulti) {
-      estadoUiMulti.erro = `Código de convite inválido: ${err.message}`;
-      render();
-    }
-  }
-}
-
-async function abrirCamera(alvo = 'host') {
-  fecharCamera();
-  if (!navigator.mediaDevices?.getUserMedia) {
-    if (estadoUiMulti) {
-      estadoUiMulti.cameraErro = 'Seu navegador não possui suporte para câmera.';
-      render();
-    }
-    return;
-  }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
-    });
-    cameraStream = stream;
-    if (estadoUiMulti) {
-      estadoUiMulti.cameraAtiva = true;
-      estadoUiMulti.cameraErro = null;
-      render();
-    }
-    const video = document.getElementById('camera-preview');
-    if (video) {
-      video.srcObject = stream;
-      await video.play().catch(() => {});
-    }
-    if (typeof BarcodeDetector === 'function') {
-      const detector = new BarcodeDetector({ formats: ['qr_code'] });
-      cameraInterval = setInterval(async () => {
-        if (!cameraStream || !video || video.readyState < 2) return;
-        try {
-          const codes = await detector.detect(video);
-          if (codes && codes.length > 0) {
-            const raw = codes[0].rawValue;
-            const cod = extrairCodigo(raw);
-            if (cod) {
-              fecharCamera();
-              if (alvo === 'host') {
-                await conectarConfirmacaoHost(cod);
-              } else {
-                const nome = document.querySelector('[name="nome_convidado"]')?.value || 'Jogador 2';
-                await aceitarConviteConvidadoDoHost(cod, nome);
-              }
-            }
-          }
-        } catch {
-          /* frame não legível */
-        }
-      }, 250);
-    } else {
-      if (estadoUiMulti) {
-        estadoUiMulti.cameraErro = 'Leitor de QR Code nativo não suportado neste navegador. Use a câmera do seu celular para abrir o link ou copie/cole.';
-        render();
-      }
-    }
-  } catch (err) {
-    fecharCamera();
-    if (estadoUiMulti) {
-      estadoUiMulti.cameraErro = `Não foi possível acessar a câmera: ${err.message || 'Permissão negada'}`;
-      render();
-    }
-  }
-}
-
-function abrirConviteRecebido(codigo) {
-  encerrarSessaoRede();
-  estadoUiMulti = {
-    tela: 'entrar_passo1',
-    nome: 'Jogador 2',
-    codigoConvite: codigo,
-  };
-  render();
-}
-
-async function checarHashUrl() {
-  if (typeof window === 'undefined' || !window.location.hash) return;
-  const hash = window.location.hash;
-  const codigo = extrairCodigo(hash);
-  const tipo = tipoDoCodigo(codigo);
-  if (tipo === 'pedido') {
-    window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    abrirConviteRecebido(codigo);
-  } else if (tipo === 'resposta') {
-    window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    if (sessaoRede?.tipo === 'anfitriao' && sessaoRede.conviteAtivo) {
-      await conectarConfirmacaoHost(codigo);
-    } else if (canalBroadcast) {
-      canalBroadcast.postMessage({ tipo: 'confirmacao-recebida', codigo });
-      estadoUiMulti = {
-        tela: 'escolha',
-        aviso: 'Confirmação enviada para a aba aberta do anfitrião! Você já pode fechar esta aba.',
-      };
-      render();
-    }
-  }
-}
-
-async function colarTextoClipboard(inputDestino) {
-  if (!navigator.clipboard?.readText) return;
-  try {
-    const texto = await navigator.clipboard.readText();
-    const el = app.querySelector(`[name="${inputDestino}"]`);
-    if (el) {
-      el.value = texto;
-      el.focus();
-    }
-  } catch {
-    /* permissão não concedida */
-  }
-}
-
 async function gerarPedidoConvidado(nome) {
   try {
     const { codigo, transporte, aplicarResposta } = await criarPedido(nome);
@@ -735,42 +457,19 @@ app.addEventListener('click', (ev) => {
             tela: 'lobby_dono',
             visaoHost: visao,
             respostaGerada: sessaoRede?.respostaGerada ?? null,
-            conviteAtivo: sessaoRede?.conviteAtivo ?? null,
           };
         }
         render();
       },
     });
     const tickTimer = setInterval(() => host.tick(), 2000);
-    sessaoRede = { tipo: 'anfitriao', instancia: host, tickTimer, respostaGerada: null, conviteAtivo: null };
-    estadoUiMulti = { tela: 'lobby_dono', visaoHost: host.visao(), respostaGerada: null, conviteAtivo: null };
+    sessaoRede = { tipo: 'anfitriao', instancia: host, tickTimer, respostaGerada: null };
+    estadoUiMulti = { tela: 'lobby_dono', visaoHost: host.visao(), respostaGerada: null };
     render();
-    gerarConviteHost();
   } else if (acao === 'ABRIR_ENTRAR_SALA') {
     encerrarSessaoRede();
     estadoUiMulti = { tela: 'entrar_passo1', nome: 'Jogador 2' };
     render();
-  } else if (acao === 'COPIAR_LINK_CONVITE') {
-    copiarTexto(botao.dataset.link, app.querySelector('[data-copiado="link-convite"]'));
-  } else if (acao === 'COPIAR_LINK_CONFIRMACAO') {
-    copiarTexto(botao.dataset.link, app.querySelector('[data-copiado="link-confirmacao"]'));
-  } else if (acao === 'COMPARTILHAR_CONVITE' || acao === 'COMPARTILHAR_CONFIRMACAO') {
-    const link = botao.dataset.link;
-    if (navigator.share) {
-      navigator.share({
-        title: 'Multiplayer RFisher',
-        text: 'Acesse o link para entrar na sala multiplayer:',
-        url: link,
-      }).catch(() => {});
-    } else {
-      copiarTexto(link, app.querySelector('[data-copiado="link-convite"]') || app.querySelector('[data-copiado="link-confirmacao"]'));
-    }
-  } else if (acao === 'COLAR_CLIPBOARD') {
-    colarTextoClipboard(botao.dataset.destino);
-  } else if (acao === 'ABRIR_CAMERA') {
-    abrirCamera(botao.dataset.alvo);
-  } else if (acao === 'FECHAR_CAMERA') {
-    fecharCamera();
   } else if (acao === 'COPIAR_CODIGO_PEDIDO') {
     const el = app.querySelector('textarea[data-alvo="pedido"]');
     const aviso = app.querySelector('[data-copiado="pedido"]');
@@ -860,25 +559,15 @@ app.addEventListener('submit', (ev) => {
   } else if (ev.target.dataset.form === 'multi-pedido') {
     ev.preventDefault();
     const nome = String(ev.target.elements.nome_convidado?.value || '').trim() || 'Jogador';
-    const codigoConvite = String(ev.target.elements.codigo_convite?.value || '').trim();
-    if (codigoConvite) {
-      aceitarConviteConvidadoDoHost(codigoConvite, nome);
-    } else {
-      gerarPedidoConvidado(nome);
-    }
+    gerarPedidoConvidado(nome);
   } else if (ev.target.dataset.form === 'multi-resposta') {
     ev.preventDefault();
     const resposta = String(ev.target.elements.codigo_resposta?.value || '').trim();
     conectarRespostaConvidado(resposta);
   } else if (ev.target.dataset.form === 'host-aceitar-pedido') {
     ev.preventDefault();
-    const entrada = String(ev.target.elements.codigo_pedido?.value || '').trim();
-    const tipo = tipoDoCodigo(entrada);
-    if (tipo === 'resposta' && sessaoRede?.conviteAtivo) {
-      conectarConfirmacaoHost(entrada);
-    } else {
-      aceitarPedidoHost(entrada);
-    }
+    const pedido = String(ev.target.elements.codigo_pedido?.value || '').trim();
+    aceitarPedidoHost(pedido);
   }
 });
 
@@ -985,8 +674,5 @@ window.addEventListener('beforeunload', (ev) => {
     ev.returnValue = '';
   }
 });
-
-window.addEventListener('hashchange', checarHashUrl);
-checarHashUrl();
 
 render();
