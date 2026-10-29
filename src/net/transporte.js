@@ -5,7 +5,7 @@
 // Interface do transporte, a mesma do transporte falso dos testes:
 //   enviar(texto) · aoReceber(fn(texto)) · aoEstado(fn('conectado' | 'instavel' | 'caiu')) · fechar()
 
-import { codificar, decodificar } from './codigo.js';
+import { codificar, decodificar, montarLinkCodigo } from './codigo.js';
 
 const CONFIG_RTC = { iceServers: [] };
 // Espera os candidatos de rede para gerar um código só (sem trickle). Em LAN termina em milissegundos.
@@ -103,8 +103,9 @@ function envolver(pc) {
   };
 }
 
-// Convidado, passo 1: gera o código de pedido. Devolve também a função que recebe o código de resposta do dono.
-export async function criarPedido(nome) {
+// Cria um convite (oferta WebRTC com DataChannel).
+// Usado pelo Anfitrião ao abrir vaga na sala (ou pelo convidado no fluxo manual legado).
+export async function criarPedido(nome = 'Anfitrião') {
   const pc = criarConexao();
   const conexao = envolver(pc);
   try {
@@ -114,13 +115,15 @@ export async function criarPedido(nome) {
     const codigo = await codificar('pedido', { nome, sdp: pc.localDescription.sdp });
     return {
       codigo,
+      link: montarLinkCodigo(codigo),
       transporte: conexao.transporte,
-      // Convidado, passo 2: cola a resposta do dono e a conexão se abre.
+      // Aplica a resposta/confirmação gerada pelo outro lado e abre o canal.
       async aplicarResposta(codigoResposta) {
         const resposta = await decodificar('resposta', codigoResposta);
         if (!resposta) throw new ErroConvite('codigo-invalido', 'Esse não é um código de resposta válido.');
         try {
           await pc.setRemoteDescription({ type: 'answer', sdp: resposta.sdp });
+          return { nome: resposta.nome };
         } catch {
           throw new ErroConvite('codigo-invalido', 'O código de resposta não combina com este pedido.');
         }
@@ -132,8 +135,9 @@ export async function criarPedido(nome) {
   }
 }
 
-// Dono: lê o código de pedido e devolve o código de resposta, mais o transporte que abre quando o convidado o colar.
-export async function responderPedido(codigoPedido) {
+// Cria a resposta/confirmação para uma oferta recebida.
+// Usado pelo Convidado ao ler o convite do anfitrião (ou pelo anfitrião no fluxo legado).
+export async function responderPedido(codigoPedido, nomeIdentificacao = null) {
   const pedido = await decodificar('pedido', codigoPedido);
   if (!pedido) throw new ErroConvite('codigo-invalido', 'Esse não é um código de pedido válido.');
   const pc = criarConexao();
@@ -143,9 +147,19 @@ export async function responderPedido(codigoPedido) {
     await pc.setRemoteDescription({ type: 'offer', sdp: pedido.sdp });
     await pc.setLocalDescription(await pc.createAnswer());
     await esperarCandidatos(pc);
-    return { nome: pedido.nome, codigoResposta: await codificar('resposta', { sdp: pc.localDescription.sdp }), transporte: conexao.transporte };
+    const nomeFinal = (nomeIdentificacao || pedido.nome || 'Convidado').trim();
+    const codigoResposta = await codificar('resposta', { nome: nomeFinal, sdp: pc.localDescription.sdp });
+    return {
+      nome: nomeFinal,
+      codigoResposta,
+      linkResposta: montarLinkCodigo(codigoResposta),
+      transporte: conexao.transporte,
+    };
   } catch {
     conexao.transporte.fechar();
     throw new ErroConvite('codigo-invalido', 'O código de pedido está corrompido ou incompleto.');
   }
 }
+
+export const criarConviteHospedeiro = (nome = 'Anfitrião') => criarPedido(nome);
+export const aceitarConviteConvidado = (codigoConvite, nome) => responderPedido(codigoConvite, nome);

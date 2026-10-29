@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { codificar, decodificar, tipoDoCodigo, PREFIXOS } from '../src/net/codigo.js';
+import { codificar, decodificar, tipoDoCodigo, PREFIXOS, enxugarSdp, hidratarSdp, extrairCodigo, montarLinkCodigo } from '../src/net/codigo.js';
 import { validarMensagem, serializar, ACOES_REMOTAS, MAX_DO_CONVIDADO } from '../src/net/protocolo.js';
 
 const SDP = 'v=0\r\no=- 4611731400430051336 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=candidate:1 1 udp 2113937151 abcd-1234.local 54321 typ host\r\n'.repeat(8);
@@ -121,3 +121,80 @@ test('protocolo: mensagens do dono', () => {
   assert.equal(validarMensagem('{"tipo":"acao","acao":{"tipo":"ROLAR"}}', 'dono'), null);
   assert.equal(validarMensagem('{"tipo":"aviso","texto":"Ana ficou sem conexão"}', 'dono').texto, 'Ana ficou sem conexão');
 });
+
+const SDP_WEBRTC_REAL = [
+  'v=0',
+  'o=- 8129384729182371 2 IN IP4 127.0.0.1',
+  's=-',
+  't=0 0',
+  'a=group:BUNDLE 0',
+  'a=extmap-allow-mixed',
+  'a=msid-semantic: WMS',
+  'm=application 9 UDP/DTLS/SCTP webrtc-datachannel',
+  'c=IN IP4 0.0.0.0',
+  'a=ice-ufrag:AbCd',
+  'a=ice-pwd:XyZ1234567890abcdefghijklmn',
+  'a=ice-options:trickle',
+  'a=fingerprint:sha-256 01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF',
+  'a=setup:actpass',
+  'a=mid:0',
+  'a=sctp-port:5000',
+  'a=max-message-size:262144',
+  'a=candidate:1 1 udp 2113937151 192.168.1.50 54321 typ host generation 0 ufrag AbCd network-id 1 network-cost 10',
+  'a=candidate:2 1 tcp 1518280447 192.168.1.50 9 typ host tcptype active generation 0 ufrag AbCd',
+].join('\r\n') + '\r\n';
+
+test('enxugarSdp e hidratarSdp: extrai e restaura parâmetros essenciais de SDP WebRTC', () => {
+  const enxuto = enxugarSdp(SDP_WEBRTC_REAL);
+  assert.equal(enxuto.u, 'AbCd');
+  assert.equal(enxuto.p, 'XyZ1234567890abcdefghijklmn');
+  assert.ok(enxuto.f.startsWith('sha-256'));
+  assert.equal(enxuto.c.length, 1); // descarta candidato tcp
+  assert.deepEqual(enxuto.c[0], ['1', 1, 2113937151, '192.168.1.50', 54321]);
+
+  const restaurado = hidratarSdp(enxuto, 'pedido');
+  assert.match(restaurado, /a=ice-ufrag:AbCd/);
+  assert.match(restaurado, /a=ice-pwd:XyZ1234567890abcdefghijklmn/);
+  assert.match(restaurado, /a=candidate:1 1 udp 2113937151 192.168.1.50 54321 typ host/);
+  assert.doesNotMatch(restaurado, /tcp/);
+});
+
+test('codificar com SDP real gera código compacto e decodifica com fidelidade', async () => {
+  const cod = await codificar('pedido', { nome: 'Carlos', sdp: SDP_WEBRTC_REAL });
+  // O código sem espaços deve ter menos de 220 caracteres (muito menor que os 500+ anteriores)
+  const limpo = cod.replace(/\s+/g, '');
+  assert.ok(limpo.length < 220, `tamanho gerado: ${limpo.length}`);
+
+  const dec = await decodificar('pedido', cod);
+  assert.equal(dec.nome, 'Carlos');
+  assert.match(dec.sdp, /a=ice-ufrag:AbCd/);
+  assert.match(dec.sdp, /a=candidate:1 1 udp 2113937151 192.168.1.50 54321 typ host/);
+});
+
+test('resposta pode carregar nome do convidado', async () => {
+  const cod = await codificar('resposta', { nome: 'Bia', sdp: SDP_WEBRTC_REAL });
+  const dec = await decodificar('resposta', cod);
+  assert.equal(dec.nome, 'Bia');
+  assert.match(dec.sdp, /a=ice-ufrag:AbCd/);
+});
+
+test('extrairCodigo e montarLinkCodigo: lida com URLs, hashes e parâmetros', () => {
+  const cod = 'CEO1P.eJyLzivNydFRyC';
+  const url = `http://localhost:8000/#${cod}`;
+  assert.equal(extrairCodigo(url), cod);
+  assert.equal(extrairCodigo(`https://game.io/sala?lang=pt#${cod}`), cod);
+  assert.equal(extrairCodigo(`  #${cod}  `), cod);
+  assert.equal(extrairCodigo(cod), cod);
+
+  const link = montarLinkCodigo(cod, 'http://192.168.1.15:8000/index.html');
+  assert.equal(link, `http://192.168.1.15:8000/index.html#${cod}`);
+});
+
+test('decodificar aceita URLs completas com hash', async () => {
+  const cod = await codificar('pedido', { nome: 'Daniel', sdp: SDP_WEBRTC_REAL });
+  const url = montarLinkCodigo(cod, 'http://192.168.1.15:8000');
+  const dec = await decodificar('pedido', url);
+  assert.equal(dec?.nome, 'Daniel');
+  assert.match(dec?.sdp, /a=ice-ufrag:AbCd/);
+});
+
