@@ -5,7 +5,7 @@
 // Interface do transporte, a mesma do transporte falso dos testes:
 //   enviar(texto) · aoReceber(fn(texto)) · aoEstado(fn('conectado' | 'instavel' | 'caiu')) · fechar()
 
-import { codificar, decodificar } from './codigo.js';
+import { codificar, decodificar, tipoDoCodigo } from './codigo.js';
 
 const CONFIG_RTC = { iceServers: [] };
 // Espera os candidatos de rede para gerar um código só (sem trickle). Em LAN termina em milissegundos.
@@ -117,25 +117,56 @@ export async function criarPedido(nome) {
       transporte: conexao.transporte,
       // Convidado, passo 2: cola a resposta do dono e a conexão se abre.
       async aplicarResposta(codigoResposta) {
+        if (!codigoResposta || typeof codigoResposta !== 'string') {
+          throw new ErroConvite('codigo-invalido', 'Cole o código de resposta do anfitrião.');
+        }
+        if (tipoDoCodigo(codigoResposta) === 'pedido') {
+          throw new ErroConvite(
+            'codigo-invalido',
+            'Você colou um código de PEDIDO. Cole o código de RESPOSTA do anfitrião (começa com CEO1R.).',
+          );
+        }
         const resposta = await decodificar('resposta', codigoResposta);
-        if (!resposta) throw new ErroConvite('codigo-invalido', 'Esse não é um código de resposta válido.');
+        if (!resposta) {
+          throw new ErroConvite(
+            'codigo-invalido',
+            'Esse não é um código de resposta válido (deve começar com CEO1R. e conter os dados gerados pelo anfitrião).',
+          );
+        }
         try {
           await pc.setRemoteDescription({ type: 'answer', sdp: resposta.sdp });
-        } catch {
-          throw new ErroConvite('codigo-invalido', 'O código de resposta não combina com este pedido.');
+        } catch (e) {
+          throw new ErroConvite(
+            'codigo-invalido',
+            `O código de resposta não combina com este pedido (${e.message || 'SDP incompatível'}).`,
+          );
         }
       },
     };
   } catch (e) {
     conexao.transporte.fechar();
-    throw e instanceof ErroConvite ? e : new ErroConvite('falha', 'Não foi possível criar o pedido de entrada.');
+    throw e instanceof ErroConvite ? e : new ErroConvite('falha', `Não foi possível criar o pedido de entrada (${e.message || 'erro de rede'}).`);
   }
 }
 
 // Dono: lê o código de pedido e devolve o código de resposta, mais o transporte que abre quando o convidado o colar.
 export async function responderPedido(codigoPedido) {
+  if (!codigoPedido || typeof codigoPedido !== 'string') {
+    throw new ErroConvite('codigo-invalido', 'Cole o código de pedido do convidado.');
+  }
+  if (tipoDoCodigo(codigoPedido) === 'resposta') {
+    throw new ErroConvite(
+      'codigo-invalido',
+      'Você colou um código de RESPOSTA. Cole o código de PEDIDO do convidado (começa com CEO1P.).',
+    );
+  }
   const pedido = await decodificar('pedido', codigoPedido);
-  if (!pedido) throw new ErroConvite('codigo-invalido', 'Esse não é um código de pedido válido.');
+  if (!pedido) {
+    throw new ErroConvite(
+      'codigo-invalido',
+      'Esse não é um código de pedido válido (deve começar com CEO1P. e conter os dados gerados pelo convidado).',
+    );
+  }
   const pc = criarConexao();
   const conexao = envolver(pc);
   pc.ondatachannel = (ev) => conexao.ligar(ev.channel);
@@ -143,9 +174,16 @@ export async function responderPedido(codigoPedido) {
     await pc.setRemoteDescription({ type: 'offer', sdp: pedido.sdp });
     await pc.setLocalDescription(await pc.createAnswer());
     await esperarCandidatos(pc);
-    return { nome: pedido.nome, codigoResposta: await codificar('resposta', { sdp: pc.localDescription.sdp }), transporte: conexao.transporte };
-  } catch {
+    return {
+      nome: pedido.nome,
+      codigoResposta: await codificar('resposta', { sdp: pc.localDescription.sdp }),
+      transporte: conexao.transporte,
+    };
+  } catch (e) {
     conexao.transporte.fechar();
-    throw new ErroConvite('codigo-invalido', 'O código de pedido está corrompido ou incompleto.');
+    throw new ErroConvite(
+      'codigo-invalido',
+      `O código de pedido está corrompido ou incompatível (${e.message || 'falha no handshake'}).`,
+    );
   }
 }

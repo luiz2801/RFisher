@@ -155,26 +155,43 @@ test('enxugarSdp e hidratarSdp: extrai e restaura parâmetros essenciais de SDP 
   const restaurado = hidratarSdp(enxuto, 'pedido');
   assert.match(restaurado, /a=ice-ufrag:AbCd/);
   assert.match(restaurado, /a=ice-pwd:XyZ1234567890abcdefghijklmn/);
-  assert.match(restaurado, /a=candidate:1 1 udp 2113937151 192.168.1.50 54321 typ host/);
+  assert.match(restaurado, /a=candidate:1 1 UDP 2113937151 192.168.1.50 54321 typ host/i);
   assert.doesNotMatch(restaurado, /tcp/);
 });
 
-test('codificar com SDP real gera código compacto e decodifica com fidelidade', async () => {
-  const cod = await codificar('pedido', { nome: 'Carlos', sdp: SDP_WEBRTC_REAL });
-  // O código sem espaços deve ter menos de 220 caracteres (muito menor que os 500+ anteriores)
-  const limpo = cod.replace(/\s+/g, '');
-  assert.ok(limpo.length < 220, `tamanho gerado: ${limpo.length}`);
+test('codificar com SDP real gera código compacto e decodifica com fidelidade para pedido e resposta', async () => {
+  const codPedido = await codificar('pedido', { nome: 'Carlos', sdp: SDP_WEBRTC_REAL });
+  const limpoPedido = codPedido.replace(/\s+/g, '');
+  assert.ok(limpoPedido.length < 220, `tamanho gerado: ${limpoPedido.length}`);
 
-  const dec = await decodificar('pedido', cod);
-  assert.equal(dec.nome, 'Carlos');
-  assert.match(dec.sdp, /a=ice-ufrag:AbCd/);
-  assert.match(dec.sdp, /a=candidate:1 1 udp 2113937151 192.168.1.50 54321 typ host/);
+  const decPedido = await decodificar('pedido', codPedido);
+  assert.equal(decPedido.nome, 'Carlos');
+  assert.match(decPedido.sdp, /a=ice-ufrag:AbCd/);
+  assert.match(decPedido.sdp, /a=candidate:1 1 UDP 2113937151 192.168.1.50 54321 typ host/i);
+
+  const codResposta = await codificar('resposta', { sdp: SDP_WEBRTC_REAL });
+  const limpoResposta = codResposta.replace(/\s+/g, '');
+  assert.ok(limpoResposta.length < 220, `tamanho gerado: ${limpoResposta.length}`);
+
+  const decResposta = await decodificar('resposta', codResposta);
+  assert.match(decResposta.sdp, /a=ice-ufrag:AbCd/);
+  assert.match(decResposta.sdp, /a=candidate:1 1 UDP 2113937151 192.168.1.50 54321 typ host/i);
 });
 
-test('extrairCodigo: limpa espaços e quebras de linha do código copiado', () => {
+test('extrairCodigo: limpa espaços, quebras de linha e caracteres invisíveis de chat', () => {
   const cod = 'CEO1P.eJyLzivNydFRyC';
   assert.equal(extrairCodigo(`  ${cod}  `), cod);
   assert.equal(extrairCodigo('CEO1P.eJyL zivN ydFR yC'), cod);
   assert.equal(extrairCodigo(cod), cod);
+
+  // Caracteres invisíveis (zero-width space, BOM) inseridos por apps de chat:
+  const invisiveis = `\u200B\uFEFFCEO1P.eJyL\u200CzivN\u200DydFR\u2060yC\uFEFF`;
+  assert.equal(extrairCodigo(invisiveis), cod);
+});
+
+test('extrairCodigo: prioriza tipo esperado se texto contiver ambos os códigos', () => {
+  const textoMisto = 'Convidado: CEO1P.PEDIDO123\nAnfitrião: CEO1R.RESPOSTA456';
+  assert.equal(extrairCodigo(textoMisto, 'resposta'), 'CEO1R.RESPOSTA456');
+  assert.equal(extrairCodigo(textoMisto, 'pedido'), 'CEO1P.PEDIDO123');
 });
 
