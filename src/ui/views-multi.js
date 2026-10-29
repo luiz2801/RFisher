@@ -177,7 +177,7 @@ function viewEntrarPasso2({ codigoPedido = '', codigoResposta = '', conectando =
     </form>`;
 }
 
-function viewLobbyDono({ visaoHost, codigoSala = '', respostaGerada = null } = {}) {
+function viewLobbyDono({ visaoHost, codigoSala = '', respostaGerada = null, tipoTransporte = null } = {}) {
   const sala = visaoHost?.sala;
   const config = sala?.config ?? {};
   const validacao = sala ? validarInicio(sala) : { ok: false, erro: '' };
@@ -233,6 +233,11 @@ function viewLobbyDono({ visaoHost, codigoSala = '', respostaGerada = null } = {
         <div class="acoes-codigo-sala">
           <button type="button" class="discreto" data-acao="COPIAR_CODIGO_SALA">📋 Copiar código</button>
           <span role="status" class="ajuda" data-copiado="sala" hidden>Copiado!</span>
+          ${
+            tipoTransporte
+              ? `<span class="selo-conexao ${tipoTransporte === 'p2p' ? 'selo-p2p' : 'selo-servidor'}">${tipoTransporte === 'p2p' ? '🌐 P2P Direto' : '⚡ Servidor Local'}</span>`
+              : ''
+          }
         </div>
         <small class="ajuda">Compartilhe este código com quem for jogar com você.</small>
       </div>`
@@ -310,7 +315,7 @@ function viewLobbyDono({ visaoHost, codigoSala = '', respostaGerada = null } = {
     </div>`;
 }
 
-function viewLobbyConvidado({ visaoConvidado } = {}) {
+function viewLobbyConvidado({ visaoConvidado, tipoTransporte = null } = {}) {
   const sala = visaoConvidado?.sala;
   const config = sala?.config ?? {};
   const voce = visaoConvidado?.voce;
@@ -330,9 +335,14 @@ function viewLobbyConvidado({ visaoConvidado } = {}) {
     </li>`;
   }).join('');
 
+  const seloTransporte = tipoTransporte
+    ? `<div class="status-transporte"><span class="selo-conexao ${tipoTransporte === 'p2p' ? 'selo-p2p' : 'selo-servidor'}">${tipoTransporte === 'p2p' ? '🌐 P2P Direto' : '⚡ Servidor Local'}</span></div>`
+    : '';
+
   return `<header class="topo-multi">
       <h2>Lobby da Sala (Convidado)</h2>
       <p class="sub">Conectado à sala de <strong>${esc(dono?.nome ?? 'Anfitrião')}</strong>. Personalize seu perfil enquanto aguarda o início.</p>
+      ${seloTransporte}
     </header>
     <div class="grade-lobby">
       <div class="painel-esquerdo">

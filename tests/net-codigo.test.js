@@ -159,6 +159,18 @@ test('enxugarSdp e hidratarSdp: extrai e restaura parâmetros essenciais de SDP 
   assert.doesNotMatch(restaurado, /tcp/);
 });
 
+test('enxugarSdp e hidratarSdp: preserva candidatos srflx (STUN reflexivo)', () => {
+  const sdpComSrflx = `${SDP_WEBRTC_REAL}
+a=candidate:2 1 UDP 1686052607 177.136.23.45 61234 typ srflx raddr 192.168.1.50 rport 54321
+`;
+  const enxuto = enxugarSdp(sdpComSrflx);
+  assert.equal(enxuto.c.length, 2);
+  assert.deepEqual(enxuto.c[1], ['2', 1, 1686052607, '177.136.23.45', 61234, 'srflx', '192.168.1.50', 54321]);
+
+  const restaurado = hidratarSdp(enxuto, 'resposta');
+  assert.match(restaurado, /a=candidate:2 1 UDP 1686052607 177\.136\.23\.45 61234 typ srflx raddr 192\.168\.1\.50 rport 54321/i);
+});
+
 test('codificar com SDP real gera código compacto e decodifica com fidelidade para pedido e resposta', async () => {
   const codPedido = await codificar('pedido', { nome: 'Carlos', sdp: SDP_WEBRTC_REAL });
   const limpoPedido = codPedido.replace(/\s+/g, '');

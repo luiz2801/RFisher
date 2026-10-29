@@ -7,7 +7,11 @@
 
 import { codificar, decodificar, tipoDoCodigo } from './codigo.js';
 
-const CONFIG_RTC = { iceServers: [] };
+export const CONFIG_RTC = {
+  iceServers: [
+    { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+  ],
+};
 // Espera os candidatos de rede para gerar um código só (sem trickle). Em LAN termina em milissegundos.
 const ESPERA_ICE_MS = 4000;
 
@@ -186,4 +190,143 @@ export async function responderPedido(codigoPedido) {
       `O código de pedido está corrompido ou incompatível (${e.message || 'falha no handshake'}).`,
     );
   }
+}
+
+// Cria um transporte híbrido com fallback transparente:
+// Tenta conectar via WebRTC P2P direto nos primeiros timeoutRtcMs (3.5s).
+// Se o firewall da rede local (ex: UFW) ou AP Isolation bloquear o WebRTC UDP,
+// o canal de revezamento do servidor/relay assume silenciosamente sem travar o jogo.
+export function criarTransporteHibrido({
+  transporteRtc,
+  canalSinal,
+  codigoSala,
+  papel = 'host',
+  idConexao = null,
+  timeoutRtcMs = 3500,
+  aoMudarModo = () => {},
+}) {
+  let modo = 'rtc';
+  let estado = 'conectando';
+  const filaMsg = [];
+  const ouvintesMsg = [];
+  const ouvintesEstado = [];
+
+  const emitirEstado = (s) => {
+    if (estado === s) return;
+    estado = s;
+    ouvintesEstado.forEach((fn) => fn(s));
+  };
+
+  const emitirMsg = (texto) => {
+    if (!ouvintesMsg.length) filaMsg.push(texto);
+    else ouvintesMsg.forEach((fn) => fn(texto));
+  };
+
+  let timerFallback = null;
+  const ativarFallback = () => {
+    if (modo === 'revezamento' || estado === 'caiu') return;
+    modo = 'revezamento';
+    aoMudarModo('revezamento');
+    emitirEstado('conectado');
+  };
+
+  if (timeoutRtcMs > 0) {
+    timerFallback = setTimeout(() => {
+      timerFallback = null;
+      if (estado !== 'conectado') {
+        ativarFallback();
+      }
+    }, timeoutRtcMs);
+  }
+
+  transporteRtc.aoEstado?.((s) => {
+    if (s === 'conectado') {
+      if (timerFallback) {
+        clearTimeout(timerFallback);
+        timerFallback = null;
+      }
+      modo = 'rtc';
+      aoMudarModo('p2p');
+      emitirEstado('conectado');
+    } else if (s === 'caiu' && modo === 'rtc') {
+      if (timerFallback) {
+        clearTimeout(timerFallback);
+        timerFallback = null;
+        ativarFallback();
+      } else {
+        emitirEstado('caiu');
+      }
+    } else if (s === 'instavel' && modo === 'rtc') {
+      emitirEstado('instavel');
+    }
+  });
+
+  transporteRtc.aoReceber?.((texto) => {
+    if (modo === 'rtc') {
+      emitirMsg(texto);
+    }
+  });
+
+  let cancelarSinal = () => {};
+  if (canalSinal && codigoSala) {
+    cancelarSinal = canalSinal.ouvir(codigoSala, (msg) => {
+      if (modo !== 'revezamento' || msg?.tipo !== 'dados_jogo') return;
+
+      const ehParaMim = papel === 'host'
+        ? (msg.de === 'convidado' && (!idConexao || msg.idConexao === idConexao))
+        : (msg.de === 'host' && (msg.idConexao === idConexao || msg.idConexao === 'todos'));
+
+      if (ehParaMim && typeof msg.dados === 'string') {
+        emitirMsg(msg.dados);
+      }
+    });
+  }
+
+  return {
+    enviar(texto) {
+      if (modo === 'rtc') {
+        try {
+          transporteRtc.enviar(texto);
+          return;
+        } catch {
+          ativarFallback();
+        }
+      }
+      if (canalSinal && codigoSala) {
+        canalSinal.publicar(codigoSala, {
+          tipo: 'dados_jogo',
+          de: papel,
+          idConexao: idConexao ?? 'todos',
+          dados: texto,
+        }).catch(() => {});
+      }
+    },
+    aoReceber(fn) {
+      ouvintesMsg.push(fn);
+      while (filaMsg.length) fn(filaMsg.shift());
+    },
+    aoEstado(fn) {
+      ouvintesEstado.push(fn);
+      if (estado !== 'conectando') fn(estado);
+    },
+    fechar() {
+      if (timerFallback) {
+        clearTimeout(timerFallback);
+        timerFallback = null;
+      }
+      cancelarSinal();
+      try {
+        transporteRtc.fechar();
+      } catch {
+        /* já fechado */
+      }
+      emitirEstado('caiu');
+    },
+    tipoTransporte: () => (modo === 'rtc' ? 'p2p' : 'servidor'),
+    diagnostico: () => ({
+      modo,
+      estado,
+      rtc: transporteRtc.diagnostico ? transporteRtc.diagnostico() : null,
+    }),
+  };
 }

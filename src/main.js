@@ -356,15 +356,23 @@ async function conectarComCodigoSala(codigoSala, nome) {
           estadoUiMulti = null;
         } else {
           estado = null;
-          estadoUiMulti = { tela: 'lobby_convidado', visaoConvidado: visao };
+          estadoUiMulti = {
+            tela: 'lobby_convidado',
+            visaoConvidado: visao,
+            tipoTransporte: sessaoRede?.transporte?.tipoTransporte?.() ?? null,
+          };
         }
         render();
       },
     });
 
     const tickTimer = setInterval(() => convidado.tick(), 2000);
-    sessaoRede = { tipo: 'convidado', instancia: convidado, tickTimer };
-    estadoUiMulti = { tela: 'lobby_convidado', visaoConvidado: convidado.visao() };
+    sessaoRede = { tipo: 'convidado', instancia: convidado, tickTimer, transporte };
+    estadoUiMulti = {
+      tela: 'lobby_convidado',
+      visaoConvidado: convidado.visao(),
+      tipoTransporte: transporte.tipoTransporte?.() ?? null,
+    };
     render();
   } catch (err) {
     clearInterval(timerDiag);
@@ -560,19 +568,24 @@ app.addEventListener('click', (ev) => {
           estadoUiMulti = null;
         } else {
           estado = null;
+          const tipoTransporte = sessaoRede?.transportes?.some((t) => t.tipoTransporte?.() === 'servidor')
+            ? 'servidor'
+            : (sessaoRede?.transportes?.length ? 'p2p' : null);
           estadoUiMulti = {
             tela: 'lobby_dono',
             visaoHost: visao,
             codigoSala: sessaoRede?.codigoSala ?? codigoSala,
             respostaGerada: sessaoRede?.respostaGerada ?? null,
+            tipoTransporte,
           };
         }
         render();
       },
     });
     const tickTimer = setInterval(() => host.tick(), 2000);
-    sessaoRede = { tipo: 'anfitriao', instancia: host, tickTimer, respostaGerada: null, codigoSala, sinalizador: null };
-    estadoUiMulti = { tela: 'lobby_dono', visaoHost: host.visao(), codigoSala, respostaGerada: null };
+    const transportes = [];
+    sessaoRede = { tipo: 'anfitriao', instancia: host, tickTimer, respostaGerada: null, codigoSala, sinalizador: null, transportes };
+    estadoUiMulti = { tela: 'lobby_dono', visaoHost: host.visao(), codigoSala, respostaGerada: null, tipoTransporte: null };
     render();
 
     obterCanalSinalizacao().then((canal) => {
@@ -581,6 +594,7 @@ app.addEventListener('click', (ev) => {
           codigoSala,
           canalSinal: canal,
           aoConectar: ({ nome, transporte }) => {
+            sessaoRede?.transportes?.push(transporte);
             sessaoRede?.instancia?.receberPedido({ nome, transporte });
           },
         });

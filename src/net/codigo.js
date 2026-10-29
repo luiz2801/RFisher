@@ -53,9 +53,23 @@ export function enxugarSdp(sdp) {
   const c = [];
   const linhas = sdp.split(/\r?\n/);
   for (const l of linhas) {
-    const match = l.match(/^a=candidate:(\S+)\s+(\d+)\s+udp\s+(\d+)\s+(\S+)\s+(\d+)\s+typ\s+host/i);
+    const match = l.match(/^a=candidate:(\S+)\s+(\d+)\s+udp\s+(\d+)\s+(\S+)\s+(\d+)\s+typ\s+(host|srflx)(?:\s+raddr\s+(\S+)\s+rport\s+(\d+))?/i);
     if (match) {
-      c.push([match[1], Number(match[2]), Number(match[3]), match[4], Number(match[5])]);
+      const tipoCand = match[6].toLowerCase();
+      if (tipoCand === 'srflx') {
+        c.push([
+          match[1],
+          Number(match[2]),
+          Number(match[3]),
+          match[4],
+          Number(match[5]),
+          'srflx',
+          match[7] ?? '',
+          Number(match[8] ?? 0),
+        ]);
+      } else {
+        c.push([match[1], Number(match[2]), Number(match[3]), match[4], Number(match[5])]);
+      }
     }
   }
   return { u, p, f, s: s ?? 'actpass', m: m ?? '0', c };
@@ -67,9 +81,11 @@ export function hidratarSdp(dados, tipo = 'pedido') {
   if (!dados?.u || !dados?.p || !dados?.f) return null;
   const setup = dados.s || (tipo === 'pedido' ? 'actpass' : 'active');
   const mid = dados.m || '0';
-  const candidatos = (dados.c ?? []).map(
-    ([fund, comp, prio, ip, porta]) => `a=candidate:${fund} ${comp} UDP ${prio} ${ip} ${porta} typ host`,
-  );
+  const candidatos = (dados.c ?? []).map((item) => {
+    const [fund, comp, prio, ip, porta, tipoCand = 'host', raddr = '', rport = 0] = item;
+    const sufixo = tipoCand === 'srflx' && raddr ? ` raddr ${raddr} rport ${rport}` : '';
+    return `a=candidate:${fund} ${comp} UDP ${prio} ${ip} ${porta} typ ${tipoCand}${sufixo}`;
+  });
 
   return [
     'v=0',

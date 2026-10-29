@@ -98,6 +98,7 @@ function tratarSinalizacao(req, res, urlPath) {
       'Connection': 'keep-alive',
       'Access-Control-Allow-Origin': '*',
     });
+    res.flushHeaders?.();
     res.write(': ok\n\n');
 
     const ouvinte = (dados) => {
@@ -138,6 +139,16 @@ function tratarSinalizacao(req, res, urlPath) {
       try {
         const payload = JSON.parse(corpo);
         const item = { ...payload, tempo: Date.now() };
+
+        if (payload?.tipo === 'pedido_conexao') {
+          console.log(`  [sinal] 📱 Convidado "${payload.nome || 'anônimo'}" solicitou entrada na sala "${codigoSala}"`);
+        } else if (payload?.tipo === 'resposta_conexao') {
+          console.log(`  [sinal] 👑 Anfitrião enviou resposta para sala "${codigoSala}"`);
+        } else if (payload?.tipo === 'dados_jogo' && !sala.revezamentoAtivo) {
+          sala.revezamentoAtivo = true;
+          console.log(`  [sinal] ⚡ Sala "${codigoSala}": revezamento via servidor ativo`);
+        }
+
         sala.mensagens.push(item);
         if (sala.mensagens.length > 30) sala.mensagens.shift();
         for (const ouvinte of sala.ouvintes) {
@@ -209,5 +220,6 @@ server.listen(PORT, '0.0.0.0', () => {
   if (ip) {
     console.log(`  > No celular:  http://${ip}:${PORT}`);
   }
-  console.log('  (Cache desabilitado automaticamente para módulos e estilos)\n');
+  console.log('  (Multiplayer: P2P com fallback automático via servidor local)');
+  console.log('  (Dica UFW Linux: "sudo ufw allow from 192.168.0.0/16" para liberar P2P direto)\n');
 });

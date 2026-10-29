@@ -1895,6 +1895,32 @@ fieldset.secao-config {
   margin-top: 1.25rem;
 }
 
+.status-transporte {
+  margin-top: .5rem;
+}
+
+.selo-conexao {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .8rem;
+  font-weight: 600;
+  padding: .2rem .55rem;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--borda);
+}
+
+.selo-conexao.selo-p2p {
+  color: var(--bom);
+  border-color: var(--bom);
+}
+
+.selo-conexao.selo-servidor {
+  color: var(--primaria);
+  border-color: var(--primaria);
+}
+
 .resposta-pronta {
   margin-top: 1rem;
   padding: .75rem;

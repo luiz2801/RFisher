@@ -151,8 +151,8 @@ test('anunciarSala e conectarNaSala: fluxo completo de conexão bem-sucedido', a
   const canalSinal = criarCanalEmMemoria();
   const codigoSala = 'K9P2';
 
-  const mockTransporteHost = { fechar: () => {}, enviar: () => {} };
-  const mockTransporteGuest = { fechar: () => {}, enviar: () => {} };
+  const mockTransporteHost = { fechar: () => {}, enviar: () => {}, aoEstado: () => {}, aoReceber: () => {} };
+  const mockTransporteGuest = { fechar: () => {}, enviar: () => {}, aoEstado: () => {}, aoReceber: () => {} };
 
   let respostaAplicada = null;
 
@@ -194,12 +194,13 @@ test('anunciarSala e conectarNaSala: fluxo completo de conexão bem-sucedido', a
   });
 
   assert.equal(respostaAplicada, 'CEO1R.MOCK_RESPOSTA');
-  assert.equal(resultadoGuest.transporte, mockTransporteGuest);
+  assert.equal(typeof resultadoGuest.transporte.enviar, 'function');
+  assert.equal(typeof resultadoGuest.transporte.fechar, 'function');
   assert.equal(resultadoGuest.nome, 'Convidado Bob');
 
   assert.ok(conexaoRecebidaPeloHost);
   assert.equal(conexaoRecebidaPeloHost.nome, 'Convidado Bob');
-  assert.equal(conexaoRecebidaPeloHost.transporte, mockTransporteHost);
+  assert.equal(typeof conexaoRecebidaPeloHost.transporte.enviar, 'function');
 
   assert.ok(progresso.includes('criando_oferta'));
   assert.ok(progresso.includes('aguardando_anfitriao'));

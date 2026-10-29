@@ -2,7 +2,7 @@
 // Permite que o anfitrião exiba apenas um código curto de 4 caracteres (ex: K9P2)
 // e os convidados conectem-se automaticamente sem precisar trocar códigos de centenas de caracteres.
 
-import { ErroConvite, criarPedido, responderPedido } from './transporte.js';
+import { ErroConvite, criarPedido, responderPedido, criarTransporteHibrido } from './transporte.js';
 
 export const ALFABETO_SALA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
@@ -202,11 +202,18 @@ export function anunciarSala({
       if (pedidosAtendidos.has(msg.idPedido)) return;
       pedidosAtendidos.add(msg.idPedido);
       try {
-        const { nome, codigoResposta, transporte } = await responderFn(msg.codigoPedido);
+        const { nome, codigoResposta, transporte: transporteRtc } = await responderFn(msg.codigoPedido);
         await canalSinal.publicar(chave, {
           tipo: 'resposta_conexao',
           idPedido: msg.idPedido,
           codigoResposta,
+        });
+        const transporte = criarTransporteHibrido({
+          transporteRtc,
+          canalSinal,
+          codigoSala: chave,
+          papel: 'host',
+          idConexao: msg.idPedido,
         });
         aoConectar({ nome, transporte });
       } catch (err) {
@@ -273,7 +280,14 @@ export async function conectarNaSala({
         aoProgresso('conectando_webrtc');
         try {
           await pedido.aplicarResposta(msg.codigoResposta);
-          resolve({ transporte: pedido.transporte, nome });
+          const transporte = criarTransporteHibrido({
+            transporteRtc: pedido.transporte,
+            canalSinal,
+            codigoSala: chave,
+            papel: 'convidado',
+            idConexao: idPedido,
+          });
+          resolve({ transporte, nome });
         } catch (err) {
           try {
             pedido.transporte.fechar();

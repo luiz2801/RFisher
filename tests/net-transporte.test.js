@@ -5,7 +5,9 @@ import {
   ErroConvite,
   criarPedido,
   responderPedido,
+  criarTransporteHibrido,
 } from '../src/net/transporte.js';
+import { criarCanalEmMemoria } from '../src/net/sinalizacao.js';
 import { codificar, PREFIXOS } from '../src/net/codigo.js';
 
 // Mock de DataChannel para testar troca de mensagens e eventos
@@ -420,3 +422,158 @@ test('connectionState = connected ativa "conectado" quando o canal já está abe
     globalThis.RTCPeerConnection = original;
   }
 });
+
+test('criarTransporteHibrido: conecta direto via WebRTC P2P quando canal abre a tempo', async () => {
+  const canalSinal = criarCanalEmMemoria();
+  let rtcConectou = false;
+
+  const mockRtc = {
+    enviar: (txt) => { mockRtc.ultimoEnviado = txt; },
+    aoReceber: (fn) => { mockRtc._receber = fn; },
+    aoEstado: (fn) => { mockRtc._mudarEstado = fn; },
+    fechar: () => { mockRtc.fechado = true; },
+    diagnostico: () => ({ rtc: 'ok' }),
+  };
+
+  let modoNotificado = null;
+  const hibrido = criarTransporteHibrido({
+    transporteRtc: mockRtc,
+    canalSinal,
+    codigoSala: 'TEST',
+    papel: 'host',
+    timeoutRtcMs: 1000,
+    aoMudarModo: (m) => { modoNotificado = m; },
+  });
+
+  const estados = [];
+  hibrido.aoEstado((s) => estados.push(s));
+
+  // Simula conexão WebRTC rápida
+  mockRtc._mudarEstado('conectado');
+  assert.equal(hibrido.tipoTransporte(), 'p2p');
+  assert.equal(modoNotificado, 'p2p');
+  assert.deepEqual(estados, ['conectado']);
+
+  // Mensagens trafegam pelo RTC
+  hibrido.enviar('ola p2p');
+  assert.equal(mockRtc.ultimoEnviado, 'ola p2p');
+
+  const msgsRecebidas = [];
+  hibrido.aoReceber((m) => msgsRecebidas.push(m));
+  mockRtc._receber('resposta p2p');
+  assert.deepEqual(msgsRecebidas, ['resposta p2p']);
+
+  hibrido.fechar();
+  assert.equal(mockRtc.fechado, true);
+});
+
+test('criarTransporteHibrido: ativa fallback transparente para servidor quando WebRTC não conecta', async () => {
+  const canalSinal = criarCanalEmMemoria();
+
+  const mockRtcHost = {
+    enviar: () => {},
+    aoReceber: (fn) => { mockRtcHost._receber = fn; },
+    aoEstado: (fn) => { mockRtcHost._mudarEstado = fn; },
+    fechar: () => { mockRtcHost.fechado = true; },
+  };
+
+  const mockRtcGuest = {
+    enviar: () => {},
+    aoReceber: (fn) => { mockRtcGuest._receber = fn; },
+    aoEstado: (fn) => { mockRtcGuest._mudarEstado = fn; },
+    fechar: () => { mockRtcGuest.fechado = true; },
+  };
+
+  let modoHost = null;
+  let modoGuest = null;
+
+  const hibridoHost = criarTransporteHibrido({
+    transporteRtc: mockRtcHost,
+    canalSinal,
+    codigoSala: 'FALL',
+    papel: 'host',
+    idConexao: 'conn1',
+    timeoutRtcMs: 50, // timeout curto para teste
+    aoMudarModo: (m) => { modoHost = m; },
+  });
+
+  const hibridoGuest = criarTransporteHibrido({
+    transporteRtc: mockRtcGuest,
+    canalSinal,
+    codigoSala: 'FALL',
+    papel: 'convidado',
+    idConexao: 'conn1',
+    timeoutRtcMs: 50,
+    aoMudarModo: (m) => { modoGuest = m; },
+  });
+
+  const estadosHost = [];
+  const estadosGuest = [];
+  hibridoHost.aoEstado((s) => estadosHost.push(s));
+  hibridoGuest.aoEstado((s) => estadosGuest.push(s));
+
+  // Aguarda timeout do WebRTC
+  await new Promise((r) => setTimeout(r, 80));
+
+  assert.equal(hibridoHost.tipoTransporte(), 'servidor');
+  assert.equal(hibridoGuest.tipoTransporte(), 'servidor');
+  assert.equal(modoHost, 'revezamento');
+  assert.equal(modoGuest, 'revezamento');
+  assert.deepEqual(estadosHost, ['conectado']);
+  assert.deepEqual(estadosGuest, ['conectado']);
+
+  // Troca de mensagens via canal de sinalização em revezamento
+  const msgsHost = [];
+  const msgsGuest = [];
+  hibridoHost.aoReceber((m) => msgsHost.push(m));
+  hibridoGuest.aoReceber((m) => msgsGuest.push(m));
+
+  // Guest envia para host
+  hibridoGuest.enviar('{"acao":"jogar"}');
+  // Dá um instante para o bus em memória propagar
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(msgsHost, ['{"acao":"jogar"}']);
+
+  // Host responde para guest
+  hibridoHost.enviar('{"estado":"ok"}');
+  await new Promise((r) => setTimeout(r, 10));
+  assert.deepEqual(msgsGuest, ['{"estado":"ok"}']);
+
+  hibridoHost.fechar();
+  hibridoGuest.fechar();
+  assert.equal(mockRtcHost.fechado, true);
+  assert.equal(mockRtcGuest.fechado, true);
+});
+
+test('criarTransporteHibrido: ativa fallback imediato se WebRTC cair antes do timeout', async () => {
+  const canalSinal = criarCanalEmMemoria();
+
+  const mockRtc = {
+    enviar: () => {},
+    aoReceber: () => {},
+    aoEstado: (fn) => { mockRtc._mudarEstado = fn; },
+    fechar: () => {},
+  };
+
+  let modo = null;
+  const hibrido = criarTransporteHibrido({
+    transporteRtc: mockRtc,
+    canalSinal,
+    codigoSala: 'FAIL',
+    papel: 'host',
+    timeoutRtcMs: 5000,
+    aoMudarModo: (m) => { modo = m; },
+  });
+
+  const estados = [];
+  hibrido.aoEstado((s) => estados.push(s));
+
+  // Simula queda do ICE antes do timeout
+  mockRtc._mudarEstado('caiu');
+  assert.equal(hibrido.tipoTransporte(), 'servidor');
+  assert.equal(modo, 'revezamento');
+  assert.deepEqual(estados, ['conectado']);
+
+  hibrido.fechar();
+});
+
