@@ -25,6 +25,8 @@ export function viewModalMultiplayer(estadoUi = {}) {
   let conteudo = '';
   if (tela === 'escolha') {
     conteudo = viewEscolhaMulti();
+  } else if (tela === 'entrar') {
+    conteudo = viewEntrarSala(estadoUi);
   } else if (tela === 'entrar_passo1') {
     conteudo = viewEntrarPasso1(estadoUi);
   } else if (tela === 'entrar_passo2') {
@@ -65,6 +67,62 @@ function viewEscolhaMulti() {
     <div class="nav-menu">
       <button type="button" class="discreto" data-acao="FECHAR_MODAL_MULTI">Fechar</button>
     </div>`;
+}
+
+function viewEntrarSala({
+  nome = '',
+  codigoSala = '',
+  conectando = false,
+  progresso = null,
+  tempoDecorrido = 0,
+} = {}) {
+  const alertaDiagnostico = tempoDecorrido >= 15
+    ? `<div class="alerta" role="status">
+        <strong>⚠️ A conexão está demorando.</strong>
+        <p>Certifique-se de que o anfitrião está com a sala aberta e que ambos os dispositivos estejam conectados na <strong>mesma rede local</strong> (Wi-Fi sem isolamento de clientes).</p>
+      </div>`
+    : '';
+
+  const statusConexao = conectando
+    ? `<div class="status-espera">
+        <p class="ajuda">⏳ ${esc(progresso || 'Conectando à sala...')}</p>
+      </div>`
+    : '';
+
+  return `<header class="topo-multi">
+      <h2>Entrar em uma Sala</h2>
+      <p class="sub">Digite o código de 4 letras fornecido pelo anfitrião para entrar na partida.</p>
+    </header>
+    <form data-form="multi-entrar-codigo">
+      <label class="campo-nome">Seu Nome de CEO:
+        <input name="nome_convidado" value="${esc(nome || 'Jogador 2')}" maxlength="20" required autofocus ${conectando ? 'disabled' : ''}>
+      </label>
+
+      <div class="cartao-entrar-codigo">
+        <label><strong>Código da Sala:</strong>
+          <input name="codigo_sala" class="campo-codigo-sala" value="${esc(codigoSala)}" maxlength="6" placeholder="Ex: K9P2" required autocomplete="off" autocapitalize="characters" spellcheck="false" ${conectando ? 'disabled' : ''}>
+        </label>
+        <small class="ajuda">Código curto gerado na tela do anfitrião.</small>
+      </div>
+
+      ${statusConexao}
+      ${alertaDiagnostico}
+
+      <div class="nav-menu">
+        <button type="button" class="discreto" data-acao="VOLTAR_ESCOLHA_MULTI" ${conectando ? 'disabled' : ''}>← Voltar</button>
+        <button type="submit" class="primario" data-acao="CONECTAR_CODIGO_SALA" ${conectando ? 'disabled' : ''}>
+          ${conectando ? 'Conectando...' : 'Conectar à sala →'}
+        </button>
+      </div>
+    </form>
+
+    <details class="fallback-manual">
+      <summary>Modo offline / Troca manual de códigos</summary>
+      <div class="conteudo-fallback">
+        <p class="ajuda">Caso a rede não permita conexão automática, você pode alternar para a troca manual de códigos de convite:</p>
+        <button type="button" class="discreto" data-acao="ABRIR_ENTRAR_MANUAL">Usar troca manual de códigos →</button>
+      </div>
+    </details>`;
 }
 
 function viewEntrarPasso1({ nome = '' } = {}) {
@@ -119,7 +177,7 @@ function viewEntrarPasso2({ codigoPedido = '', codigoResposta = '', conectando =
     </form>`;
 }
 
-function viewLobbyDono({ visaoHost, respostaGerada = null } = {}) {
+function viewLobbyDono({ visaoHost, codigoSala = '', respostaGerada = null } = {}) {
   const sala = visaoHost?.sala;
   const config = sala?.config ?? {};
   const validacao = sala ? validarInicio(sala) : { ok: false, erro: '' };
@@ -143,9 +201,9 @@ function viewLobbyDono({ visaoHost, respostaGerada = null } = {}) {
   }).join('');
 
   const vagasRestantes = sala ? sala.vagas - sala.pessoas.length : 0;
-  const areaConectar = vagasRestantes > 0
+  const areaConectarManual = vagasRestantes > 0
     ? `<fieldset class="secao-config">
-        <legend>Conectar convidado (${vagasRestantes} vaga${vagasRestantes > 1 ? 's' : ''} livre${vagasRestantes > 1 ? 's' : ''})</legend>
+        <legend>Conectar convidado manualmente (${vagasRestantes} vaga${vagasRestantes > 1 ? 's' : ''} livre${vagasRestantes > 1 ? 's' : ''})</legend>
         <form data-form="host-aceitar-pedido">
           <label>Cole aqui o <strong>código de pedido</strong> enviado pelo convidado:
             <textarea class="caixa-codigo" name="codigo_pedido" rows="3" placeholder="Cole o código CEO1P.... que o amigo enviou" required></textarea>
@@ -168,10 +226,23 @@ function viewLobbyDono({ visaoHost, respostaGerada = null } = {}) {
 
   const dono = sala?.pessoas?.find((p) => p.chave === 'dono');
 
+  const blocoCodigoSala = codigoSala
+    ? `<div class="cartao-codigo-sala">
+        <span class="rotulo-sala">Código da Sala:</span>
+        <strong class="codigo-sala-destaque" data-alvo="codigo-sala">${esc(codigoSala)}</strong>
+        <div class="acoes-codigo-sala">
+          <button type="button" class="discreto" data-acao="COPIAR_CODIGO_SALA">📋 Copiar código</button>
+          <span role="status" class="ajuda" data-copiado="sala" hidden>Copiado!</span>
+        </div>
+        <small class="ajuda">Compartilhe este código com quem for jogar com você.</small>
+      </div>`
+    : '';
+
   return `<header class="topo-multi">
       <h2>Lobby da Sala (Anfitrião)</h2>
       <p class="sub">Configure a partida e aguarde a entrada dos outros jogadores.</p>
     </header>
+    ${blocoCodigoSala}
     <div class="grade-lobby">
       <div class="painel-esquerdo">
         <fieldset class="secao-config">
@@ -215,7 +286,19 @@ function viewLobbyDono({ visaoHost, respostaGerada = null } = {}) {
           <legend>Participantes Conectados (${sala?.pessoas?.length ?? 1} de ${sala?.vagas ?? 2})</legend>
           <ul class="lista-vagas">${listaPessoas}</ul>
         </fieldset>
-        ${areaConectar}
+        ${
+          vagasRestantes > 0 && codigoSala
+            ? `<div class="status-espera">
+                <p class="ajuda">⏳ Aguardando os convidados conectarem pelo código <strong>${esc(codigoSala)}</strong>...</p>
+              </div>`
+            : ''
+        }
+        <details class="fallback-manual" ${respostaGerada ? 'open' : ''}>
+          <summary>Troca manual de códigos (modo offline)</summary>
+          <div class="conteudo-fallback">
+            ${areaConectarManual}
+          </div>
+        </details>
       </div>
     </div>
 

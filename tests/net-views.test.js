@@ -14,6 +14,35 @@ test('viewModalMultiplayer: renderiza tela de escolha', () => {
   assert.match(html, /data-acao="FECHAR_MODAL_MULTI"/);
 });
 
+test('viewModalMultiplayer: entrar com código da sala (tela entrar)', () => {
+  const html = viewModalMultiplayer({
+    tela: 'entrar',
+    nome: 'Bob',
+    codigoSala: 'K9P2',
+    conectando: false,
+    tempoDecorrido: 2,
+  });
+  assert.match(html, /Entrar em uma Sala/);
+  assert.match(html, /name="nome_convidado"/);
+  assert.match(html, /value="Bob"/);
+  assert.match(html, /name="codigo_sala"/);
+  assert.match(html, /value="K9P2"/);
+  assert.match(html, /data-acao="CONECTAR_CODIGO_SALA"/);
+  assert.match(html, /data-acao="ABRIR_ENTRAR_MANUAL"/);
+  assert.doesNotMatch(html, /A conexão está demorando/);
+
+  const htmlLento = viewModalMultiplayer({
+    tela: 'entrar',
+    nome: 'Bob',
+    codigoSala: 'K9P2',
+    conectando: true,
+    progresso: 'Aguardando sala "K9P2" responder...',
+    tempoDecorrido: 18,
+  });
+  assert.match(htmlLento, /A conexão está demorando/);
+  assert.match(htmlLento, /Aguardando sala &quot;K9P2&quot; responder\.\.\./);
+});
+
 test('viewModalMultiplayer: entrar passo 1 e passo 2', () => {
   const p1 = viewModalMultiplayer({ tela: 'entrar_passo1', nome: 'Carlos' });
   assert.match(p1, /Passo 1 de 2/);
@@ -52,6 +81,7 @@ test('viewModalMultiplayer: lobby do dono e lobby do convidado', () => {
   const htmlDono = viewModalMultiplayer({
     tela: 'lobby_dono',
     visaoHost: { sala },
+    codigoSala: 'K9P2',
     respostaGerada: { codigo: 'CEO1R.RESP', nome: 'Bob' },
   });
   assert.match(htmlDono, /Lobby da Sala \(Anfitrião\)/);
@@ -60,6 +90,8 @@ test('viewModalMultiplayer: lobby do dono e lobby do convidado', () => {
   assert.match(htmlDono, /👑 Anfitrião/);
   assert.match(htmlDono, /data-acao="INICIAR_SALA"/);
   assert.match(htmlDono, /data-acao="ENCERRAR_SALA"/);
+  assert.match(htmlDono, /data-acao="COPIAR_CODIGO_SALA"/);
+  assert.match(htmlDono, /K9P2/);
   assert.match(htmlDono, /CEO1R\.RESP/);
 
   const htmlConvidado = viewModalMultiplayer({

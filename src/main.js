@@ -6,6 +6,13 @@ import { viewModalMultiplayer } from './ui/views-multi.js';
 import { criarAnfitriao } from './net/anfitriao.js';
 import { criarConvidado } from './net/convidado.js';
 import { criarPedido, responderPedido } from './net/transporte.js';
+import {
+  gerarCodigoSala,
+  detectarTipoSinalizacao,
+  criarCanalSinalizacao,
+  anunciarSala,
+  conectarNaSala,
+} from './net/sinalizacao.js';
 import { obterCenario, todosCenarios } from './scenarios/loader.js';
 import { MAX_JOGADORES, PERFIS_BOT } from './engine/config.js';
 import { NUM_CASAS } from './engine/board.js';
@@ -25,6 +32,13 @@ function encerrarSessaoRede() {
   if (!sessaoRede) return;
   if (sessaoRede.tickTimer) clearInterval(sessaoRede.tickTimer);
   if (sessaoRede.timerDiag) clearInterval(sessaoRede.timerDiag);
+  if (sessaoRede.sinalizador) {
+    try {
+      sessaoRede.sinalizador.parar();
+    } catch {
+      /* já parado */
+    }
+  }
   if (sessaoRede.tipo === 'anfitriao') {
     sessaoRede.instancia.encerrar();
   } else if (sessaoRede.tipo === 'convidado') {
@@ -276,6 +290,95 @@ async function copiarTexto(texto, avisoEl) {
   }
 }
 
+let canalSinalizacaoCache = null;
+async function obterCanalSinalizacao() {
+  if (canalSinalizacaoCache) return canalSinalizacaoCache;
+  const tipo = await detectarTipoSinalizacao();
+  canalSinalizacaoCache = criarCanalSinalizacao({ tipo });
+  return canalSinalizacaoCache;
+}
+
+async function conectarComCodigoSala(codigoSala, nome) {
+  encerrarSessaoRede();
+  estadoUiMulti = {
+    tela: 'entrar',
+    nome,
+    codigoSala,
+    conectando: true,
+    progresso: 'Preparando conexão...',
+    tempoDecorrido: 0,
+    erro: null,
+  };
+  render();
+
+  const inicioConexao = Date.now();
+  const timerDiag = setInterval(() => {
+    if (estadoUiMulti?.tela === 'entrar') {
+      estadoUiMulti.tempoDecorrido = Math.floor((Date.now() - inicioConexao) / 1000);
+      render();
+    }
+  }, 1000);
+
+  try {
+    const canal = await obterCanalSinalizacao();
+    const { transporte } = await conectarNaSala({
+      codigoSala,
+      nome,
+      canalSinal: canal,
+      aoProgresso: (etapa) => {
+        if (estadoUiMulti) {
+          const msgs = {
+            criando_oferta: 'Gerando credenciais de rede...',
+            aguardando_anfitriao: `Aguardando sala "${codigoSala}" responder...`,
+            conectando_webrtc: 'Conectando ao anfitrião...',
+          };
+          estadoUiMulti.progresso = msgs[etapa] || 'Conectando...';
+          render();
+        }
+      },
+    });
+
+    clearInterval(timerDiag);
+
+    const convidado = criarConvidado({
+      transporte,
+      aoMudar: (visao) => {
+        if (visao.encerrada) {
+          const msg = visao.motivo === 'dono' ? 'A sala foi encerrada pelo anfitrião.' : 'A conexão com o anfitrião foi perdida.';
+          encerrarSessaoRede();
+          estado = null;
+          estadoUiMulti = { tela: 'escolha', erro: msg };
+          render();
+          return;
+        }
+        if (visao.estado) {
+          estado = visao.estado;
+          estadoUiMulti = null;
+        } else {
+          estado = null;
+          estadoUiMulti = { tela: 'lobby_convidado', visaoConvidado: visao };
+        }
+        render();
+      },
+    });
+
+    const tickTimer = setInterval(() => convidado.tick(), 2000);
+    sessaoRede = { tipo: 'convidado', instancia: convidado, tickTimer };
+    estadoUiMulti = { tela: 'lobby_convidado', visaoConvidado: convidado.visao() };
+    render();
+  } catch (err) {
+    clearInterval(timerDiag);
+    estadoUiMulti = {
+      tela: 'entrar',
+      nome,
+      codigoSala,
+      conectando: false,
+      erro: err.message || 'Falha ao conectar à sala.',
+    };
+    render();
+  }
+}
+
 async function gerarPedidoConvidado(nome) {
   try {
     const { codigo, transporte, aplicarResposta } = await criarPedido(nome);
@@ -441,6 +544,7 @@ app.addEventListener('click', (ev) => {
     render();
   } else if (acao === 'ABRIR_CRIAR_SALA') {
     encerrarSessaoRede();
+    const codigoSala = gerarCodigoSala();
     const host = criarAnfitriao({
       nomeDono: 'Jogador 1',
       vagas: 2,
@@ -459,6 +563,7 @@ app.addEventListener('click', (ev) => {
           estadoUiMulti = {
             tela: 'lobby_dono',
             visaoHost: visao,
+            codigoSala: sessaoRede?.codigoSala ?? codigoSala,
             respostaGerada: sessaoRede?.respostaGerada ?? null,
           };
         }
@@ -466,13 +571,32 @@ app.addEventListener('click', (ev) => {
       },
     });
     const tickTimer = setInterval(() => host.tick(), 2000);
-    sessaoRede = { tipo: 'anfitriao', instancia: host, tickTimer, respostaGerada: null };
-    estadoUiMulti = { tela: 'lobby_dono', visaoHost: host.visao(), respostaGerada: null };
+    sessaoRede = { tipo: 'anfitriao', instancia: host, tickTimer, respostaGerada: null, codigoSala, sinalizador: null };
+    estadoUiMulti = { tela: 'lobby_dono', visaoHost: host.visao(), codigoSala, respostaGerada: null };
     render();
+
+    obterCanalSinalizacao().then((canal) => {
+      if (sessaoRede?.tipo === 'anfitriao' && sessaoRede.codigoSala === codigoSala) {
+        sessaoRede.sinalizador = anunciarSala({
+          codigoSala,
+          canalSinal: canal,
+          aoConectar: ({ nome, transporte }) => {
+            sessaoRede?.instancia?.receberPedido({ nome, transporte });
+          },
+        });
+      }
+    }).catch(() => {});
   } else if (acao === 'ABRIR_ENTRAR_SALA') {
     encerrarSessaoRede();
-    estadoUiMulti = { tela: 'entrar_passo1', nome: 'Jogador 2' };
+    estadoUiMulti = { tela: 'entrar', nome: 'Jogador 2', codigoSala: '' };
     render();
+  } else if (acao === 'ABRIR_ENTRAR_MANUAL') {
+    estadoUiMulti = { tela: 'entrar_passo1', nome: estadoUiMulti?.nome || 'Jogador 2' };
+    render();
+  } else if (acao === 'COPIAR_CODIGO_SALA') {
+    const el = app.querySelector('[data-alvo="codigo-sala"]');
+    const aviso = app.querySelector('[data-copiado="sala"]');
+    if (el) copiarTexto(el.textContent.trim(), aviso);
   } else if (acao === 'COPIAR_CODIGO_PEDIDO') {
     const el = app.querySelector('textarea[data-alvo="pedido"]');
     const aviso = app.querySelector('[data-copiado="pedido"]');
@@ -559,6 +683,11 @@ app.addEventListener('submit', (ev) => {
   } else if (ev.target.dataset.form === 'valor') {
     ev.preventDefault();
     informarValor(ev.target);
+  } else if (ev.target.dataset.form === 'multi-entrar-codigo') {
+    ev.preventDefault();
+    const nome = String(ev.target.elements.nome_convidado?.value || '').trim() || 'Jogador 2';
+    const codigoSala = String(ev.target.elements.codigo_sala?.value || '').trim().toUpperCase();
+    conectarComCodigoSala(codigoSala, nome);
   } else if (ev.target.dataset.form === 'multi-pedido') {
     ev.preventDefault();
     const nome = String(ev.target.elements.nome_convidado?.value || '').trim() || 'Jogador';
@@ -667,6 +796,10 @@ app.addEventListener('change', (ev) => {
 // Digitar um valor próprio marca o cartão de mesmo valor (ou nenhum).
 app.addEventListener('input', (ev) => {
   const campo = ev.target;
+  if (campo.name === 'codigo_sala') {
+    campo.value = campo.value.toUpperCase();
+    return;
+  }
   if (campo.type !== 'number' || !campo.form?.querySelector(`[data-alvo="${campo.name}"]`)) return;
   campo.form.querySelectorAll(`[data-alvo="${campo.name}"]`).forEach((r) => { r.checked = r.value === campo.value; });
 });

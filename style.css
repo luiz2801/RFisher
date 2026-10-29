@@ -1674,6 +1674,80 @@ fieldset.secao-config {
   resize: vertical;
 }
 
+.cartao-codigo-sala {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .4rem;
+  padding: 1rem 1.25rem;
+  border: 2px dashed var(--primaria);
+  border-radius: 8px;
+  background: var(--surface);
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+
+.rotulo-sala {
+  font-size: .9rem;
+  color: var(--suave);
+  text-transform: uppercase;
+  letter-spacing: .05rem;
+  font-weight: 600;
+}
+
+.codigo-sala-destaque {
+  font-size: 2.4rem;
+  letter-spacing: .35rem;
+  font-family: monospace;
+  color: var(--primaria);
+  line-height: 1.1;
+  user-select: all;
+}
+
+.acoes-codigo-sala {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.cartao-entrar-codigo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .4rem;
+  margin: 1.25rem 0;
+  text-align: center;
+}
+
+.campo-codigo-sala {
+  font-size: 1.8rem !important;
+  letter-spacing: .3rem;
+  text-transform: uppercase;
+  text-align: center;
+  font-family: monospace;
+  max-width: 200px;
+  display: block;
+  margin: .4rem auto 0;
+  padding: .4rem .6rem !important;
+}
+
+.fallback-manual {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--borda);
+  padding-top: .75rem;
+}
+
+.fallback-manual summary {
+  cursor: pointer;
+  font-size: .9rem;
+  color: var(--suave);
+  padding: .3rem 0;
+}
+
+.fallback-manual .conteudo-fallback {
+  padding-top: .6rem;
+}
+
 .passo-codigo {
   margin-bottom: 1.25rem;
 }
