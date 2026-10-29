@@ -287,6 +287,7 @@ async function gerarPedidoConvidado(nome) {
     estadoUiMulti = {
       tela: 'entrar_passo2',
       codigoPedido: codigo,
+      codigoResposta: '',
       conectando: false,
       tempoDecorrido: 0,
       erro: null,
@@ -302,6 +303,7 @@ async function conectarRespostaConvidado(codigoResposta) {
   if (!sessaoRede?.pedidoPendente) return;
   const { transporte, aplicarResposta } = sessaoRede.pedidoPendente;
   estadoUiMulti.conectando = true;
+  estadoUiMulti.codigoResposta = codigoResposta;
   estadoUiMulti.tempoDecorrido = 0;
   estadoUiMulti.erro = null;
   render();
@@ -346,6 +348,7 @@ async function conectarRespostaConvidado(codigoResposta) {
   } catch (err) {
     clearInterval(timerDiag);
     estadoUiMulti.conectando = false;
+    estadoUiMulti.codigoResposta = codigoResposta;
     estadoUiMulti.erro = err.message || 'Código de resposta inválido.';
     render();
   }

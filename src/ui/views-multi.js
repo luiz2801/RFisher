@@ -83,7 +83,7 @@ function viewEntrarPasso1({ nome = '' } = {}) {
     </form>`;
 }
 
-function viewEntrarPasso2({ codigoPedido = '', conectando = false, tempoDecorrido = 0 } = {}) {
+function viewEntrarPasso2({ codigoPedido = '', codigoResposta = '', conectando = false, tempoDecorrido = 0 } = {}) {
   const alertaDiagnostico = tempoDecorrido >= 15
     ? `<div class="alerta">
         <strong>⚠️ A conexão está demorando.</strong>
@@ -107,7 +107,7 @@ function viewEntrarPasso2({ codigoPedido = '', conectando = false, tempoDecorrid
     <form data-form="multi-resposta" class="passo-codigo">
       <label><strong>2. Código de resposta do anfitrião:</strong>
         <small class="ajuda">Cole abaixo o código de resposta que o anfitrião lhe enviou:</small>
-        <textarea class="caixa-codigo" name="codigo_resposta" rows="4" placeholder="Cole aqui o código CEO1R...." required></textarea>
+        <textarea class="caixa-codigo" name="codigo_resposta" rows="4" placeholder="Cole aqui o código CEO1R...." required>${esc(codigoResposta)}</textarea>
       </label>
       ${alertaDiagnostico}
       <div class="nav-menu">

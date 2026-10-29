@@ -195,3 +195,25 @@ test('extrairCodigo: prioriza tipo esperado se texto contiver ambos os códigos'
   assert.equal(extrairCodigo(textoMisto, 'pedido'), 'CEO1P.PEDIDO123');
 });
 
+test('decodificar: tolera mensagens de WhatsApp com texto antes, depois e pontuação', async () => {
+  const cod = await codificar('resposta', { sdp: SDP_WEBRTC_REAL });
+
+  // Mensagem com introdução e despedida
+  const msgCompleta = `Opa, aqui está a resposta da sala:\n\n${cod}\n\nCole lá no jogo!`;
+  const dec1 = await decodificar('resposta', msgCompleta);
+  assert.ok(dec1?.sdp);
+  assert.match(dec1.sdp, /a=ice-ufrag:AbCd/);
+
+  // Código com ponto final acidental colado
+  const comPonto = `${cod}.`;
+  const dec2 = await decodificar('resposta', comPonto);
+  assert.ok(dec2?.sdp);
+  assert.match(dec2.sdp, /a=ice-ufrag:AbCd/);
+
+  // Código contínuo sem espaços
+  const continuo = cod.replace(/\s+/g, '');
+  const dec3 = await decodificar('resposta', continuo);
+  assert.ok(dec3?.sdp);
+  assert.match(dec3.sdp, /a=ice-ufrag:AbCd/);
+});
+

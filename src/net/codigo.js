@@ -19,7 +19,22 @@ const deBase64Url = (texto) => {
 
 async function transformar(bytes, Fluxo) {
   const fluxo = new Blob([bytes]).stream().pipeThrough(new Fluxo('deflate-raw'));
-  return new Uint8Array(await new Response(fluxo).arrayBuffer());
+  const leitor = fluxo.getReader();
+  const pedacos = [];
+  let tamanho = 0;
+  while (true) {
+    const { done, value } = await leitor.read();
+    if (done) break;
+    pedacos.push(value);
+    tamanho += value.length;
+  }
+  const resultado = new Uint8Array(tamanho);
+  let pos = 0;
+  for (const p of pedacos) {
+    resultado.set(p, pos);
+    pos += p.length;
+  }
+  return resultado;
 }
 
 // Enxuga um SDP padrão de webrtc-datachannel para manter apenas os parâmetros essenciais,
@@ -66,7 +81,6 @@ export function hidratarSdp(dados, tipo = 'pedido') {
     'a=msid-semantic: WMS',
     'm=application 9 UDP/DTLS/SCTP webrtc-datachannel',
     'c=IN IP4 0.0.0.0',
-    'a=sendrecv',
     `a=ice-ufrag:${dados.u}`,
     `a=ice-pwd:${dados.p}`,
     'a=ice-options:trickle',
@@ -122,14 +136,31 @@ export function extrairCodigo(texto, tipo = null) {
         const outroIdx = parte.indexOf(outro);
         if (outroIdx >= 0) parte = parte.slice(0, outroIdx);
       }
-      const tokens = parte.trim().split(/\s+/);
+      const linhas = parte.split(/\r?\n/);
       const blocos = [];
-      for (const t of tokens) {
-        if (/^[A-Za-z0-9_-]+$/.test(t)) {
-          blocos.push(t);
-        } else {
-          break;
+      for (const linha of linhas) {
+        const l = linha.trim();
+        if (!l) {
+          if (blocos.length > 0) break;
+          continue;
         }
+        const pedacos = l.split(/\s+/);
+        let terminou = false;
+        for (const p of pedacos) {
+          const limpo = p.replace(/^[^A-Za-z0-9_-]+|[^A-Za-z0-9_-]+$/g, '');
+          if (/^[A-Za-z0-9_-]+$/.test(limpo)) {
+            if (limpo.length <= 4 || blocos.length === 0) {
+              blocos.push(limpo);
+            } else {
+              terminou = true;
+              break;
+            }
+          } else if (blocos.length > 0) {
+            terminou = true;
+            break;
+          }
+        }
+        if (terminou) break;
       }
       return pref + blocos.join('');
     }
@@ -156,6 +187,23 @@ export async function codificar(tipo, dados) {
   return PREFIXOS[tipo] + corpo;
 }
 
+// Descomprime bytes tolerando lixo residual no final do stream
+async function descomprimirSeguro(bytes) {
+  let b = bytes;
+  while (b.length > 0) {
+    try {
+      return await transformar(b, DecompressionStream);
+    } catch (e) {
+      if (e.message && e.message.includes('Trailing junk') && b.length > 1) {
+        b = b.subarray(0, b.length - 1);
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw new Error('Falha na descompressão do código');
+}
+
 // Devolve os dados ou `null` para qualquer texto inválido (prefixo ou versão errados, corrompido, campos ausentes).
 export async function decodificar(tipo, texto) {
   try {
@@ -164,7 +212,8 @@ export async function decodificar(tipo, texto) {
     const corpo = limpo.slice(PREFIXOS[tipo].length).replace(/[^A-Za-z0-9_-]/g, '');
     if (!corpo) return null;
     const bytes = deBase64Url(corpo);
-    const json = new TextDecoder('utf-8', { fatal: true }).decode(await transformar(bytes, DecompressionStream));
+    const descomprimido = await descomprimirSeguro(bytes);
+    const json = new TextDecoder('utf-8', { fatal: true }).decode(descomprimido);
     const obj = JSON.parse(json);
     const validado = CAMPOS[tipo](obj);
     if (!validado) return null;
@@ -174,7 +223,10 @@ export async function decodificar(tipo, texto) {
       ...(validado.nome !== undefined ? { nome: validado.nome } : {}),
       sdp,
     };
-  } catch {
+  } catch (err) {
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn(`[multiplayer] Falha ao decodificar código de ${tipo}:`, err.message || err);
+    }
     return null;
   }
 }
