@@ -18,16 +18,46 @@ const MIMES = {
   '.ico': 'image/x-icon',
 };
 
-function obterIpLocal() {
+function obterIpsDeRede() {
   const interfaces = os.networkInterfaces();
-  for (const lista of Object.values(interfaces)) {
+  let wifi = null;
+  let cabeada = null;
+
+  for (const [nome, lista] of Object.entries(interfaces)) {
+    const nomeLower = nome.toLowerCase();
     for (const info of lista ?? []) {
       if (info.family === 'IPv4' && !info.internal) {
-        return info.address;
+        if (
+          nomeLower.startsWith('docker') ||
+          nomeLower.startsWith('veth') ||
+          nomeLower.startsWith('br-') ||
+          nomeLower.startsWith('virbr') ||
+          nomeLower.startsWith('vmnet')
+        ) {
+          continue;
+        }
+        if (
+          nomeLower.startsWith('wl') ||
+          nomeLower.includes('wifi') ||
+          nomeLower.includes('wireless') ||
+          nomeLower.includes('wi-fi')
+        ) {
+          if (!wifi) wifi = info.address;
+        } else if (
+          nomeLower.startsWith('en') ||
+          nomeLower.startsWith('eth') ||
+          nomeLower.includes('ethernet') ||
+          nomeLower.includes('cabo')
+        ) {
+          if (!cabeada) cabeada = info.address;
+        } else if (!cabeada && !wifi) {
+          cabeada = info.address;
+        }
       }
     }
   }
-  return null;
+
+  return { wifi, cabeada };
 }
 
 const salasSinal = new Map();
@@ -214,12 +244,18 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  const ip = obterIpLocal();
+  const ips = obterIpsDeRede();
   console.log(`\n🎲 Servidor Tabuleiro do CEO ativo na porta ${PORT}`);
-  console.log(`  > Local:       http://localhost:${PORT}`);
-  if (ip) {
-    console.log(`  > No celular:  http://${ip}:${PORT}`);
+  console.log(`  > Local:        http://localhost:${PORT}`);
+  if (ips.wifi) {
+    console.log(`  > Pelo wifi:    http://${ips.wifi}:${PORT}`);
+  } else {
+    console.log('  > Pelo wifi:    (não conectado)');
   }
-  console.log('  (Multiplayer: P2P com fallback automático via servidor local)');
-  console.log('  (Dica UFW Linux: "sudo ufw allow from 192.168.0.0/16" para liberar P2P direto)\n');
+  if (ips.cabeada) {
+    console.log(`  > Pela cabeada: http://${ips.cabeada}:${PORT}`);
+  } else {
+    console.log('  > Pela cabeada: (não conectada)');
+  }
+  console.log();
 });

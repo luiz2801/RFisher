@@ -17,6 +17,7 @@ Adotar WebRTC com `RTCDataChannel` puro e serverless, utilizando troca manual de
 5. **Resiliência a quedas:** O anfitrião envia pings periódicos a cada 2 segundos. Se um convidado ficar 8 segundos sem sinal, os demais são avisados; se completar 60 segundos de silêncio, seu slot é permanentemente assumido por um bot com o mesmo perfil técnico, garantindo que a partida não trave. Se o anfitrião desconectar, a sala é encerrada para todos.
 6. **Modo espectador:** Quando não é a vez do jogador, a interface fica em modo espectador (textos em terceira pessoa, botões inativos/desabilitados), mantendo recursos de conveniência locais (como calculadora e cópia de tabelas) utilizáveis.
 7. **Revanche sem renegociação:** Ao término da partida, o anfitrião pode disparar uma revanche que retorna todos ao lobby da sala reaproveitando os mesmos canais WebRTC abertos, sem exigir nova troca de códigos.
+8. **Transporte Híbrido com Fallback Automático:** A camada de transporte tenta estabelecer conexão P2P direta via WebRTC (`RTCDataChannel`) com auxílio de servidores STUN públicos (`stun.l.google.com:19302`) para desmascarar IPs protegidos por mDNS em navegadores mobile. Caso o tráfego UDP direto seja impedido por firewalls ou isolamento da rede, o sistema comuta silenciosamente em até 3,5 segundos para um canal de revezamento (via servidor de desenvolvimento `scripts/server.mjs` em rede local ou canal público em nuvem no GitHub Pages), garantindo conectividade sem interrupções.
 
 ## Consequências
 
@@ -24,6 +25,11 @@ Adotar WebRTC com `RTCDataChannel` puro e serverless, utilizando troca manual de
 - **Fácil:** Códigos muito menores (~120–160 caracteres), muito mais leves e fáceis de copiar e colar.
 - **Fácil:** A autoridade centralizada no anfitrião elimina qualquer risco de divergência ou dessincronização de estado entre os jogadores.
 - **Fácil:** O piloto automático de bots permite que partidas continuem mesmo se a bateria de um participante acabar ou se ele se ausentar.
-- **Difícil:** A entrada inicial na sala exige que os jogadores copiem e colem dois blocos curtos de texto (pedido e resposta) através de um mensageiro ou e-mail.
-- **Difícil:** Redes locais corporativas ou escolares com isolamento de clientes (AP Isolation / Guest Wi-Fi) bloqueiam conexões diretas P2P entre aparelhos; o jogo mitiga isso apresentando uma mensagem de diagnóstico após 15 segundos de espera na negociação.
+- **Fácil:** O fallback de revezamento transparente contorna bloqueios de portas dinâmicas UDP em redes restritas sem exigir intervenção do jogador.
+- **Difícil:** A entrada inicial na sala no modo manual exige que os jogadores copiem e colem dois blocos curtos de texto (pedido e resposta) através de um mensageiro ou e-mail.
+- **Difícil:** Redes locais corporativas ou escolares com isolamento de clientes (AP Isolation / Guest Wi-Fi) bloqueiam conexões diretas P2P entre aparelhos; o transporte híbrido resolve isso usando o canal de revezamento.
+- **Operação / Firewall em Linux (UFW):** Em sistemas Linux com UFW ativo, portas UDP dinâmicas de entrada costumam ser bloqueadas por padrão (`[UFW BLOCK]`). Embora o fallback via servidor local resolva isso automaticamente, o anfitrião que desejar permitir P2P direto na rede local pode liberar a sub-rede:
+  ```bash
+  sudo ufw allow from 192.168.0.0/16
+  ```
 - **Vigiar:** Modificações nas ações da máquina de estados devem garantir que apenas ações legítimas do jogador da vez sejam aceitas pelo anfitrião (`acaoPermitida`).
