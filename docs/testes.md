@@ -22,6 +22,7 @@ O projeto é JavaScript puro (ES modules), sem dependências e sem build. Os tes
 | 12 | Integração do navegador (`main.js`) | `src/main.js` | Ausente |
 | 13 | Regressão de documentação | `README.md`, `fisher.md`, `docs/` | Ausente |
 | 14 | Integração da partida (reducer + save) | `machine.js`, `persist.js` | Coberto |
+| 15 | Multiplayer em rede local (LAN) | `src/net/`, `src/ui/views-multi.js` | Coberto (`tests/net-*.test.js`) |
 
 ## 1. Unitário de regras
 
@@ -211,6 +212,18 @@ O projeto não tem rotas HTTP; o equivalente a um teste de API é conduzir uma p
 - Salvar a cada ação e recarregar do save no meio da partida: o estado final é idêntico (`deepEqual`) ao da partida sem interrupção.
 
 **Situação:** coberto em `tests/integracao-partida.test.js`.
+
+## 15. Multiplayer em rede local (LAN)
+
+O multiplayer serverless via WebRTC (`RTCDataChannel`) é testado sem depender de rede externa ou APIs de navegador fechadas, utilizando transporte simulado em memória (`transporte-falso.js`):
+
+- **Códigos de convite e protocolo** (`tests/net-codigo.test.js`): compactação com `deflate-raw`, codificação base64url, integridade de SDP, rejeição de payloads inválidos e validação de schema das mensagens com limites de tamanho (`MAX_DO_DONO`, `MAX_DO_CONVIDADO`).
+- **Regras da sala e lobby** (`tests/net-sala.test.js`): validação de vagas (2 a 3), regras de transição de fase, início válido sem repetição de diretorias, substituição de jogador por bot e retorno ao lobby para revanche.
+- **Piloto automático de bots e resiliência** (`tests/net-piloto.test.js`): avanço determinístico de bots em todas as fases da máquina de estados, teste de propriedades simulando quedas súbitas em qualquer ponto do jogo e condução até `FIM_DE_JOGO`.
+- **Sessão do anfitrião e do convidado** (`tests/net-sessao.test.js`): partida multiplayer completa conduzida via rede simulada, pings, detecção de silêncio (8s aviso, 60s substituição), ressincronização de estado e encerramento de sala.
+- **Telas e modo espectador** (`tests/net-views.test.js`): modal multiplayer (escolha, passo 1, passo 2 com aviso de 15s, lobby dono e convidado), visão de espectador com pronomes em terceira pessoa e botões desabilitados, revanche e relatórios colapsados no fim de jogo.
+
+**Situação:** coberto em `tests/net-codigo.test.js`, `tests/net-sala.test.js`, `tests/net-piloto.test.js`, `tests/net-sessao.test.js` e `tests/net-views.test.js`.
 
 ## Prioridades sugeridas
 

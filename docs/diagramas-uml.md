@@ -431,6 +431,61 @@ sequenceDiagram
     UI->>UI: render()
 ```
 
+### 3.2 Diagrama de Sequência: Sessão Multiplayer WebRTC Serverless
+
+Demonstra a troca manual de sinalização para abertura do canal `RTCDataChannel`, a execução autoritativa de ações durante a partida e o tratamento de queda com substituição por bot.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Convidado as Convidado (Bob)
+    participant UI_C as UI Convidado
+    actor Anfitriao as Anfitrião (Alice)
+    participant UI_A as UI Anfitrião
+    participant Net_A as Anfitriao/Sala
+    participant Machine as Engine (Alice)
+    participant Piloto as PilotoBots
+
+    Note over Anfitriao, UI_A: Alice cria a sala ("Lobby Dono")
+    UI_A->>Net_A: criarAnfitriao({ vagas: 2 })
+    
+    Note over Convidado, UI_C: Bob inicia entrada ("Passo 1")
+    UI_C->>UI_C: criarPedido("Bob") -> gera oferta SDP compactada (CEO1P...)
+    Convidado-->>Anfitriao: Envia código de pedido (via chat/WhatsApp)
+    
+    Anfitriao->>UI_A: Cola código de pedido
+    UI_A->>Net_A: responderPedido(codigo) -> gera resposta SDP (CEO1R...)
+    Anfitriao-->>Convidado: Envia código de resposta (via chat/WhatsApp)
+    
+    Convidado->>UI_C: Cola código de resposta
+    UI_C->>UI_C: aplicarResposta(codigo)
+    Note over UI_C, Net_A: Conexão WebRTC (RTCDataChannel) aberta!
+    Net_A->>UI_C: broadcast({ tipo: 'sala', sala })
+    
+    Anfitriao->>UI_A: Clica em "Iniciar Partida"
+    UI_A->>Net_A: iniciar()
+    Net_A->>Machine: iniciarPartida(sala)
+    Machine-->>Net_A: estadoInicial
+    Net_A->>UI_A: render(estado)
+    Net_A->>UI_C: broadcast({ tipo: 'estado', estado })
+    UI_C->>UI_C: render(estado) [Modo Espectador se for vez de Alice]
+
+    Note over Convidado, Net_A: Vez de Bob: Bob escolhe métrica
+    Convidado->>UI_C: Clica na métrica
+    UI_C->>Net_A: enviar({ tipo: 'acao', acao: { tipo: 'METRICA', valor: 'mediana' } })
+    Net_A->>Machine: acaoPermitida e reduzir(estado, acao)
+    Machine-->>Net_A: novoEstado
+    Net_A->>UI_A: render(novoEstado)
+    Net_A->>UI_C: broadcast({ tipo: 'estado', estado: novoEstado })
+
+    Note over Convidado, Net_A: Bob perde conexão (Wi-Fi oscila)
+    Net_A->>Net_A: tick() detecta 8s sem sinal
+    Net_A->>UI_A: broadcast({ tipo: 'aviso', texto: 'Bob está sem conexão...' })
+    Net_A->>Net_A: tick() detecta 60s sem sinal
+    Net_A->>Net_A: substituirPorBot(estado, idBob)
+    Net_A->>Piloto: agendarPiloto() -> bot joga os turnos de Bob automaticamente
+```
+
 ---
 
 ## 4. Diagrama de Pacotes e Arquitetura (Módulos)
@@ -477,10 +532,32 @@ graph TD
         PERSIST["persist.js<br/>(LocalStorage Wrapper)"]
     end
 
+    subgraph Net_Layer["Camada Rede (src/net/)"]
+        CODIGO["codigo.js<br/>(Convites comprimidos Base64url)"]
+        PROTOCOLO["protocolo.js<br/>(Mensagens e validação)"]
+        SALA["sala.js<br/>(Lobby, vagas e regras de sala)"]
+        PILOTO["piloto.js<br/>(Piloto de bots e queda de jogador)"]
+        TRANSPORTE["transporte.js<br/>(WebRTC DataChannel Serverless)"]
+        ANFITRIAO["anfitriao.js<br/>(Sessão autoritativa do host)"]
+        CONVIDADO["convidado.js<br/>(Sessão do cliente convidado)"]
+    end
+
     %% Relações
     MAIN --> MACHINE
     MAIN --> VIEWS
     MAIN --> PERSIST
+    MAIN --> ANFITRIAO
+    MAIN --> CONVIDADO
+    MAIN --> TRANSPORTE
+    VIEWS --> VIEWS_MULTI["views-multi.js<br/>(Telas de Lobby e Conexão)"]
+    ANFITRIAO --> SALA
+    ANFITRIAO --> PILOTO
+    ANFITRIAO --> PROTOCOLO
+    CONVIDADO --> PROTOCOLO
+    TRANSPORTE --> CODIGO
+    ANFITRIAO --> MACHINE
+    PILOTO --> BOT
+    PILOTO --> MACHINE
     VIEWS --> GRAFICO
     VIEWS --> HTML
     VIEWS --> DESEMPENHO
@@ -548,4 +625,12 @@ graph TD
 | **`src/stats/metrics.js`** | Cálculos estatísticos fundamentais (média, mediana, moda, desvio padrão, percentil 90). |
 | **`src/stats/format.js`** | Formatação dos números por formato de cenário (R$, dias, minutos, s, ...) e leitura (`lerNumero`) do valor digitado em pt-BR. |
 | **`src/storage/persist.js`** | Camada de persistência em `window.localStorage` para salvamento automático a cada transição. |
+| **`src/net/codigo.js`** | Codificação e decodificação de ofertas e respostas SDP em Base64url comprimidas com Deflate-raw (`CEO1P.` e `CEO1R.`). |
+| **`src/net/protocolo.js`** | Definição do catálogo de mensagens de rede, validação de schemas, limites de payload e timeouts de sinalização. |
+| **`src/net/sala.js`** | Máquina de regras da sala e lobby: vagas (2 a 3), perfis, transições para partida (`iniciarPartida`) e retorno para revanche (`voltarAoLobby`). |
+| **`src/net/piloto.js`** | Piloto automático que substitui jogadores desconectados por bots no mesmo nível técnico e avança os turnos de forma cadenciada. |
+| **`src/net/transporte.js`** | Abstração da API nativa WebRTC (`RTCPeerConnection` e `RTCDataChannel`) para sinalização manual sem servidor intermediário. |
+| **`src/net/anfitriao.js`** | Sessão autoritativa do criador da sala: gerencia conexões dos convidados, executa a máquina de estados, broadcast de turnos e detecção de quedas. |
+| **`src/net/convidado.js`** | Sessão do cliente convidado: recebe e espelha o estado da sala e despacha intenções de ação do jogador na sua vez. |
+| **`src/ui/views-multi.js`** | Templates e formulários da interface multiplayer: escolha de modo, geração de pedido, troca de resposta e lobbies do dono e convidado. |
 | **`src/ui/`** | Renderização reativa baseada em strings HTML puras e SVG (`grafico.js`), delegando ações de volta ao `main.js`. Em partida, o tabuleiro ocupa a tela toda (`viewJogo`): o centro traz a vez, os dados, o botão **Jogar** (fase `ROLAR_DADO`), o placar e o contexto; todas as demais fases (decisão, resultado, evento, mercado, balanço, fim de jogo) aparecem num painel modal (`.modal > .painel`) sobreposto ao tabuleiro. |

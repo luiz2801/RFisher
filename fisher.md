@@ -84,6 +84,7 @@ Rola os dois dados (soma, 2 a 12) → cai numa casa → vê o cenário/gráfico 
 | 20 | **Progressão da dificuldade configurável** (implementado, 4.5): o menu (etapa Dificuldade) oferece Gradual, Tradicional (padrão) e Acelerada, que mudam só o ritmo com que a dificuldade-alvo sobe com o progresso (expoente 2,6, 2 ou 1); começo e fim da partida são iguais nas três. Vale a todos os jogadores da partida | A subida linear original fazia os cenários de nível 2 dominarem já com 40% do percurso, rápido demais para quem está aprendendo. Em vez de fixar um ritmo, o grupo escolhe: quem quer desafio usa a Acelerada (a curva original), quem quer mais tempo nos conceitos básicos usa a Gradual. Não muda pontuação nem o acerto do rival do solo, apenas quais cenários saem. Saves antigos valem a Tradicional. Expoentes a calibrar no playtest |
 | 21 | **Habilidades das diretorias em todos os modos** (implementado, 3.16): cada diretoria tem uma habilidade ativa (Plano B, Teste A/B ou Treinamento, 2 usos por partida cada, na escolha da métrica) e uma passiva (menos 30% de prejuízo nos eventos do próprio setor e, em Pessoas e Finanças, consultoria pela metade do preço). Valem no competitivo, no solo e no cooperativo, para quem tem a diretoria; o rival do computador não as usa | A diretoria deixa de ser só um cargo fora do cooperativo e vira uma escolha com efeito. As ativas dão **informação, nunca a resposta**, para a justificativa continuar obrigatória (princípio 2). A **Rota alternativa** da proposta original foi trocada pelo **Plano B**, porque o dado é o de movimento e ela não atuaria na decisão. O **Dashboard** da Tecnologia (resumo estatístico) foi trocado pelo **Teste A/B** por repetir o que o gráfico já mostra. O +2 de reputação por Balanço de Pessoas e Finanças foi retirado: era fixo, automático e sem ligação com o papel. Usos e percentuais a calibrar no playtest |
 | 22 | **O tamanho da justificativa não pode entregar a certa** (implementado, 4.3): os comprimentos das justificativas de todos os cenários seguem uma distribuição aproximadamente normal (média ≈ 105 caracteres, desvio ≈ 20), e o tamanho da certa é uma amostra dela, sem relação com o tipo. Um teste confere assimetria, curtose, que a certa não seja sistematicamente a maior e que nenhum tipo se afaste da média geral | Antes, a certa era quase sempre a mais longa (e a irrelevante a mais curta): dava para acertar a justificativa só olhando o tamanho, o que fere o princípio 2 (acertar por sorte não pode compensar). O texto mais completo não pode ser pista |
+| 23 | **Multiplayer em rede local via WebRTC sem servidor** (implementado, 3.17 e ADR 0008): 2 ou 3 participantes jogam em aparelhos separados na mesma rede Wi-Fi, sem servidor central, banco de dados ou contas. A sinalização WebRTC ocorre por troca manual de códigos comprimidos (`CEO1P.` e `CEO1R.`), com minificação de SDP (redução de ~75% no tamanho do código, gerando textos curtos de ~120–160 caracteres). O anfitrião é autoritativo (roda a máquina de estados e despacha ações). Queda por 60s é assumida por bot no mesmo nível. No fim, há opção de revanche no lobby sem renegociar códigos | Atende à demanda de jogar com múltiplos aparelhos preservando o custo zero e hospedagem estática no GitHub Pages. Não exige STUN/TURN na nuvem, garantindo privacidade e independência de infraestrutura. A autoridade única no anfitrião impede dessincronizações |
 
 ---
 
@@ -343,7 +344,6 @@ As oportunidades são **ganhos fixos**, não aportes: investir continua sendo co
 
 Quem mantém joga uma aposta de variância, com leve custo de imagem, e passar é uma opção legítima. Quem **troca** tem valor esperado claramente positivo: o conhecimento do problema de Monty Hall vale dinheiro, de acordo com o princípio 3. Em ≈ 2,5 casas de Evento numa partida de 10 turnos, isso são cerca de R$ 16.000 a mais para quem troca. O rival do solo não participa (3.11), então essa vantagem só existe para a pessoa e aumenta a taxa de vitória dela. Valores e peso da vantagem a calibrar no playtest (questão em aberto nº 13).
 
-
 ### 3.16 Diretorias: habilidades ativas e passivas
 
 **Implementado** (`src/engine/habilidades.js`, `papeis.js` e `machine.js`; testes em `tests/habilidades.test.js`). Decisão nº 21. Vale nos **três modos**. Quem tem a diretoria é o jogador que a escolheu no menu (competitivo e solo) ou quem a recebeu em `papeis` (cooperativo, onde um jogador pode acumular as três). O rival do computador não tem diretoria nem usa habilidades. Saves antigos sem setor seguem o mesmo rodízio do cargo exibido.
@@ -361,6 +361,17 @@ Quem mantém joga uma aposta de variância, com leve custo de imagem, e passar �
 **Apresentação.** O menu mostra a habilidade ativa e a passiva de cada diretoria, tanto na escolha do setor de cada jogador quanto no cartão das divisões. Na decisão, a pessoa vê os botões das suas habilidades com os usos que restam.
 
 **Calibração.** 2 usos por partida, os 30% e o Teste A/B (que reduz 4 ou 5 opções a 2 e deixa a escolha em 50%, a justificar e apostar) são pontos de partida a observar no playtest. Há 7 cartas de logística e produção, 14 de dados e produto e 20 de RH, atendimento e financeiro (`src/scenarios/content/eventos.js`), então a passiva de Pessoas e Finanças atua mais vezes, além da consultoria.
+
+### 3.17 Modo multiplayer em rede local (LAN)
+
+O multiplayer permite que 2 a 3 pessoas disputem a partida em aparelhos separados conectados na mesma rede local (Wi-Fi), sem necessidade de servidores externos ou banco de dados (ADR 0008).
+
+- **Criação e entrada via WebRTC Serverless:** O anfitrião cria a sala e define as regras (competitivo ou cooperativo, número de vagas, trimestres e progressão). Os convidados entram gerando um código de pedido compactado (`CEO1P.`), que o anfitrião recebe para gerar um código de resposta (`CEO1R.`). A troca manual desses códigos estabelece um `RTCDataChannel` direto ponto a ponto. Um algoritmo de **minificação de SDP** remove cabeçalhos redundantes da oferta/resposta WebRTC, reduzindo os códigos em cerca de 75% (~120–160 caracteres), tornando a cópia e o compartilhamento manual simples e rápidos. Códigos legados sem minificação seguem 100% suportados.
+- **Anfitrião autoritativo:** Toda a lógica de regras e a máquina de estados (`reduzir`) rodam exclusivamente no dispositivo do anfitrião. Os convidados enviam intenções de ação e recebem o estado sincronizado.
+- **Modo espectador:** Quando um jogador não está na sua vez, a interface atua como espectadora: os títulos e justificativas aparecem em terceira pessoa, os botões de ação ficam desabilitados e uma tarja no topo indica quem está jogando. Ferramentas locais de apoio (como a calculadora de estatísticas e a cópia de tabelas) permanecem livres para consulta.
+- **Resiliência e piloto automático de bots:** O anfitrião monitora a conexão de cada convidado com pings a cada 2 segundos. Se um convidado passar 8 segundos sem responder, uma mensagem avisa os demais. Se a ausência atingir 60 segundos, a vaga do jogador é permanentemente substituída por um bot do computador no mesmo nível técnico (`medio`), garantindo que o jogo não trave. Se o anfitrião desconectar, a sala é encerrada para todos.
+- **Transporte híbrido e contingência:** Tenta conexão WebRTC direta (P2P) com auxílio de STUN. Se houver bloqueio de portas UDP por firewall da rede local (como UFW no Linux) ou restrição do roteador, comuta silenciosamente em ~3,5 segundos para revezamento via servidor local ou relay público, assegurando que o jogo funcione em qualquer ambiente sem necessidade de configurações manuais.
+- **Fim de jogo e revanche no lobby:** Ao final da partida, cada jogador vê seu relatório pedagógico em destaque, com os relatórios dos demais recolhidos em caixas expansíveis. O anfitrião dispõe do botão de **Revanche**, que conduz todos os participantes de volta ao lobby da sala reaproveitando os canais de rede já estabelecidos, sem precisar trocar códigos novamente.
 
 ---
 
@@ -766,7 +777,7 @@ O tabuleiro ocupa toda a tela, sob um topo fixo, num retângulo de proporção a
 
 - Site 100% estático em GitHub Pages ou Cloudflare Pages.
 - Sem backend, sem banco de dados, sem API paga e sem telemetria em servidor.
-- Multiplayer **local** (mesmo computador). Multiplayer online exigiria servidor e fica fora do escopo.
+- Multiplayer **local**: no mesmo aparelho (hot-seat) ou em aparelhos separados na mesma rede local (LAN / Wi-Fi) via WebRTC serverless ponto a ponto (3.17 e ADR 0008). Multiplayer online com servidor na nuvem segue fora do escopo.
 
 ---
 

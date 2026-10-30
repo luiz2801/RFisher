@@ -37,3 +37,10 @@ export function atribuirPapeis(n, escolhas = []) {
   const validas = escolhas.length >= 3 && new Set(escolhas.slice(0, 3)).size === 3 && escolhas.slice(0, 3).every((id) => ids.includes(id));
   return validas ? escolhas.slice(0, 3).map((id) => [id]) : ids.map((id) => [id]);
 }
+
+// Setores repetidos entre os jogadores não valem: cada setor vale para um jogador só. Fora do solo, vale no competitivo
+// e no cooperativo com 3 jogadores (com 1 ou 2 o cooperativo distribui os setores sozinho). `escolhas` traz a diretoria de cada um.
+export function setoresRepetidos(modo, escolhas) {
+  if (modo === 'solo' || (modo === 'cooperativo' && escolhas.length !== 3)) return false;
+  return new Set(escolhas).size < escolhas.length;
+}
