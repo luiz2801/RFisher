@@ -2,6 +2,22 @@
 
 Este documento consolida a modelagem UML e arquitetural do projeto **Fisher SA**, detalhando sua estrutura de dados, máquina de estados, ciclo de vida de execução e separação em camadas.
 
+Os diagramas seguem a notação UML das aulas de Análise e Projeto de Sistemas (pasta `diagramas/`) e estão escritos em Mermaid, para renderizar direto no GitHub:
+
+| Seção | Diagrama | Visão |
+| :--- | :--- | :--- |
+| 1 | Classes e entidades | Estrutural |
+| 2 | Máquina de estados | Comportamental |
+| 3 | Sequência | Comportamental |
+| 4 | Pacotes e arquitetura (módulos) | Arquitetura lógica |
+| 5 | Casos de uso | Requisitos |
+| 6 | Objetos (instantâneo de uma partida) | Estrutural |
+| 7 | Atividades (turno, decisão e configuração) | Comportamental |
+| 8 | Componentes e implantação | Arquitetura física |
+| 9 | Descrição dos componentes | Referência |
+
+O Mermaid não tem diagramas nativos de casos de uso, objetos, atividades, componentes e implantação. Nas seções 5 a 8 eles são desenhados com `flowchart` ou `classDiagram` e estereótipos entre «», como explicado no início de cada seção.
+
 ---
 
 ## 1. Diagrama de Classes e Entidades (Estrutural)
@@ -516,7 +532,509 @@ graph TD
 
 ---
 
-## 5. Descrição dos Componentes Principais
+## 5. Diagrama de Casos de Uso (Requisitos)
+
+Mostra a visão externa do sistema: o que o **Fisher SA** oferece e a quem, sem dizer como (o "como" está nos diagramas de sequência, atividades e estados). Segue a Aula 04: atores fora da fronteira do sistema, casos de uso dentro dela, e os relacionamentos de **generalização**, **inclusão** (`«include»`) e **extensão** (`«extend»`).
+
+> **Notação.** O Mermaid não tem diagrama de casos de uso nativo, então este usa `flowchart`: retângulos com `«estereótipo»` são atores, elipses são casos de uso, a moldura `Fisher SA` é a fronteira do sistema, linha contínua sem seta é associação, seta tracejada é `«include»` (da base para o incluído) ou `«extend»` (da extensão para a base) e seta grossa "generaliza" aponta do caso especializado para o geral.
+
+```mermaid
+flowchart LR
+    jogador["«ator principal»<br/>Jogador"]:::ator
+    armazenamento["«ator secundário»<br/>Armazenamento local<br/>do navegador"]:::ator
+    forms["«ator secundário»<br/>Google Forms<br/>(questionário externo)"]:::ator
+
+    subgraph SISTEMA["Fisher SA (fronteira do sistema)"]
+        CONF(["Configurar partida"])
+        RETOMAR(["Retomar partida salva"])
+        SALVAR(["Salvar partida"])
+        TURNO(["Jogar turno"])
+
+        DECISAO(["Responder decisão estatística"])
+        CONCEITUAL(["Responder cenário conceitual"])
+        CALCULO(["Responder cenário de cálculo"])
+        DICA(["Consultar dica"])
+        CALCULADORA(["Usar calculadora embutida"])
+        RIVAL(["Jogar a vez do rival"])
+
+        EVENTO(["Participar de evento"])
+        TROCAR(["Trocar a carta escolhida"])
+
+        MERCADO(["Avaliar oferta do Mercado"])
+        CONSULTORIA(["Contratar consultoria"])
+        DIAGNOSTICO(["Diagnosticar o argumento do fundador"])
+
+        BALANCO(["Passar pelo Balanço"])
+        APURAR(["Apurar investimentos"])
+
+        RESULTADO(["Ver resultado e relatório de desempenho"])
+        QUESTIONARIO(["Responder ao questionário de opinião"])
+        IMPRIMIR(["Imprimir relatório"])
+    end
+
+    %% Associações (comunicação ator-caso de uso)
+    jogador --- CONF
+    jogador --- RETOMAR
+    jogador --- TURNO
+    jogador --- DECISAO
+    jogador --- EVENTO
+    jogador --- MERCADO
+    jogador --- RESULTADO
+    armazenamento --- RETOMAR
+    armazenamento --- SALVAR
+    forms --- QUESTIONARIO
+
+    %% Generalização
+    CONCEITUAL ==>|"generaliza"| DECISAO
+    CALCULO ==>|"generaliza"| DECISAO
+
+    %% Inclusão: comportamento sempre executado pelo caso base
+    CONF -.->|"«include»"| SALVAR
+    TURNO -.->|"«include»"| SALVAR
+    BALANCO -.->|"«include»"| APURAR
+    RESULTADO -.->|"«include»"| APURAR
+
+    %% Extensão: comportamento opcional, inserido no ponto de extensão da base
+    DECISAO -.->|"«extend»<br/>[casa de Decisão]"| TURNO
+    EVENTO -.->|"«extend»<br/>[casa de Evento]"| TURNO
+    MERCADO -.->|"«extend»<br/>[casa de Mercado]"| TURNO
+    BALANCO -.->|"«extend»<br/>[passou pelo início]"| TURNO
+    DICA -.->|"«extend»<br/>[nível iniciante]"| DECISAO
+    RIVAL -.->|"«extend»<br/>[modo solo, vez do rival]"| DECISAO
+    CALCULADORA -.->|"«extend»<br/>[etapa do valor]"| CALCULO
+    TROCAR -.->|"«extend»<br/>[depois da revelação]"| EVENTO
+    CONSULTORIA -.->|"«extend»<br/>[oferta aberta]"| MERCADO
+    DIAGNOSTICO -.->|"«extend»<br/>[oferta aberta]"| MERCADO
+    QUESTIONARIO -.->|"«extend»<br/>[fim da partida]"| RESULTADO
+    IMPRIMIR -.->|"«extend»<br/>[fim da partida]"| RESULTADO
+
+    classDef ator fill:#fff3cd,stroke:#8a6d00,color:#000
+```
+
+**Atores.**
+
+| Ator | Tipo | Papel |
+| :--- | :--- | :--- |
+| **Jogador** | Principal | Pessoa de 1 a 3 que joga em hot-seat no mesmo dispositivo. Nos três modos (competitivo, cooperativo e solo) é o mesmo ator; o modo só muda as regras do caso de uso, não quem o executa. |
+| **Armazenamento local do navegador** | Secundário | `localStorage`, onde a partida é gravada a cada transição e de onde é retomada. Se estiver indisponível, o jogo segue sem salvar. |
+| **Google Forms** | Secundário | Serviço externo do questionário anônimo (`URL_PESQUISA`), aberto em nova aba. O jogo não sabe se foi respondido. |
+
+O **rival do modo solo** não é ator: é comportamento interno do sistema (`bot.js`), por isso aparece como o caso de uso `Jogar a vez do rival`, e não como uma pessoa fora da fronteira.
+
+**Pontos de extensão de `Jogar turno`.** A casa onde o peão cai decide qual extensão roda: Decisão, Evento, Mercado ou Balanço (`fisher.md` 3.1 e 3.2). O Balanço também roda quando o peão apenas **passa** pelo início, antes de resolver a casa onde parou.
+
+**Descrição do caso de uso `Responder decisão estatística`** (`fisher.md` 3.3 a 3.5 e 4.7):
+
+| Item | Descrição |
+| :--- | :--- |
+| Ator | Jogador (no modo solo, também o rival, decidido pelo sistema) |
+| Pré-condição | O peão caiu numa casa de Decisão e a fase é `ESCOLHER_METRICA`. |
+| Fluxo principal | 1. O sistema sorteia um cenário do baralho, com peso pela dificuldade-alvo do progresso, e mostra o contexto e os dados (gráfico ou tabela). 2. O jogador escolhe a **métrica**. 3. O jogador escolhe a **justificativa**. 4. O jogador escolhe a **confiança** (de `chute` a `certeza`). 5. O sistema classifica a resposta (sucesso, sorte, incoerência ou erro total), atualiza caixa, reputação e sequência, registra no histórico e salva. 6. O sistema mostra o resultado e a explicação, e o jogador continua. |
+| Variante: cenário de cálculo | Entre 2 e 3 há o passo **informar o valor**; a métrica só conta como certa se a opção estiver certa **e** o valor estiver dentro da margem. O jogador pode usar a calculadora embutida (`Usar calculadora embutida`). |
+| Variante: dica | No nível iniciante, antes da métrica, o jogador pode abrir a dica (`ABRIR_DICA`), o que reduz o bônus de confiança. |
+| Variante: modo solo | Na vez do rival o sistema executa tudo numa só ação (`DECIDIR_BOT`) e o jogador vê direto o resultado. |
+| Fluxo excepcional | Valor que não é número: o sistema mostra o erro no campo e não avança. Armazenamento indisponível: o jogo continua e não retoma depois. Caixa negativo ao continuar numa jogada que passou pelo Balanço: o sistema aplica a falência (`fisher.md` 3.12). |
+| Pós-condição | A fase é `MOSTRAR_RESULTADO` e a decisão está no histórico do jogador. |
+
+---
+
+## 6. Diagrama de Objetos (Instantâneo de uma Partida)
+
+Uma "fotografia" de uma partida em execução, com valores concretos nos atributos e os vínculos entre os objetos (Aula 06). Complementa o diagrama de classes da seção 1: cada objeto aqui é instância de uma daquelas classes. Mostra só os objetos necessários para entender o momento, não o estado inteiro.
+
+**Momento retratado.** Partida competitiva de dois jogadores, semente 7, 10 trimestres. No 2º trimestre, **Ana** rolou 1 + 2, caiu na casa 7 (Decisão), recebeu o cenário *Política salarial na startup* e já escolheu a métrica "mediana"; falta a justificativa. No 1º trimestre ela tinha acertado o cenário do estoque de calçados com confiança `provavel` (+R$ 20.000, +5 de reputação). **Bruno** caiu na casa 9 (Mercado) e aportou R$ 10.000 numa empresa de porte PME, ainda em custódia até o próximo Balanço.
+
+> **Notação.** O Mermaid não tem diagrama de objetos nativo, então este usa `classDiagram`: cada caixa é um objeto, rotulada `nome : Classe` (sem o sublinhado da UML), e os atributos mostram valores com `=`. Objetos anônimos aparecem como `: Classe`. A caixa `Opcao [5]` é um *multiobject* (conjunto de objetos com o mesmo papel).
+
+```mermaid
+classDiagram
+    direction LR
+
+    class partida["partida : GameState"]
+    partida : +modo = competitivo
+    partida : +seed = 7
+    partida : +turnoAtual = 2
+    partida : +turnosPorJogador = 10
+    partida : +dinheiroInicial = 100000
+    partida : +reputacaoInicial = 50
+    partida : +jogadorAtual = 0
+    partida : +fase = ESCOLHER_JUSTIFICATIVA
+    partida : +dado = 3
+    partida : +dados = 1 e 2
+    partida : +jogadaExtra = false
+
+    class ana["ana : Jogador"]
+    ana : +id = 0
+    ana : +nome = Ana
+    ana : +nivel = iniciante
+    ana : +dinheiro = 120000
+    ana : +reputacao = 55
+    ana : +posicao = 7
+    ana : +distancia = 7
+    ana : +falido = false
+    ana : +bot = null
+
+    class seqAna["seqAna : Sequencia"]
+    seqAna : +acertos = 1
+    seqAna : +erros = 0
+
+    class h1["h1 : HistoricoDecisao"]
+    h1 : +cenario = cenario_03_estoque
+    h1 : +conceito = moda
+    h1 : +metrica = moda
+    h1 : +justificativa = j1
+    h1 : +confianca = provavel
+    h1 : +resultado = sucesso
+    h1 : +delta = 20000
+
+    class bruno["bruno : Jogador"]
+    bruno : +id = 1
+    bruno : +nome = Bruno
+    bruno : +nivel = iniciante
+    bruno : +dinheiro = 90000
+    bruno : +reputacao = 50
+    bruno : +posicao = 9
+    bruno : +distancia = 9
+
+    class seqBruno["seqBruno : Sequencia"]
+    seqBruno : +acertos = 0
+    seqBruno : +erros = 0
+
+    class inv1["inv1 : Investimento"]
+    inv1 : +empresaId = bytestorm_labs
+    inv1 : +porte = pme
+    inv1 : +valor = 10000
+    inv1 : +prob = 0.58
+    inv1 : +ganho = 0.7
+    inv1 : +perda = 0.5
+    inv1 : +consultoria = false
+    inv1 : +turnoAporte = 1
+
+    class empresa["bytestorm_labs : EmpresaDef"]
+    empresa : +nome = ByteStorm Labs
+    empresa : +porte = pme
+
+    class cenarioAtual["cenarioAtual : CenarioInstanciado"]
+    cenarioAtual : +id = cenario_01_salarios
+    cenarioAtual : +metricaId = mediana
+    cenarioAtual : +justificativaId = null
+    cenarioAtual : +confianca = null
+    cenarioAtual : +dicaUsada = false
+
+    class defCenario["cenario_01_salarios : CenarioDef"]
+    defCenario : +conceito = mediana
+    defCenario : +dificuldade = 1
+    defCenario : +nivel = iniciante
+    defCenario : +valor_base = 20000
+
+    class opcoes["Opcao [5]"]
+    opcoes : +ids = mediana, media, moda, ponto_medio, maximo
+    class justificativas["Justificativa [6]"]
+    justificativas : +ids = j1 a j6
+
+    partida --> ana : jogadores 0
+    partida --> bruno : jogadores 1
+    partida --> cenarioAtual : cenarioAtual
+    ana --> seqAna : sequencia
+    ana --> h1 : historico 0
+    bruno --> seqBruno : sequencia
+    bruno --> inv1 : investimentos 0
+    inv1 ..> empresa : empresaId
+    cenarioAtual ..> defCenario : id
+    defCenario --> opcoes : opcoes
+    defCenario --> justificativas : justificativas
+```
+
+Leitura rápida: `partida.jogadorAtual = 0` aponta para `ana`; `ana.posicao = 7` é uma casa de Decisão (`CASAS[7]`), por isso `partida.cenarioAtual` existe; `bruno.investimentos` guarda o aporte até ele passar pelo Balanço, quando `liquidar` sorteia o desfecho com `inv1.prob`. Num jogo solo, `bruno` seria um `Jogador` com `bot = medio` e `investimentos` sempre vazio. O diagrama não mostra a evolução no tempo; para isso, ver as seções 2, 3 e 7.
+
+---
+
+## 7. Diagramas de Atividades (Fluxos)
+
+Decompõem os fluxos de trabalho em atividades, decisões e raias de responsabilidade (Aula 08). O jogo é de uma só linha de execução (um jogador por vez, sem concorrência), então **não há `fork`/`join`**: os fluxos são sequenciais com ramificações. Os estados internos de cada fase estão no diagrama da seção 2.
+
+> **Notação.** O Mermaid não tem diagrama de atividades nativo, então usa-se `flowchart`: círculo cheio é o estado inicial, círculo duplo é o final, retângulo arredondado é atividade, losango é decisão (com as condições entre colchetes nas setas) e cada `subgraph` é uma raia (*swimlane*).
+
+### 7.1 Turno de um jogador (com raias)
+
+```mermaid
+flowchart TB
+    ini((" ")):::ini
+    fin(((" "))):::fin
+
+    subgraph RJ["Raia: Jogador"]
+        J1("Clicar em Jogar")
+        J2("Resolver a casa: responder a decisão,<br/>escolher a carta, decidir o aporte<br/>ou apenas ler o Balanço")
+        J3("Clicar em Continuar")
+    end
+
+    subgraph RU["Raia: Interface (main.js / views.js)"]
+        U1("Despachar ROLAR")
+        UR{"Decisão na vez<br/>do rival (modo solo)?"}
+        UB("Despachar DECIDIR_BOT")
+        U2("Mostrar a fase no painel<br/>sobre o tabuleiro (render)")
+        U3("Despachar as ações da fase")
+        U4("Mostrar o resultado e a explicação")
+        U5("Despachar CONTINUAR")
+        U6("Mostrar o questionário de opinião<br/>e depois o resultado final")
+    end
+
+    subgraph RM["Raia: Motor (machine.js)"]
+        M1("Rolar dois dados e<br/>mover o peão")
+        M2{"Passou pelo<br/>início?"}
+        M3("Aplicar o Balanço e<br/>apurar os investimentos")
+        M4{"Tipo da casa"}
+        M5("Sacar e instanciar<br/>o cenário")
+        M6("Sacar a mão de<br/>três cartas")
+        M7("Sortear a oferta<br/>de investimento")
+        M8("Mostrar o Balanço")
+        M9("Aplicar o efeito:<br/>caixa, reputação, sequência<br/>e histórico")
+        M10{"A falência encerra a partida?<br/>(empresa falida, ninguém no jogo<br/>ou um só sobrevivente)"}
+        M11{"Dados iguais e<br/>jogador ainda no jogo?"}
+        M12("Mesmo jogador joga de novo,<br/>sem gastar trimestre")
+        M13("Passar a vez ao próximo<br/>jogador que não faliu")
+        M14{"Trimestres<br/>esgotados?"}
+        M15("Apurar os investimentos<br/>em custódia")
+        M16("Fase FIM_DE_JOGO")
+    end
+
+    subgraph RS["Raia: Armazenamento (persist.js)"]
+        S1("salvar(estado)")
+        S2("salvar(estado)")
+        S3("salvar(estado)")
+        S4("limpar()<br/>apaga a partida salva")
+    end
+
+    ini --> J1 --> U1 --> M1 --> M2
+    M2 -->|"sim"| M3 --> M4
+    M2 -->|"não"| M4
+    M4 -->|"Decisão"| M5 --> UR
+    M4 -->|"Evento"| M6 --> S1
+    M4 -->|"Mercado"| M7 --> S1
+    M4 -->|"Balanço"| M8 --> S1
+    UR -->|"não"| S1
+    UR -->|"sim"| UB --> M9
+    S1 --> U2 --> J2 --> U3 --> M9 --> S2 --> U4 --> J3 --> U5 --> M10
+    M10 -->|"sim"| M16
+    M10 -->|"não"| M11
+    M11 -->|"sim"| M12 --> S3
+    M11 -->|"não"| M13 --> M14
+    M14 -->|"não"| S3
+    M14 -->|"sim"| M15 --> M16
+    S3 --> J1
+    M16 --> S4 --> U6 --> fin
+
+    classDef ini fill:#000,stroke:#000
+    classDef fin fill:#fff,stroke:#000,stroke-width:3px
+```
+
+Observações:
+
+- A atividade `Resolver a casa` tem várias etapas e várias gravações (uma por transição); aqui está colapsada, como recomenda a Aula 08 para ações complicadas. A decisão é detalhada em 7.2.
+- O Evento e o Mercado têm seus próprios subfluxos (participar, escolher e trocar a carta; consultoria, diagnóstico, investir ou recusar), descritos nas máquinas `FluxoEvento` e `FluxoMercado` da seção 2.
+- Em `CONTINUAR` a ordem é: falência (só na jogada que passou pelo Balanço, com o caixa já final, `fisher.md` 3.12), jogada extra por dados iguais, passagem da vez e, por fim, o teste de trimestres esgotados. Só o fim por trimestres apura os investimentos em custódia; a falência da empresa ou a vitória do último sobrevivente encerram a partida sem apuração.
+- O rival do solo não participa de Evento nem investe no Mercado: nessas casas ele só passa a vez.
+
+### 7.2 Decisão estatística
+
+```mermaid
+flowchart TB
+    ini((" ")):::ini
+    fin(((" "))):::fin
+
+    A("Mostrar o cenário: contexto,<br/>gráfico ou tabela")
+    B{"Quem decide?"}
+    BOT("DECIDIR_BOT: o rival escolhe métrica,<br/>valor (se for cálculo), justificativa<br/>e confiança")
+    D{"Abrir a dica?<br/>(só nível iniciante)"}
+    D1("ABRIR_DICA: marca dicaUsada e<br/>reduz o bônus de confiança")
+    C("Escolher a métrica")
+    E{"Cenário de<br/>cálculo?"}
+    F("Informar o valor calculado<br/>(pode usar a calculadora embutida)")
+    G{"O valor é um<br/>número?"}
+    G1("Mostrar o erro no campo")
+    H("Escolher a justificativa")
+    I("Escolher a confiança:<br/>chute, dúvida, provável,<br/>confiante ou certeza")
+    R("Classificar: sucesso, sorte,<br/>incoerência ou erro total")
+    T("Atualizar caixa, reputação,<br/>sequência e histórico")
+    V("Mostrar resultado e explicação<br/>(MOSTRAR_RESULTADO)")
+
+    ini --> A --> B
+    B -->|"pessoa"| D
+    B -->|"rival do modo solo"| BOT --> R
+    D -->|"sim"| D1 --> C
+    D -->|"não"| C
+    C --> E
+    E -->|"sim"| F --> G
+    G -->|"não"| G1 --> F
+    G -->|"sim"| H
+    E -->|"não"| H
+    H --> I --> R --> T --> V --> fin
+
+    classDef ini fill:#000,stroke:#000
+    classDef fin fill:#fff,stroke:#000,stroke-width:3px
+```
+
+Em cenário de cálculo a métrica só conta como certa se a opção estiver certa **e** o valor estiver dentro da margem; o valor é conferido contra a métrica escolhida (`fisher.md` 4.7).
+
+### 7.3 Configuração da partida (assistente da tela inicial)
+
+```mermaid
+flowchart TB
+    ini((" ")):::ini
+    fin(((" "))):::fin
+
+    T0("Mostrar a tela inicial<br/>com a introdução")
+    T1{"Escolha do jogador"}
+    T2("CONTINUAR_SALVA: carregar()<br/>e mostrar a partida")
+    T3("Abrir o assistente<br/>(janela Anterior / Próximo)")
+    E("Mostrar a etapa atual")
+    P("Clicar em Próximo")
+    V{"Campos da etapa<br/>válidos?"}
+    A("Mostrar o aviso do campo")
+    N{"Era a última<br/>etapa?"}
+    I("Clicar em Iniciar Disputa Corporativa:<br/>novoJogo(config) limita os valores")
+    S("salvar(estado) e<br/>mostrar o tabuleiro")
+
+    ini --> T0 --> T1
+    T1 -->|"Continuar partida salva<br/>(só se houver save)"| T2 --> fin
+    T1 -->|"Iniciar"| T3 --> E
+    E -->|"Anterior"| E
+    E --> P --> V
+    V -->|"não"| A --> E
+    V -->|"sim"| N
+    N -->|"não: próxima etapa"| E
+    N -->|"sim"| I --> S --> fin
+
+    classDef ini fill:#000,stroke:#000
+    classDef fin fill:#fff,stroke:#000,stroke-width:3px
+```
+
+Ordem das etapas: **história** (a crise dos "achismos"), **a disputa pelo controle acionário**, **como prosperar perante o Conselho**, **modo de jogo**, **participantes** (quantidade e, no solo, o rival), **um jogador por etapa** (nome, perfil e setor; as etapas de jogadores que não existem na partida são puladas), **duração**, **capital inicial** (caixa e reputação), **mercado** (semente) e **material de apoio**. Só a última etapa mostra o botão Iniciar; **Esc** fecha o assistente em qualquer etapa e volta à tela inicial, sem criar a partida. A validação roda a cada Próximo (`checkValidity`), então uma etapa inválida não avança.
+
+---
+
+## 8. Arquitetura Física: Componentes e Implantação
+
+Complementa o diagrama de pacotes da seção 4, que mostra a estrutura **lógica** (camadas e dependências entre módulos), com a estrutura **física** (o que é entregue e como se liga) e o ambiente onde roda (Aula 10). Os dois seguem o estilo arquitetônico do projeto: site estático, ES modules sem bundler, sem backend (ADRs 0001, 0002 e 0005).
+
+### 8.1 Diagrama de Componentes
+
+Cada componente agrupa os módulos de uma camada da seção 4 e é ligado aos outros por **interfaces**: o círculo é a interface; a linha contínua liga o componente que a **realiza** (exporta) e a seta tracejada parte de quem a **usa** (importa). Quem usa depende só da interface, não do interior do componente.
+
+> **Notação.** O Mermaid não tem diagrama de componentes nativo, então usa-se `flowchart`: retângulos com `«estereótipo»` (`«component»`, `«file»`, `«document»`, `«executable»`, `«database»`) e círculos para as interfaces.
+
+```mermaid
+flowchart LR
+    subgraph ENTREGA["Aplicação entregue ao navegador (site estático)"]
+        HTML["«file»<br/>index.html"]
+        CSS["«file»<br/>style.css"]
+        UI["«component»<br/>Interface<br/>src/main.js e src/ui/"]
+        MOTOR["«component»<br/>Motor de regras<br/>src/engine/"]
+        CEN["«component»<br/>Cenários<br/>src/scenarios/loader.js<br/>e generators.js"]
+        CONT["«document»<br/>Conteúdo<br/>src/scenarios/content/"]
+        EST["«component»<br/>Estatísticas<br/>src/stats/"]
+        PER["«component»<br/>Persistência<br/>src/storage/persist.js"]
+    end
+
+    subgraph DEV["Ambiente de desenvolvimento (Node.js, fora da entrega)"]
+        TESTES["«executable»<br/>tests/*.test.js<br/>(node --test)"]
+        SIM["«executable»<br/>scripts/simular-bot.mjs"]
+    end
+
+    LS[("«database»<br/>localStorage do navegador")]
+
+    IMOTOR(("IMotor<br/>reduzir, novoJogo,<br/>seletores"))
+    ICEN(("ICenarios<br/>obterCenario, instanciar,<br/>validarCenario"))
+    ICONT(("IConteudo<br/>cenários, eventos,<br/>empresas, materiais"))
+    IEST(("IEstatisticas<br/>métricas e formatação"))
+    IPER(("IPersistencia<br/>salvar, carregar, limpar"))
+    IWS(("Web Storage<br/>getItem, setItem,<br/>removeItem"))
+
+    %% Realização (exporta)
+    MOTOR --- IMOTOR
+    CEN --- ICEN
+    CONT --- ICONT
+    EST --- IEST
+    PER --- IPER
+    LS --- IWS
+
+    %% Dependência (usa)
+    UI -.-> IMOTOR
+    UI -.-> ICEN
+    UI -.-> IEST
+    UI -.-> ICONT
+    UI -.-> IPER
+    MOTOR -.-> ICEN
+    MOTOR -.-> IEST
+    MOTOR -.-> ICONT
+    CEN -.-> IEST
+    CEN -.-> ICONT
+    PER -.-> IWS
+    TESTES -.-> IMOTOR
+    TESTES -.-> ICEN
+    TESTES -.-> IEST
+    TESTES -.-> IPER
+    SIM -.-> IMOTOR
+    SIM -.-> ICEN
+
+    %% Arquivos carregados pelo navegador
+    HTML -.->|"«load»<br/>script type=module"| UI
+    HTML -.->|"«load»"| CSS
+```
+
+Pontos de leitura:
+
+- **Substituição.** O componente de persistência pode ser trocado por outro que realize `IPersistencia` (por exemplo, `sessionStorage` ou um arquivo) sem mudar a Interface nem o Motor. O mesmo vale para o Motor, que não conhece a Interface: é uma função pura `(estado, ação) → novoEstado` (ADR 0003).
+- **Sentido das dependências.** O Motor não usa `IPersistencia` nem a Interface; só a Interface grava e lê a partida. Isso é o que permite testar o Motor e simular partidas sem navegador.
+- **Conteúdo como dado.** Os cenários são dados (`cenarios.json`), não código (ADR 0006); o Motor, a Interface e o componente de Cenários só os leem pela interface `IConteudo`.
+- **Fora do diagrama.** `scripts/lint.mjs` lê todos os arquivos de `src/` e `tests/` pelo sistema de arquivos e não depende de nenhuma interface; os workflows do GitHub Actions aparecem na implantação (8.2).
+
+### 8.2 Diagrama de Implantação
+
+Mostra os nós onde os componentes executam e as conexões entre eles. **Em produção só há dois nós de execução: o navegador de quem joga e o site estático do GitHub Pages.** Depois que os arquivos são baixados, todo o processamento (regras, sorteios, pontuação e gravação da partida) acontece no navegador, sem servidor de aplicação nem banco de dados (`fisher.md` 5.10).
+
+> **Notação.** O Mermaid não tem diagrama de implantação nativo, então usa-se `flowchart` com subgrafos para os nós (`«device»`, `«execution environment»`) e estereótipos nas conexões para o protocolo (`«HTTPS»`).
+
+```mermaid
+flowchart TB
+    subgraph PC["«device»<br/>Computador ou celular de quem joga"]
+        subgraph BR["«execution environment»<br/>Navegador web com suporte a ES modules"]
+            APP["«artifact»<br/>index.html, style.css e src/<br/>(Interface, Motor, Cenários, Estatísticas, Persistência)"]
+            WS[("«artifact»<br/>localStorage<br/>partida salva")]
+        end
+    end
+
+    subgraph GH["«node» GitHub"]
+        REPO["Repositório<br/>(main protegida: só entra por pull request)"]
+        subgraph ACT["«execution environment»<br/>GitHub Actions (ubuntu-latest)"]
+            CI["Workflow Testes<br/>lint e test:cobertura<br/>em Node 20 e 22"]
+            DEP["Workflow Deploy<br/>lint e test em Node 22,<br/>monta _site"]
+        end
+        PAGES["«node» GitHub Pages<br/>site estático (.nojekyll)"]
+    end
+
+    FORMS["«node» Google Forms<br/>questionário anônimo"]
+
+    subgraph DEVPC["«device»<br/>Máquina de quem desenvolve"]
+        NODE["«execution environment»<br/>Node.js 20+<br/>npm test, lint, simulação"]
+        SERV["«execution environment»<br/>python3 -m http.server 8000<br/>(npm start)"]
+    end
+
+    PC -- "«HTTPS»<br/>baixa os arquivos estáticos" --> PAGES
+    APP --- WS
+    BR -- "«HTTPS»<br/>link aberto em nova aba" --> FORMS
+    DEVPC -- "git push e pull request" --> REPO
+    REPO -- "pull request e push na main" --> CI
+    REPO -- "push na main" --> DEP
+    DEP -- "publica o artefato _site" --> PAGES
+    SERV -. "«HTTP» localhost:8000" .-> BR
+```
+
+**Estrangulamentos (Aula 10).** Não há gargalo de servidor: o custo por jogador é zero no lado do host, e a capacidade é a do CDN do GitHub Pages para arquivos estáticos. Os limites reais são do cliente: o tamanho do `localStorage` (a partida salva é um JSON pequeno) e o suporte a ES modules. O envio ao Google Forms acontece fora do jogo, na aba que a pessoa abre; falha nele não afeta a partida.
+
+---
+
+## 9. Descrição dos Componentes Principais
 
 | Módulo | Responsabilidade Principal |
 | :--- | :--- |
