@@ -297,56 +297,68 @@ classDiagram
 
 ## 2. Diagrama de Máquina de Estados (Comportamental)
 
-Modela o fluxo de fases do motor de turnos em `src/engine/machine.js`. Cada transição é uma função pura `(estado, acao) -> novoEstado`.
+Modela o fluxo de fases do motor de turnos em `src/engine/machine.js`. Cada transição é uma função pura `(estado, acao) -> novoEstado`. Os retângulos arredondados são fases (`estado.fase`) e os losangos são decisões, com a pergunta escrita dentro. O diagrama usa `flowchart` porque o `stateDiagram` do Mermaid desenha o losango (`<<choice>>`) sempre vazio, sem aceitar texto. As fases `MOSTRAR_EVENTO` e `MOSTRAR_MERCADO` aparecem divididas pelo campo `decisao`, que as subdivide sem mudar a fase.
 
 ```mermaid
-stateDiagram-v2
-    [*] --> MENU : Início / Sem jogo ativo
-    
-    MENU --> ROLAR_DADO : NOVA partida / CONTINUAR_SALVA
-    
-    state TurnoAtivo {
-        [*] --> ROLAR_DADO
-        
-        ROLAR_DADO --> ESCOLHER_METRICA : ROLAR (caiu em 'decisao')
-        ROLAR_DADO --> MOSTRAR_EVENTO : ROLAR (caiu em 'evento')
-        ROLAR_DADO --> MOSTRAR_MERCADO : ROLAR (caiu em 'mercado')
-        ROLAR_DADO --> MOSTRAR_BALANCO : ROLAR (caiu em 'balanco')
-        
-        state FluxoDecisao {
-            ESCOLHER_METRICA --> ESCOLHER_METRICA : ABRIR_DICA (só iniciante; marca dicaUsada e reduz o bônus de confiança)
-            ESCOLHER_METRICA --> ESCOLHER_METRICA : USAR_HABILIDADE(diretoria) (Plano B, Dashboard ou Treinamento; 2 usos por partida e 1 por cenário)
-            ESCOLHER_METRICA --> ESCOLHER_JUSTIFICATIVA : METRICA(id) (só pessoa, cenário comum)
-            ESCOLHER_METRICA --> INFORMAR_VALOR : METRICA(id) (só pessoa, cenário de cálculo)
-            INFORMAR_VALOR --> ESCOLHER_JUSTIFICATIVA : VALOR(número ou texto pt-BR)
-            ESCOLHER_METRICA --> MOSTRAR_RESULTADO : DECIDIR_BOT (só rival do modo solo)
-            ESCOLHER_JUSTIFICATIVA --> ESCOLHER_CONFIANCA : JUSTIFICATIVA(id)
-            ESCOLHER_CONFIANCA --> MOSTRAR_RESULTADO : CONFIANCA('chute' | 'duvida' | 'provavel' | 'confiante' | 'certeza')
-        }
-        
-        state FluxoEvento {
-            MOSTRAR_EVENTO --> MOSTRAR_EVENTO : PARTICIPAR (decisao = escolhendo; três cartas viradas)
-            MOSTRAR_EVENTO --> MOSTRAR_EVENTO : ESCOLHER_CARTA(0, 1 ou 2) (revela uma das outras, nunca a boa; decisao = trocando)
-            MOSTRAR_EVENTO --> MOSTRAR_EVENTO : MANTER / TROCAR (aplica o efeito da carta final; decisao = participou)
-        }
+flowchart TD
+    classDef fase fill:#e8f0fe,stroke:#3b5bdb,color:#111,stroke-width:1.5px
+    classDef decisao fill:#fff4cc,stroke:#b8860b,color:#111,stroke-width:1.5px
+    classDef marco fill:#222,stroke:#222,color:#fff
 
-        state FluxoMercado {
-            MOSTRAR_MERCADO --> MOSTRAR_MERCADO : ABRIR_CONSULTORIA / DIAGNOSTICAR(falácia) (oferta aberta, uma vez cada)
-            MOSTRAR_MERCADO --> MOSTRAR_MERCADO : INVESTIR(aporte) / RECUSAR (fecha a oferta, paga o diagnóstico e, se contratou a consultoria sem investir, debita o honorário)
-        }
+    INI((" ")):::marco --> MENU(MENU):::fase
+    MENU -->|"NOVA partida (ou CONTINUAR salva, que retoma na fase gravada)"| ROLAR_DADO(ROLAR_DADO):::fase
 
-        MOSTRAR_RESULTADO --> ValidaFimTurno : CONTINUAR
-        MOSTRAR_EVENTO --> ValidaFimTurno : RECUSAR (passa a vez, sem efeito) / CONTINUAR (sem decidir vale RECUSAR; com as cartas na mesa ou à espera de manter ou trocar é ignorado; depois de decidir, segue)
-        MOSTRAR_MERCADO --> ValidaFimTurno : CONTINUAR (sem decidir, vale RECUSAR)
-        MOSTRAR_BALANCO --> ValidaFimTurno : CONTINUAR
-        
-        state ValidaFimTurno <<choice>>
-        ValidaFimTurno --> ROLAR_DADO : dados iguais e jogador no jogo\n(mesmo jogador, jogadaExtra, sem gastar trimestre)
-        ValidaFimTurno --> ROLAR_DADO : turnoAtual <= turnosPorJogador\n(próximo jogador que não faliu ou nova rodada)
-    }
+    %% Rolagem
+    ROLAR_DADO -->|"ROLAR (2d6, avança o peão)"| PassouInicio{"Passou pelo Início?"}:::decisao
+    PassouInicio -->|"sim, aplica o Balanço (receita, custos, investimentos e, no coop., a meta)"| QualCasa{"Em que casa caiu?"}:::decisao
+    PassouInicio -->|"não"| QualCasa
+    QualCasa -->|"Decisão (sorteia o cenário)"| ESCOLHER_METRICA(ESCOLHER_METRICA):::fase
+    QualCasa -->|"Evento"| EventoOferta("MOSTRAR_EVENTO<br/>decisao = null"):::fase
+    QualCasa -->|"Mercado"| MercadoOferta("MOSTRAR_MERCADO<br/>decisao = null"):::fase
+    QualCasa -->|"Balanço ou Início"| MOSTRAR_BALANCO(MOSTRAR_BALANCO):::fase
 
-    ValidaFimTurno --> FIM_DE_JOGO : turnoAtual > turnosPorJogador\n(apura os investimentos em custódia)\nou empresa falida (coop.)\nou só um jogador sem falir
-    FIM_DE_JOGO --> MENU : NOVA partida (limpa storage)
+    %% Fluxo de decisão
+    ESCOLHER_METRICA -->|"ABRIR_DICA (só iniciante) ou USAR_HABILIDADE (uma vez por cenário)"| ESCOLHER_METRICA
+    ESCOLHER_METRICA -->|"METRICA(id) ou DECIDIR_BOT"| QuemDecide{"Quem joga a vez?"}:::decisao
+    QuemDecide -->|"rival do modo solo: DECIDIR_BOT escolhe tudo de uma vez"| MOSTRAR_RESULTADO(MOSTRAR_RESULTADO):::fase
+    QuemDecide -->|"pessoa"| TipoCenario{"O cenário é de cálculo?"}:::decisao
+    TipoCenario -->|"sim"| INFORMAR_VALOR(INFORMAR_VALOR):::fase
+    TipoCenario -->|"não"| ESCOLHER_JUSTIFICATIVA(ESCOLHER_JUSTIFICATIVA):::fase
+    INFORMAR_VALOR -->|"VALOR (número ou texto pt-BR)"| ESCOLHER_JUSTIFICATIVA
+    ESCOLHER_JUSTIFICATIVA -->|"JUSTIFICATIVA(id)"| ESCOLHER_CONFIANCA(ESCOLHER_CONFIANCA):::fase
+    ESCOLHER_CONFIANCA -->|"CONFIANCA (chute, dúvida, provável, confiante ou certeza)"| MOSTRAR_RESULTADO
+
+    %% Fluxo de evento (Monty Hall)
+    EventoOferta -->|"ação da pessoa"| ParticiparEvento{"Participa do evento?"}:::decisao
+    ParticiparEvento -->|"sim: PARTICIPAR (três cartas viradas)"| EventoEscolhendo("MOSTRAR_EVENTO<br/>decisao = escolhendo"):::fase
+    ParticiparEvento -->|"não: RECUSAR ou CONTINUAR (sem efeito, vale também para o rival do solo)"| PassouBalanco
+    EventoEscolhendo -->|"ESCOLHER_CARTA(0, 1 ou 2): revela uma das outras, nunca a boa"| EventoTrocando("MOSTRAR_EVENTO<br/>decisao = trocando"):::fase
+    EventoTrocando -->|"ação da pessoa"| ManterOuTrocar{"Mantém ou troca a carta?"}:::decisao
+    ManterOuTrocar -->|"MANTER: efeito da carta escolhida"| EventoResolvido("MOSTRAR_EVENTO<br/>decisao = participou"):::fase
+    ManterOuTrocar -->|"TROCAR: efeito da carta que sobrou"| EventoResolvido
+    EventoResolvido -->|"CONTINUAR"| PassouBalanco
+
+    %% Fluxo de mercado
+    MercadoOferta -->|"ABRIR_CONSULTORIA ou DIAGNOSTICAR (falácia), uma vez cada"| MercadoOferta
+    MercadoOferta -->|"INVESTIR(aporte) ou RECUSAR"| DecisaoMercado{"Investe ou recusa?"}:::decisao
+    DecisaoMercado -->|"INVESTIR com aporte válido (da lista e até o caixa): debita e registra"| MercadoDecidido("MOSTRAR_MERCADO<br/>decisao = investiu ou recusou"):::fase
+    DecisaoMercado -->|"RECUSAR: paga o honorário se contratou a consultoria"| MercadoDecidido
+    MercadoDecidido -->|"CONTINUAR"| PassouBalanco
+    MercadoOferta -->|"CONTINUAR sem decidir (vale RECUSAR)"| PassouBalanco
+
+    %% Fim da jogada
+    MOSTRAR_RESULTADO -->|"CONTINUAR"| PassouBalanco{"Passou pelo Balanço nesta jogada?"}:::decisao
+    MOSTRAR_BALANCO -->|"CONTINUAR"| PassouBalanco
+    PassouBalanco -->|"sim, julga a falência (coop.: caixa da empresa negativo. Competitivo: julgarBalanco elimina o pior saldo)"| HaFimDePartida{"Empresa falida, ninguém ativo<br/>ou só um sobrevivente?"}:::decisao
+    PassouBalanco -->|"não"| HaFimDePartida
+    HaFimDePartida -->|"sim"| FIM_DE_JOGO([FIM_DE_JOGO]):::fase
+    HaFimDePartida -->|"não"| JogadaExtra{"Dados iguais e jogador<br/>ainda no jogo?"}:::decisao
+    JogadaExtra -->|"sim: mesmo jogador, jogadaExtra, sem gastar trimestre"| ROLAR_DADO
+    JogadaExtra -->|"não"| HaFimDosTrimestres{"Passou do último trimestre?<br/>(turnoAtual maior que turnosPorJogador)"}:::decisao
+    HaFimDosTrimestres -->|"sim, apura os investimentos em custódia"| FIM_DE_JOGO
+    HaFimDosTrimestres -->|"não: próximo jogador não falido (ao dar a volta, turnoAtual + 1)"| ROLAR_DADO
+
+    FIM_DE_JOGO -->|"NOVA partida (o storage já foi limpo ao entrar em FIM_DE_JOGO)"| MENU
 ```
 
 ---
